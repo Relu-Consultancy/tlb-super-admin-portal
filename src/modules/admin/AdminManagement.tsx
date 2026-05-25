@@ -6,9 +6,9 @@ import {
     Settings as SettingsIcon,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import Card from '../components/ui/Card';
-import { cn } from '../lib/utils';
-import * as mock from '../mockData';
+import Card from '../../shared/components/ui/Card';
+import { cn } from '../../shared/lib/utils';
+import * as mock from '../../data/mockData';
 
 const AdminManagement = () => {
     const [activeTab, setActiveTab] = useState('Admins');

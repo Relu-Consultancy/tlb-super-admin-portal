@@ -9,9 +9,9 @@ import {
     X,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import Card from '../components/ui/Card';
-import { cn } from '../lib/utils';
-import * as mock from '../mockData';
+import Card from '../../shared/components/ui/Card';
+import { cn } from '../../shared/lib/utils';
+import * as mock from '../../data/mockData';
 
 const PaymentsFinance = () => {
     const [activeTab, setActiveTab] = useState('Transactions');
@@ -127,13 +127,7 @@ const PaymentsFinance = () => {
             <AnimatePresence>
                 {showRegister && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setShowRegister(false)}
-                            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-                        />
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowRegister(false)} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -142,9 +136,7 @@ const PaymentsFinance = () => {
                         >
                             <div className="p-6 border-b border-gray-100 flex justify-between items-center">
                                 <h2 className="text-xl font-bold text-gray-900">Register Transaction</h2>
-                                <button onClick={() => setShowRegister(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                                    <X size={20} className="text-gray-400" />
-                                </button>
+                                <button onClick={() => setShowRegister(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X size={20} className="text-gray-400" /></button>
                             </div>
                             <div className="p-6 space-y-5">
                                 <div className="grid grid-cols-2 gap-4">
@@ -185,12 +177,8 @@ const PaymentsFinance = () => {
                                 </div>
                             </div>
                             <div className="p-6 bg-gray-50 flex justify-end gap-3">
-                                <button onClick={() => setShowRegister(false)} className="px-6 py-3 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-all">
-                                    Cancel
-                                </button>
-                                <button onClick={() => setShowRegister(false)} className="px-6 py-3 bg-yellow-400 text-gray-900 font-bold rounded-xl hover:bg-yellow-500 shadow-lg shadow-yellow-400/20 transition-all">
-                                    Register
-                                </button>
+                                <button onClick={() => setShowRegister(false)} className="px-6 py-3 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-all">Cancel</button>
+                                <button onClick={() => setShowRegister(false)} className="px-6 py-3 bg-yellow-400 text-gray-900 font-bold rounded-xl hover:bg-yellow-500 shadow-lg shadow-yellow-400/20 transition-all">Register</button>
                             </div>
                         </motion.div>
                     </div>
@@ -199,13 +187,7 @@ const PaymentsFinance = () => {
             <AnimatePresence>
                 {showFilters && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setShowFilters(false)}
-                            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-                        />
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowFilters(false)} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -214,25 +196,17 @@ const PaymentsFinance = () => {
                         >
                             <div className="p-6 border-b border-gray-100 flex justify-between items-center">
                                 <h2 className="text-xl font-bold text-gray-900">Filter Transactions</h2>
-                                <button onClick={() => setShowFilters(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                                    <X size={20} className="text-gray-400" />
-                                </button>
+                                <button onClick={() => setShowFilters(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X size={20} className="text-gray-400" /></button>
                             </div>
                             <div className="p-6 space-y-6">
                                 <div>
                                     <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Status</label>
                                     <div className="flex flex-wrap gap-2">
                                         {['All', 'Completed', 'Pending', 'Failed'].map((status) => (
-                                            <button key={status} className={cn(
-                                                "px-4 py-2 rounded-xl text-sm font-medium transition-all border",
-                                                status === 'All' ? "bg-yellow-400 border-yellow-400 text-gray-900 shadow-sm" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
-                                            )}>
-                                                {status}
-                                            </button>
+                                            <button key={status} className={cn("px-4 py-2 rounded-xl text-sm font-medium transition-all border", status === 'All' ? "bg-yellow-400 border-yellow-400 text-gray-900 shadow-sm" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50")}>{status}</button>
                                         ))}
                                     </div>
                                 </div>
-
                                 <div>
                                     <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Amount Range</label>
                                     <div className="flex items-center gap-3">
@@ -247,7 +221,6 @@ const PaymentsFinance = () => {
                                         </div>
                                     </div>
                                 </div>
-
                                 <div>
                                     <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Date Timeline</label>
                                     <select className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-yellow-400 appearance-none">
@@ -261,12 +234,8 @@ const PaymentsFinance = () => {
                                 </div>
                             </div>
                             <div className="p-6 bg-gray-50 flex justify-between items-center gap-4 border-t border-gray-100">
-                                <button className="text-sm font-bold text-gray-500 hover:text-gray-900 transition-colors">
-                                    Reset Filters
-                                </button>
-                                <button onClick={() => setShowFilters(false)} className="px-6 py-3 bg-yellow-400 text-gray-900 font-bold rounded-xl hover:bg-yellow-500 shadow-lg shadow-yellow-400/20 transition-all flex-1 text-center">
-                                    Apply
-                                </button>
+                                <button className="text-sm font-bold text-gray-500 hover:text-gray-900 transition-colors">Reset Filters</button>
+                                <button onClick={() => setShowFilters(false)} className="px-6 py-3 bg-yellow-400 text-gray-900 font-bold rounded-xl hover:bg-yellow-500 shadow-lg shadow-yellow-400/20 transition-all flex-1 text-center">Apply</button>
                             </div>
                         </motion.div>
                     </div>

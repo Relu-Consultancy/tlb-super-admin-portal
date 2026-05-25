@@ -1,25 +1,26 @@
 import { useState } from 'react';
 import { BarChart3, Bell, Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { cn } from './lib/utils';
+import { cn } from './shared/lib/utils';
 import { Screen } from './types';
 
 // Layout
-import Sidebar from './components/layout/Sidebar';
+import Sidebar from './shared/components/layout/Sidebar';
 
-// Pages
-import LoginScreen from './pages/LoginScreen';
-import Dashboard from './pages/Dashboard';
-import PartnerManagement from './pages/PartnerManagement';
-import EventApproval from './pages/EventApproval';
-import AdminManagement from './pages/AdminManagement';
-import PaymentsFinance from './pages/PaymentsFinance';
-import FinanceDashboard from './pages/FinanceDashboard';
-import CouponsMarketing from './pages/CouponsMarketing';
-import SupportSystem from './pages/SupportSystem';
-import UserManagement from './pages/UserManagement';
-import Settings from './pages/Settings';
-import Analytics from './pages/Analytics';
+// Modules
+import LoginScreen from './modules/auth/LoginScreen';
+import Dashboard from './modules/dashboard/Dashboard';
+import PartnerManagement from './modules/partners/PartnerManagement';
+import EventApproval from './modules/events/EventApproval';
+import AdminManagement from './modules/admin/AdminManagement';
+import PaymentsFinance from './modules/finance/PaymentsFinance';
+import FinanceDashboard from './modules/finance/FinanceDashboard';
+import CouponsMarketing from './modules/marketing/CouponsMarketing';
+import SupportSystem from './modules/support/SupportSystem';
+import UserManagement from './modules/users/UserManagement';
+import Settings from './modules/settings/Settings';
+import Analytics from './modules/analytics/Analytics';
+import UserSection from './modules/users/UserSection/UserSection';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -43,6 +44,7 @@ export default function App() {
       case Screen.USER_MANAGEMENT: return <UserManagement />;
       case Screen.SETTINGS: return <Settings />;
       case Screen.ANALYTICS: return <Analytics />;
+      case Screen.USER_SECTION: return <UserSection />;
       default: return (
         <div className="flex flex-col items-center justify-center h-[60vh] text-gray-400">
           <BarChart3 size={64} className="mb-4 opacity-20" />

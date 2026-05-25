@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import SidebarItem from '../ui/SidebarItem';
-import { Screen } from '../../types';
+import { Screen } from '../../../types';
 
 interface SidebarProps {
     currentScreen: Screen;
