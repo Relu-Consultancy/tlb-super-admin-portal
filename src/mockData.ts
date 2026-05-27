@@ -68,9 +68,67 @@ export const USERS = [
 ];
 
 export const SUPPORT_CHATS = [
-    { id: 1, user: 'Alex Thompson', lastMessage: 'How can I reset my event pas...', time: '14:22', type: 'BOT', status: 'Active', avatar: 'https://picsum.photos/seed/support1/100/100', unread: true },
-    { id: 2, user: 'Sarah Jenkins', lastMessage: 'Waiting for a human represe...', time: '14:15', type: 'PENDING', status: 'Pending', avatar: 'https://picsum.photos/seed/support2/100/100', unread: false },
-    { id: 3, user: 'Michael Chen', lastMessage: 'Thank you for your help!', time: '13:50', type: 'HUMAN', status: 'Completed', avatar: 'https://picsum.photos/seed/support3/100/100', unread: false },
+    { id: 1, user: 'Alex Thompson', lastMessage: 'How can I reset my event pas...', time: '14:22', type: 'BOT', status: 'Active', avatar: 'https://picsum.photos/seed/support1/100/100', unread: true, priority: 'High', category: 'Booking', ticketId: '#TKT-4401', email: 'alex.t@email.com', phone: '+91 98190 XXXXX', createdAt: '27-May-26, 02:10 PM' },
+    { id: 2, user: 'Sarah Jenkins', lastMessage: 'Waiting for a human represe...', time: '14:15', type: 'PENDING', status: 'Pending', avatar: 'https://picsum.photos/seed/support2/100/100', unread: false, priority: 'Medium', category: 'Refund', ticketId: '#TKT-4398', email: 'sarah.j@org.com', phone: '+91 98200 XXXXX', createdAt: '27-May-26, 01:50 PM' },
+    { id: 3, user: 'Michael Chen', lastMessage: 'Thank you for your help!', time: '13:50', type: 'HUMAN', status: 'Resolved', avatar: 'https://picsum.photos/seed/support3/100/100', unread: false, priority: 'Low', category: 'Payment', ticketId: '#TKT-4385', email: 'm.chen@webmail.com', phone: '+91 93220 XXXXX', createdAt: '27-May-26, 10:20 AM' },
+    { id: 4, user: 'Priya Mehta', lastMessage: 'The venue details are wrong...', time: '13:30', type: 'HUMAN', status: 'Active', avatar: 'https://picsum.photos/seed/support4/100/100', unread: true, priority: 'High', category: 'Listing', ticketId: '#TKT-4382', email: 'priya.m@yahoo.com', phone: '+91 93221 XXXXX', createdAt: '27-May-26, 09:45 AM' },
+    { id: 5, user: 'Rahul Sharma', lastMessage: 'Can I change my event date?', time: '12:45', type: 'BOT', status: 'Active', avatar: 'https://picsum.photos/seed/support5/100/100', unread: false, priority: 'Medium', category: 'Booking', ticketId: '#TKT-4379', email: 'rahul.s@gmail.com', phone: '+91 98201 XXXXX', createdAt: '27-May-26, 08:30 AM' },
+    { id: 6, user: 'Neha Gupta', lastMessage: 'Coupon code not working', time: '12:10', type: 'PENDING', status: 'Pending', avatar: 'https://picsum.photos/seed/support6/100/100', unread: true, priority: 'Low', category: 'Coupon', ticketId: '#TKT-4370', email: 'neha.g@email.com', phone: '+91 98765 XXXXX', createdAt: '27-May-26, 07:55 AM' },
+    { id: 7, user: 'Amit Patel', lastMessage: 'Thanks, issue is fixed now!', time: '11:30', type: 'HUMAN', status: 'Resolved', avatar: 'https://picsum.photos/seed/support7/100/100', unread: false, priority: 'Medium', category: 'Payment', ticketId: '#TKT-4362', email: 'amit.p@email.com', phone: '+91 99876 XXXXX', createdAt: '26-May-26, 04:20 PM' },
+];
+
+export const SUPPORT_MESSAGES: Record<number, Array<{ id: number; sender: 'user' | 'admin' | 'bot'; text: string; time: string }>> = {
+    1: [
+        { id: 1, sender: 'user', text: 'How can I reset my event pass? I accidentally deleted the email confirmation.', time: '02:10 PM' },
+        { id: 2, sender: 'bot', text: 'Hi Alex! I can help with that. Let me pull up your recent bookings. Could you share the event name or booking ID?', time: '02:11 PM' },
+        { id: 3, sender: 'user', text: "It was for the \"Summer Music Fest\" on June 15th. I think the booking ID starts with #BK-9...", time: '02:15 PM' },
+        { id: 4, sender: 'admin', text: "I've found your booking #BK-98231 for Summer Music Fest. I'm re-sending the e-ticket to your registered email now.", time: '02:18 PM' },
+        { id: 5, sender: 'user', text: 'How can I reset my event pass? In case this happens again?', time: '02:22 PM' },
+    ],
+    2: [
+        { id: 1, sender: 'user', text: 'Hi, I need a refund for my booking. The event was cancelled by the organizer but I still got charged.', time: '01:50 PM' },
+        { id: 2, sender: 'bot', text: 'I understand your concern, Sarah. Let me connect you with a human agent for refund processing.', time: '01:51 PM' },
+        { id: 3, sender: 'user', text: "Waiting for a human representative... it's been 20 minutes already.", time: '02:15 PM' },
+    ],
+    3: [
+        { id: 1, sender: 'user', text: "Hello, I'm having trouble with my recent booking for the \"Summer Music Fest\". The payment went through but I haven't received my ticket yet.", time: '10:24 AM' },
+        { id: 2, sender: 'admin', text: 'Hi Michael, I\'m sorry to hear that. Let me check your transaction status right away. Could you please provide your booking ID?', time: '10:26 AM' },
+        { id: 3, sender: 'user', text: "Sure, it's #BK-98231.", time: '10:27 AM' },
+        { id: 4, sender: 'admin', text: "I've located your booking. The ticket was generated but the email delivery failed. I've re-sent it to your email. Please check your inbox.", time: '10:32 AM' },
+        { id: 5, sender: 'user', text: 'Got it! Thank you for your help!', time: '10:35 AM' },
+        { id: 6, sender: 'admin', text: "You're welcome, Michael! Is there anything else I can help with?", time: '10:36 AM' },
+        { id: 7, sender: 'user', text: 'No, that was all. Thanks again!', time: '13:50 PM' },
+    ],
+    4: [
+        { id: 1, sender: 'user', text: 'The venue details listed for "Pottery for Toddlers" are completely wrong. It says Andheri but the actual venue is in Bandra.', time: '09:45 AM' },
+        { id: 2, sender: 'admin', text: "Thank you for flagging this, Priya. I'm escalating this to the partner team for immediate correction.", time: '09:50 AM' },
+        { id: 3, sender: 'user', text: "Please fix it ASAP. The event is tomorrow and parents are confused. I've already gotten 3 calls about this.", time: '01:30 PM' },
+    ],
+    5: [
+        { id: 1, sender: 'user', text: 'Can I change my event date from June 15 to June 22? Something came up.', time: '08:30 AM' },
+        { id: 2, sender: 'bot', text: 'Hi Rahul! Date changes depend on the event organizer\'s policy. Let me check if this event allows date modifications.', time: '08:31 AM' },
+        { id: 3, sender: 'bot', text: 'Good news! The "Summer Music Fest" allows date changes up to 48 hours before the event. Would you like me to process the change?', time: '08:33 AM' },
+        { id: 4, sender: 'user', text: 'Yes please! Change it to June 22.', time: '12:45 PM' },
+    ],
+    6: [
+        { id: 1, sender: 'user', text: 'I\'m trying to use coupon code SUMMER24 but it says "invalid code". The promo says it\'s valid until August.', time: '07:55 AM' },
+        { id: 2, sender: 'bot', text: "I'll look into this for you. Could you tell me which event you're trying to book?", time: '07:56 AM' },
+        { id: 3, sender: 'user', text: 'Coupon code not working for the Art Workshop this Saturday.', time: '12:10 PM' },
+    ],
+    7: [
+        { id: 1, sender: 'user', text: 'My payment of ₹2,400 was deducted twice for the same booking #BK-97812. Please help!', time: '04:20 PM' },
+        { id: 2, sender: 'admin', text: "I can see the duplicate charge, Amit. I've initiated a refund for ₹2,400. It should reflect in 3-5 business days.", time: '04:35 PM' },
+        { id: 3, sender: 'user', text: 'Thanks, issue is fixed now! Got the refund confirmation email.', time: '11:30 AM' },
+    ],
+};
+
+export const SUPPORT_QUICK_REPLIES = [
+    "I'll look into this right away.",
+    'Could you please share your booking ID?',
+    "I'm escalating this to the relevant team.",
+    'The refund has been initiated and will reflect in 3-5 business days.',
+    'Is there anything else I can help with?',
+    'Let me check with the partner team and get back to you.',
 ];
 
 export const ACTIVITY_LOGS = [

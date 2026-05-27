@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import App from './App';
 
 // Mock recharts used by Analytics and FinanceDashboard modules
@@ -32,51 +32,55 @@ vi.mock('motion/react', async () => {
 });
 
 describe('App', () => {
-    it('renders the login screen heading when not logged in', () => {
+    it('renders the login screen heading when not logged in', async () => {
         render(<App />);
-        expect(screen.getByText('TLB Admin Team')).toBeInTheDocument();
+        expect(await screen.findByText('TLB Admin Team')).toBeInTheDocument();
     });
 
-    it('shows the email input on the login screen', () => {
+    it('shows the email input on the login screen', async () => {
         render(<App />);
-        expect(screen.getByPlaceholderText('name@tlb-events.com')).toBeInTheDocument();
+        expect(await screen.findByPlaceholderText('name@tlb-events.com')).toBeInTheDocument();
     });
 
-    it('shows the password input on the login screen', () => {
+    it('shows the password input on the login screen', async () => {
         render(<App />);
-        expect(screen.getByPlaceholderText('Enter your password')).toBeInTheDocument();
+        expect(await screen.findByPlaceholderText('Enter your password')).toBeInTheDocument();
     });
 
-    it('logs in and shows the main app layout', () => {
+    it('logs in and shows the main app layout', async () => {
         render(<App />);
-        fireEvent.click(screen.getByText('Login'));
-        // After login the dashboard should be visible
-        expect(screen.getByText('Dashboard')).toBeInTheDocument();
+        const loginBtn = await screen.findByText('Login');
+        fireEvent.click(loginBtn);
+        expect(await screen.findByText('Dashboard')).toBeInTheDocument();
     });
 
-    it('shows the admin name in the header after login', () => {
+    it('shows the admin name in the header after login', async () => {
         render(<App />);
-        fireEvent.click(screen.getByText('Login'));
-        expect(screen.getByText('Vishesh S.')).toBeInTheDocument();
+        const loginBtn = await screen.findByText('Login');
+        fireEvent.click(loginBtn);
+        expect(await screen.findByText('Vishesh S.')).toBeInTheDocument();
     });
 
-    it('shows the Super Admin role label after login', () => {
+    it('shows the Super Admin role label after login', async () => {
         render(<App />);
-        fireEvent.click(screen.getByText('Login'));
-        // "Super Admin" appears in the header
-        const superAdminLabels = screen.getAllByText('Super Admin');
-        expect(superAdminLabels.length).toBeGreaterThan(0);
+        const loginBtn = await screen.findByText('Login');
+        fireEvent.click(loginBtn);
+        await waitFor(() => {
+            const superAdminLabels = screen.getAllByText('Super Admin');
+            expect(superAdminLabels.length).toBeGreaterThan(0);
+        });
     });
 
-    it('shows the sidebar with nav items after login', () => {
+    it('shows the sidebar with nav items after login', async () => {
         render(<App />);
-        fireEvent.click(screen.getByText('Login'));
-        expect(screen.getByText('Analytics')).toBeInTheDocument();
+        const loginBtn = await screen.findByText('Login');
+        fireEvent.click(loginBtn);
+        expect(await screen.findByText('Analytics')).toBeInTheDocument();
         expect(screen.getByText('Partner Management')).toBeInTheDocument();
     });
 
-    it('shows login screen sub-heading', () => {
+    it('shows login screen sub-heading', async () => {
         render(<App />);
-        expect(screen.getByText('Secure access for super admins')).toBeInTheDocument();
+        expect(await screen.findByText('Secure access for super admins')).toBeInTheDocument();
     });
 });

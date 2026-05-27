@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { BarChart3, Bell, Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './shared/lib/utils';
@@ -7,20 +7,26 @@ import { Screen } from './types';
 // Layout
 import Sidebar from './shared/components/layout/Sidebar';
 
-// Modules
-import LoginScreen from './modules/auth/LoginScreen';
-import Dashboard from './modules/dashboard/Dashboard';
-import PartnerManagement from './modules/partners/PartnerManagement';
-import EventApproval from './modules/events/EventApproval';
-import AdminManagement from './modules/admin/AdminManagement';
-import PaymentsFinance from './modules/finance/PaymentsFinance';
-import FinanceDashboard from './modules/finance/FinanceDashboard';
-import CouponsMarketing from './modules/marketing/CouponsMarketing';
-import SupportSystem from './modules/support/SupportSystem';
-import UserManagement from './modules/users/UserManagement';
-import Settings from './modules/settings/Settings';
-import Analytics from './modules/analytics/Analytics';
-import UserSection from './modules/users/UserSection/UserSection';
+// Lazy-loaded modules (code-split per screen)
+const LoginScreen = lazy(() => import('./modules/auth/LoginScreen'));
+const Dashboard = lazy(() => import('./modules/dashboard/Dashboard'));
+const PartnerManagement = lazy(() => import('./modules/partners/PartnerManagement'));
+const EventApproval = lazy(() => import('./modules/events/EventApproval'));
+const AdminManagement = lazy(() => import('./modules/admin/AdminManagement'));
+const PaymentsFinance = lazy(() => import('./modules/finance/PaymentsFinance'));
+const FinanceDashboard = lazy(() => import('./modules/finance/FinanceDashboard'));
+const CouponsMarketing = lazy(() => import('./modules/marketing/CouponsMarketing'));
+const SupportSystem = lazy(() => import('./modules/support/SupportSystem'));
+const UserManagement = lazy(() => import('./modules/users/UserManagement'));
+const Settings = lazy(() => import('./modules/settings/Settings'));
+const Analytics = lazy(() => import('./modules/analytics/Analytics'));
+const UserSection = lazy(() => import('./modules/users/UserSection/UserSection'));
+
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center h-[60vh]">
+    <div className="loader" />
+  </div>
+);
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -28,7 +34,11 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   if (!isLoggedIn) {
-    return <LoginScreen onLogin={() => setIsLoggedIn(true)} />;
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <LoginScreen onLogin={() => setIsLoggedIn(true)} />
+      </Suspense>
+    );
   }
 
   const renderScreen = () => {
@@ -99,17 +109,19 @@ export default function App() {
         </header>
 
         <div className="p-8 max-w-7xl mx-auto">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentScreen}
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.2 }}
-            >
-              {renderScreen()}
-            </motion.div>
-          </AnimatePresence>
+          <Suspense fallback={<LoadingFallback />}>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentScreen}
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                {renderScreen()}
+              </motion.div>
+            </AnimatePresence>
+          </Suspense>
         </div>
       </main>
     </div>
