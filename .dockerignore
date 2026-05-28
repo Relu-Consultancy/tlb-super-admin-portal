@@ -1,0 +1,11 @@
+node_modules
+dist
+build
+coverage
+.git
+.gitignore
+*.md
+*.xlsx
+.env*
+!.env.example
+Development
