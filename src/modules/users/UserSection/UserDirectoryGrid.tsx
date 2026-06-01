@@ -1,7 +1,26 @@
-import { Search, Filter, Download, History } from 'lucide-react';
+import { Search, Filter, Download, History, Users } from 'lucide-react';
 import Card from '../../../shared/components/ui/Card';
+import EmptyState from '../../../shared/components/ui/EmptyState';
 import { cn } from '../../../shared/lib/utils';
-import { USER_SECTION_USERS as users } from '../../../data/mockData';
+
+interface DirectoryUser {
+    id: string;
+    avatar: string;
+    name: string;
+    joinDate: string;
+    email: string;
+    phone: string;
+    location: string;
+    totalRevenue: number;
+    revenueBreakdown: { tickets: number; inquiries: number };
+    totalBookings: number;
+    totalInquiries: number;
+    lastActive: string;
+    accountStatus: string;
+}
+
+// Empty until the user-directory API is wired.
+const users: DirectoryUser[] = [];
 
 interface UserDirectoryGridProps {
     onOpenHistory: (user: any) => void;
@@ -57,6 +76,17 @@ const UserDirectoryGrid = ({ onOpenHistory }: UserDirectoryGridProps) => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
+                            {users.length === 0 && (
+                                <tr>
+                                    <td colSpan={6}>
+                                        <EmptyState
+                                            icon={Users}
+                                            title="No users yet"
+                                            description="The user directory will populate once the users API is connected."
+                                        />
+                                    </td>
+                                </tr>
+                            )}
                             {users.map((user) => (
                                 <tr key={user.id} className="hover:bg-yellow-50/30 transition-colors group">
                                     <td className="px-5 py-4">

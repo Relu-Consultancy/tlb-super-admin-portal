@@ -79,6 +79,11 @@ describe('PaymentsFinance', () => {
 
     it('shows pagination controls', () => {
         render(<PaymentsFinance />);
-        expect(screen.getByText('Showing 1-10 of 248 transactions')).toBeInTheDocument();
+        expect(screen.getByText('Showing 0 of 0 transactions')).toBeInTheDocument();
+    });
+
+    it('shows an empty state when there are no transactions', () => {
+        render(<PaymentsFinance />);
+        expect(screen.getByText('No transactions yet')).toBeInTheDocument();
     });
 });

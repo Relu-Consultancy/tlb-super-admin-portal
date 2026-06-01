@@ -1,6 +1,20 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import Settings from './Settings';
+
+vi.mock('../../shared/auth/AuthContext', () => ({
+    useAuth: () => ({
+        admin: {
+            full_name: 'Vishesh Srivastava',
+            email: 'super_admin@gmail.com',
+            role: 'SUPER_ADMIN',
+            department: 'Engineering',
+            avatar: null,
+        },
+        logoutAll: vi.fn(),
+    }),
+}));
 
 describe('Settings', () => {
     it('renders the Settings heading', () => {
@@ -18,28 +32,22 @@ describe('Settings', () => {
         expect(screen.getByText('Profile Information')).toBeInTheDocument();
     });
 
-    it('renders Full Name label and input with default value', () => {
+    it('shows the authenticated admin name and email', () => {
         render(<Settings />);
-        expect(screen.getByText('Full Name')).toBeInTheDocument();
-        const nameInput = screen.getByDisplayValue('Alex Rivera');
-        expect(nameInput).toBeInTheDocument();
+        expect(screen.getByDisplayValue('Vishesh Srivastava')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('super_admin@gmail.com')).toBeInTheDocument();
     });
 
-    it('renders Email Address label and input with default value', () => {
+    it('shows the admin role and department', () => {
         render(<Settings />);
-        expect(screen.getByText('Email Address')).toBeInTheDocument();
-        const emailInput = screen.getByDisplayValue('alex.rivera@tlb.com');
-        expect(emailInput).toBeInTheDocument();
+        expect(screen.getByDisplayValue('Super Admin')).toBeInTheDocument(); // role label
+        expect(screen.getByDisplayValue('Engineering')).toBeInTheDocument();
     });
 
-    it('renders the Save Changes button', () => {
-        render(<Settings />);
-        expect(screen.getByText('Save Changes')).toBeInTheDocument();
-    });
-
-    it('renders the Security section', () => {
+    it('renders the Security section with an Update Password button', () => {
         render(<Settings />);
         expect(screen.getByText('Security')).toBeInTheDocument();
+        expect(screen.getByText('Update Password')).toBeInTheDocument();
     });
 
     it('renders Two-Factor Authentication panel', () => {
@@ -60,10 +68,11 @@ describe('Settings', () => {
         expect(screen.getByText('System Maintenance')).toBeInTheDocument();
     });
 
-    it('renders notification descriptions', () => {
+    it('shows a confirm step for logging out all devices', async () => {
         render(<Settings />);
-        expect(screen.getByText('Get notified when a new partner applies')).toBeInTheDocument();
-        expect(screen.getByText('Notifications for pending event reviews')).toBeInTheDocument();
-        expect(screen.getByText('Updates about scheduled platform downtime')).toBeInTheDocument();
+        expect(screen.getByText('Active Sessions')).toBeInTheDocument();
+        await userEvent.click(screen.getByRole('button', { name: /log out all devices/i }));
+        expect(screen.getByRole('button', { name: /confirm log out/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument();
     });
 });

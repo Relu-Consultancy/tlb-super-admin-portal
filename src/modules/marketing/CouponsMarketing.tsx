@@ -8,7 +8,19 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Card from '../../shared/components/ui/Card';
-import * as mock from '../../data/mockData';
+import EmptyState from '../../shared/components/ui/EmptyState';
+
+interface Coupon {
+    id: string;
+    discount: number;
+    code: string;
+    expiry: string;
+    usageCount: number;
+    limit: number;
+}
+
+// Empty until the coupons API is wired.
+const COUPONS: Coupon[] = [];
 
 const CouponsMarketing = () => {
     const [showCreate, setShowCreate] = useState(false);
@@ -37,7 +49,16 @@ const CouponsMarketing = () => {
                             <button className="text-xs font-bold text-gray-400">Expired</button>
                         </div>
                     </div>
-                    {mock.COUPONS.map((coupon) => (
+                    {COUPONS.length === 0 && (
+                        <Card>
+                            <EmptyState
+                                icon={Ticket}
+                                title="No coupons yet"
+                                description="Active coupons will appear here once the marketing API is connected."
+                            />
+                        </Card>
+                    )}
+                    {COUPONS.map((coupon) => (
                         <Card key={coupon.id} className="flex items-center justify-between p-5 group">
                             <div className="flex items-center gap-6">
                                 <div className="w-16 h-16 bg-yellow-50 border-2 border-dashed border-yellow-200 rounded-2xl flex items-center justify-center">
@@ -71,7 +92,7 @@ const CouponsMarketing = () => {
                     <Card className="bg-slate-900 text-white border-0">
                         <h3 className="font-bold text-sm mb-4">Marketing Tips</h3>
                         <p className="text-xs text-slate-400 leading-relaxed mb-4">
-                            "SUMMER24" is your best performing coupon this month. Consider extending its duration for another 2 weeks.
+                            Performance insights will appear here once campaign data is available.
                         </p>
                         <button className="w-full py-2.5 bg-yellow-400 text-gray-900 text-xs font-bold rounded-xl">
                             Apply Suggestion
@@ -84,19 +105,19 @@ const CouponsMarketing = () => {
                             <div>
                                 <div className="flex justify-between text-xs mb-1.5">
                                     <span className="text-gray-500">Total Discount Given</span>
-                                    <span className="font-bold text-gray-900">$12,450</span>
+                                    <span className="font-bold text-gray-900">$0</span>
                                 </div>
                                 <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                    <div className="h-full bg-yellow-400 rounded-full" style={{ width: '65%' }} />
+                                    <div className="h-full bg-yellow-400 rounded-full" style={{ width: '0%' }} />
                                 </div>
                             </div>
                             <div>
                                 <div className="flex justify-between text-xs mb-1.5">
                                     <span className="text-gray-500">Conversion Rate</span>
-                                    <span className="font-bold text-gray-900">4.2%</span>
+                                    <span className="font-bold text-gray-900">0%</span>
                                 </div>
                                 <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                    <div className="h-full bg-blue-400 rounded-full" style={{ width: '42%' }} />
+                                    <div className="h-full bg-blue-400 rounded-full" style={{ width: '0%' }} />
                                 </div>
                             </div>
                         </div>

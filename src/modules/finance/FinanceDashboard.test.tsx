@@ -27,13 +27,16 @@ describe('FinanceDashboard', () => {
     it('renders Total GMV stat card', () => {
         render(<FinanceDashboard />);
         expect(screen.getByText('Total GMV')).toBeInTheDocument();
-        expect(screen.getByText('$1.2M')).toBeInTheDocument();
     });
 
     it('renders Platform Revenue stat card', () => {
         render(<FinanceDashboard />);
         expect(screen.getByText('Platform Revenue')).toBeInTheDocument();
-        expect(screen.getByText('$184k')).toBeInTheDocument();
+    });
+
+    it('shows an empty state for the revenue chart when there is no data', () => {
+        render(<FinanceDashboard />);
+        expect(screen.getByText('No revenue data yet')).toBeInTheDocument();
     });
 
     it('renders Pending Payouts stat card', () => {

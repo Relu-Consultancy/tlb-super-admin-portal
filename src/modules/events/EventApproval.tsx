@@ -13,8 +13,19 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import Card from '../../shared/components/ui/Card';
+import EmptyState from '../../shared/components/ui/EmptyState';
 import { cn } from '../../shared/lib/utils';
-import * as mock from '../../data/mockData';
+
+interface EventItem {
+    id: string;
+    status: string;
+    title: string;
+    partner: string;
+    date: string;
+}
+
+// Empty until the events API is wired.
+const EVENTS: EventItem[] = [];
 
 const EventApproval = () => {
     const [activeTab, setActiveTab] = useState('Pending List');
@@ -167,7 +178,16 @@ const EventApproval = () => {
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {mock.EVENTS.map((event) => (
+                {EVENTS.length === 0 && (
+                    <Card className="md:col-span-2 lg:col-span-3">
+                        <EmptyState
+                            icon={Calendar}
+                            title="No events yet"
+                            description="Events submitted for approval will appear here once the events API is connected."
+                        />
+                    </Card>
+                )}
+                {EVENTS.map((event) => (
                     <Card key={event.id} className="p-0 overflow-hidden group cursor-pointer" onClick={() => setSelectedEvent(event)}>
                         <div className="relative h-48 overflow-hidden">
                             <img src={`https://picsum.photos/seed/${event.id}/400/300`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt="" />

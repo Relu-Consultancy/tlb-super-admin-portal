@@ -1,87 +1,95 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import PartnerManagement from './PartnerManagement';
 
+vi.mock('motion/react', async () => {
+    const React = await import('react');
+    const cache: Record<string, any> = {};
+    return {
+        motion: new Proxy({}, {
+            get(_: any, tag: string) {
+                if (!cache[tag]) {
+                    cache[tag] = ({ children, ...props }: any) => {
+                        const { initial, animate, exit, transition, layoutId, ...rest } = props;
+                        return React.createElement(tag as any, rest, children);
+                    };
+                }
+                return cache[tag];
+            },
+        }),
+        AnimatePresence: ({ children }: any) => children,
+    };
+});
+
+const { authState } = vi.hoisted(() => ({ authState: { canManage: true } }));
+vi.mock('../../shared/auth/AuthContext', () => ({
+    useAuth: () => ({ hasPermission: () => authState.canManage }),
+}));
+
+vi.mock('../../shared/lib/api', () => ({
+    listPartners: vi.fn(),
+    getPartner: vi.fn((id: string) => Promise.resolve({ id })),
+    disablePartner: vi.fn(() => Promise.resolve({ detail: 'disabled' })),
+    enablePartner: vi.fn(() => Promise.resolve({ detail: 'enabled' })),
+    partnerStatusLabel: (s: string) => s,
+    partnerStatusTone: () => 'bg-gray-100 text-gray-600',
+    ApiError: class ApiError extends Error { code: string | null = null; },
+}));
+import { listPartners, disablePartner } from '../../shared/lib/api';
+
+const PARTNERS = [
+    { id: 'p-1', email: 'active@partner.com', auth_provider: 'otp', is_active: true, disabled_reason: '', disabled_at: null, last_login: '2026-06-01T10:00:00Z', created_at: '2026-01-01T00:00:00Z', partner_status: 'approved', partner_is_active: true },
+    { id: 'p-2', email: 'pending@partner.com', auth_provider: 'otp', is_active: false, disabled_reason: 'Fraud', disabled_at: '2026-05-01T00:00:00Z', last_login: null, created_at: '2026-01-01T00:00:00Z', partner_status: 'category_selected', partner_is_active: false },
+];
+
 describe('PartnerManagement', () => {
-    it('renders the Partners heading', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        authState.canManage = true;
+        (listPartners as any).mockResolvedValue({ count: 2, next: null, previous: null, results: PARTNERS });
+    });
+
+    it('renders the heading and search', () => {
         render(<PartnerManagement />);
         expect(screen.getByText('Partners')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('Search by email...')).toBeInTheDocument();
     });
 
-    it('renders tab navigation with Requests, Existing, Archived', () => {
+    it('renders partner rows fetched from the API', async () => {
         render(<PartnerManagement />);
-        expect(screen.getByText('Requests')).toBeInTheDocument();
-        expect(screen.getByText('Existing')).toBeInTheDocument();
-        expect(screen.getByText('Archived')).toBeInTheDocument();
+        expect(await screen.findByText('active@partner.com')).toBeInTheDocument();
+        expect(screen.getByText('pending@partner.com')).toBeInTheDocument();
     });
 
-    it('renders the Pending Approval label', () => {
+    it('shows partner status badges', async () => {
         render(<PartnerManagement />);
-        expect(screen.getByText('Pending Approval')).toBeInTheDocument();
+        await screen.findByText('active@partner.com');
+        expect(screen.getByText('approved')).toBeInTheDocument();
+        expect(screen.getByText('category_selected')).toBeInTheDocument();
     });
 
-    it('renders partner cards from mock data', () => {
+    it('shows an empty state when no partners match', async () => {
+        (listPartners as any).mockResolvedValue({ count: 0, next: null, previous: null, results: [] });
         render(<PartnerManagement />);
-        // At least one Review button should be visible (pending partners)
-        const reviewButtons = screen.getAllByText('Review');
-        expect(reviewButtons.length).toBeGreaterThan(0);
+        expect(await screen.findByText('No partners found')).toBeInTheDocument();
     });
 
-    it('shows Review modal when Review button is clicked', async () => {
+    it('opens the disable modal and submits a reason', async () => {
         render(<PartnerManagement />);
-        const reviewBtn = screen.getAllByText('Review')[0];
-        fireEvent.click(reviewBtn);
-        await waitFor(() => {
-            expect(screen.getByText('Review Application')).toBeInTheDocument();
-        });
+        await screen.findByText('active@partner.com');
+        await userEvent.click(screen.getByTitle('Disable account'));
+        expect(await screen.findByRole('heading', { name: 'Disable Partner' })).toBeInTheDocument();
+        await userEvent.type(screen.getByPlaceholderText(/Fraudulent listings/i), 'Fraud reports');
+        await userEvent.click(screen.getByRole('button', { name: 'Disable Partner' }));
+        await waitFor(() => expect(disablePartner).toHaveBeenCalledWith('p-1', 'Fraud reports'));
     });
 
-    it('closes Review modal when X is clicked', async () => {
+    it('hides disable/enable actions without MANAGE_PARTNERS', async () => {
+        authState.canManage = false;
         render(<PartnerManagement />);
-        fireEvent.click(screen.getAllByText('Review')[0]);
-        await waitFor(() => screen.getByText('Review Application'));
-
-        // Click the X button inside the modal
-        const closeBtn = screen.getAllByRole('button').find(
-            (b) => b.querySelector('svg') && b.closest('.fixed')
-        );
-        // Click backdrop to close
-        fireEvent.click(screen.getByText('Review Application').closest('.fixed')!.querySelector('.absolute')!);
-        await waitFor(() => {
-            expect(screen.queryByText('Review Application')).not.toBeInTheDocument();
-        });
-    });
-
-    it('shows Manage modal when Manage button is clicked', async () => {
-        render(<PartnerManagement />);
-        const manageBtn = screen.getAllByText('Manage')[0];
-        fireEvent.click(manageBtn);
-        await waitFor(() => {
-            expect(screen.getByText('Manage Partner')).toBeInTheDocument();
-        });
-    });
-
-    it('closes Manage modal when Cancel is clicked', async () => {
-        render(<PartnerManagement />);
-        fireEvent.click(screen.getAllByText('Manage')[0]);
-        await waitFor(() => screen.getByText('Manage Partner'));
-        fireEvent.click(screen.getByText('Cancel'));
-        await waitFor(() => {
-            expect(screen.queryByText('Manage Partner')).not.toBeInTheDocument();
-        });
-    });
-
-    it('shows the search input', () => {
-        render(<PartnerManagement />);
-        expect(screen.getByPlaceholderText('Search partners...')).toBeInTheDocument();
-    });
-
-    it('shows Approve and Reject buttons in Review modal', async () => {
-        render(<PartnerManagement />);
-        fireEvent.click(screen.getAllByText('Review')[0]);
-        await waitFor(() => {
-            expect(screen.getByText('Approve')).toBeInTheDocument();
-            expect(screen.getByText('Reject')).toBeInTheDocument();
-        });
+        await screen.findByText('active@partner.com');
+        expect(screen.queryByTitle('Disable account')).not.toBeInTheDocument();
+        expect(screen.queryByTitle('Enable account')).not.toBeInTheDocument();
     });
 });

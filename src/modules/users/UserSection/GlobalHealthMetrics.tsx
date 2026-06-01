@@ -1,6 +1,12 @@
 import { Users, TrendingUp, UserMinus } from 'lucide-react';
 import Card from '../../../shared/components/ui/Card';
-import { USER_SECTION_METRICS as metrics } from '../../../data/mockData';
+
+// Empty until the user-metrics API is wired.
+const metrics = {
+    activeTicketBuyers: { value: 0, growth: '—', location: '—', insight: '—' },
+    activeInquirers: { value: 0, growth: '—', location: '—', insight: '—' },
+    dormantAccounts: { value: 0, growth: '—', location: '—', insight: '—' },
+};
 
 const GlobalHealthMetrics = () => {
     return (

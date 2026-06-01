@@ -15,8 +15,11 @@ import {
 } from 'recharts';
 import Card from '../../shared/components/ui/Card';
 import StatCard from '../../shared/components/ui/StatCard';
+import EmptyState from '../../shared/components/ui/EmptyState';
 import { cn } from '../../shared/lib/utils';
-import * as mock from '../../data/mockData';
+
+// Empty until the finance API is wired.
+const BOOKINGS_TREND: { name: string; value: number }[] = [];
 
 const FinanceDashboard = () => {
     return (
@@ -37,18 +40,21 @@ const FinanceDashboard = () => {
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard title="Total GMV" value="$1.2M" trend="+15%" icon={CreditCard} colorClass="bg-blue-50 text-blue-600" />
-                <StatCard title="Platform Revenue" value="$184k" trend="+8%" icon={PieChart} colorClass="bg-green-50 text-green-600" />
-                <StatCard title="Pending Payouts" value="$42k" trend="-2%" icon={Clock} colorClass="bg-orange-50 text-orange-600" />
-                <StatCard title="Refund Rate" value="0.8%" trend="-0.1%" icon={ArrowLeft} colorClass="bg-red-50 text-red-600" />
+                <StatCard title="Total GMV" value="$0" trend="0%" icon={CreditCard} colorClass="bg-blue-50 text-blue-600" />
+                <StatCard title="Platform Revenue" value="$0" trend="0%" icon={PieChart} colorClass="bg-green-50 text-green-600" />
+                <StatCard title="Pending Payouts" value="$0" trend="0%" icon={Clock} colorClass="bg-orange-50 text-orange-600" />
+                <StatCard title="Refund Rate" value="0%" trend="0%" icon={ArrowLeft} colorClass="bg-red-50 text-red-600" />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <Card className="lg:col-span-2">
                     <h3 className="font-bold text-gray-900 mb-6">Revenue Inflow vs Outflow</h3>
                     <div className="h-80">
+                        {BOOKINGS_TREND.length === 0 ? (
+                            <EmptyState title="No revenue data yet" description="Revenue flow will render here once the finance API is connected." className="h-full" />
+                        ) : (
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={mock.BOOKINGS_TREND}>
+                            <BarChart data={BOOKINGS_TREND}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
                                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9CA3AF' }} />
                                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9CA3AF' }} />
@@ -59,6 +65,7 @@ const FinanceDashboard = () => {
                                 <Bar dataKey="value" fill="#94A3B8" radius={[4, 4, 0, 0]} name="Outflow" opacity={0.3} />
                             </BarChart>
                         </ResponsiveContainer>
+                        )}
                     </div>
                 </Card>
 
@@ -66,9 +73,9 @@ const FinanceDashboard = () => {
                     <h3 className="font-bold text-gray-900">Payout Status</h3>
                     <div className="space-y-4">
                         {[
-                            { label: 'Verified Partners', count: 142, status: 'Ready', color: 'bg-green-500' },
-                            { label: 'Pending Verification', count: 12, status: 'On Hold', color: 'bg-yellow-500' },
-                            { label: 'Disputed Payments', count: 3, status: 'Review', color: 'bg-red-500' },
+                            { label: 'Verified Partners', count: 0, status: 'Ready', color: 'bg-green-500' },
+                            { label: 'Pending Verification', count: 0, status: 'On Hold', color: 'bg-yellow-500' },
+                            { label: 'Disputed Payments', count: 0, status: 'Review', color: 'bg-red-500' },
                         ].map((item, i) => (
                             <div key={i} className="p-4 rounded-2xl border border-gray-100 space-y-3">
                                 <div className="flex justify-between items-center">

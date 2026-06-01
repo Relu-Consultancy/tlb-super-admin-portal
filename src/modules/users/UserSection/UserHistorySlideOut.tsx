@@ -2,7 +2,13 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Receipt, Star, Heart, ShieldAlert, FileText, CheckCircle, AlertTriangle, EyeOff } from 'lucide-react';
 import { cn } from '../../../shared/lib/utils';
-import { USER_TRANSACTIONS, USER_REVIEWS, USER_LIKED_LISTINGS, USER_FOLLOWED_PARTNERS } from '../../../data/mockData';
+import EmptyState from '../../../shared/components/ui/EmptyState';
+
+// Empty until the user-history APIs are wired.
+const USER_TRANSACTIONS: any[] = [];
+const USER_REVIEWS: any[] = [];
+const USER_LIKED_LISTINGS: any[] = [];
+const USER_FOLLOWED_PARTNERS: any[] = [];
 
 interface UserHistorySlideOutProps {
     user: any;
@@ -87,6 +93,9 @@ const UserHistorySlideOut = ({ user, onClose }: UserHistorySlideOutProps) => {
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-50">
+                                                {USER_TRANSACTIONS.length === 0 && (
+                                                    <tr><td colSpan={6}><EmptyState icon={Receipt} title="No bookings or enquiries" /></td></tr>
+                                                )}
                                                 {USER_TRANSACTIONS.map((txn, idx) => (
                                                     <tr key={idx} className="hover:bg-gray-50">
                                                         <td className="px-4 py-3">
@@ -127,6 +136,11 @@ const UserHistorySlideOut = ({ user, onClose }: UserHistorySlideOutProps) => {
                             {/* Tab 2: User Reviews & Ratings */}
                             {activeTab === 'reviews' && (
                                 <div className="space-y-4">
+                                    {USER_REVIEWS.length === 0 && (
+                                        <div className="bg-white rounded-2xl border border-gray-100">
+                                            <EmptyState icon={Star} title="No reviews yet" />
+                                        </div>
+                                    )}
                                     {USER_REVIEWS.map((rev, idx) => (
                                         <div key={idx} className="bg-white rounded-2xl border border-gray-100 p-5 flex flex-col gap-4">
                                             <div className="flex justify-between items-start">
@@ -176,6 +190,9 @@ const UserHistorySlideOut = ({ user, onClose }: UserHistorySlideOutProps) => {
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-gray-50">
+                                                    {USER_LIKED_LISTINGS.length === 0 && (
+                                                        <tr><td colSpan={4}><EmptyState icon={Heart} title="No saved listings" /></td></tr>
+                                                    )}
                                                     {USER_LIKED_LISTINGS.map((item, idx) => (
                                                         <tr key={idx} className="hover:bg-gray-50">
                                                             <td className="px-4 py-3">
@@ -214,6 +231,9 @@ const UserHistorySlideOut = ({ user, onClose }: UserHistorySlideOutProps) => {
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-gray-50">
+                                                    {USER_FOLLOWED_PARTNERS.length === 0 && (
+                                                        <tr><td colSpan={4}><EmptyState icon={Heart} title="No followed partners" /></td></tr>
+                                                    )}
                                                     {USER_FOLLOWED_PARTNERS.map((ptr, idx) => (
                                                         <tr key={idx} className="hover:bg-gray-50">
                                                             <td className="px-4 py-3">
@@ -256,7 +276,7 @@ const UserHistorySlideOut = ({ user, onClose }: UserHistorySlideOutProps) => {
                                         <div>
                                             <h4 className="text-sm font-bold text-gray-900">Account Password State</h4>
                                             <p className="text-xs text-gray-500 mt-1 font-mono tracking-widest">•••••••••••• (Encrypted)</p>
-                                            <p className="text-[10px] font-medium text-gray-400 mt-1">Last Changed: 12-Apr-2026</p>
+                                            <p className="text-[10px] font-medium text-gray-400 mt-1">Last Changed: —</p>
                                         </div>
                                         <button className="px-4 py-2 bg-gray-50 border border-gray-200 text-xs font-bold text-gray-700 rounded-lg hover:bg-gray-100">Trigger Reset Link</button>
                                     </div>
@@ -264,8 +284,8 @@ const UserHistorySlideOut = ({ user, onClose }: UserHistorySlideOutProps) => {
                                     <div className="bg-white rounded-2xl border border-gray-100 p-5 flex items-center justify-between">
                                         <div>
                                             <h4 className="text-sm font-bold text-gray-900">Device Sessions</h4>
-                                            <p className="text-xs text-gray-500 mt-1">2 Devices Active (iOS App + Mobile Web)</p>
-                                            <p className="text-[10px] font-medium text-green-600 mt-1">Clean Session Logs</p>
+                                            <p className="text-xs text-gray-500 mt-1">—</p>
+                                            <p className="text-[10px] font-medium text-green-600 mt-1">—</p>
                                         </div>
                                         <button className="px-4 py-2 bg-orange-50 text-orange-600 text-xs font-bold rounded-lg hover:bg-orange-100">Force Log Out All</button>
                                     </div>

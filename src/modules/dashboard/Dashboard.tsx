@@ -12,7 +12,12 @@ import {
 import Card from '../../shared/components/ui/Card';
 import StatCard from '../../shared/components/ui/StatCard';
 import { Screen } from '../../types';
-import * as mock from '../../data/mockData';
+
+// Empty defaults until the dashboard stats API is wired.
+const STATS = {
+    today: { bookings: 0, revenue: 0, newUsers: 0, activeEvents: 0 },
+    allTime: { totalUsers: 0, totalPartners: 0, totalEvents: 0, totalRevenue: 0, platformCommission: 0 },
+};
 
 const Dashboard = ({ setScreen }: { setScreen: (s: Screen) => void }) => {
     return (
@@ -37,10 +42,10 @@ const Dashboard = ({ setScreen }: { setScreen: (s: Screen) => void }) => {
                     </span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <StatCard title="Bookings" value={mock.DASHBOARD_STATS.today.bookings} trend="+12%" icon={Ticket} />
-                    <StatCard title="Revenue" value={`$${(mock.DASHBOARD_STATS.today.revenue / 1000).toFixed(1)}k`} trend="+8%" icon={CreditCard} />
-                    <StatCard title="New Users" value={`+${mock.DASHBOARD_STATS.today.newUsers}`} trend="+5%" icon={Users} />
-                    <StatCard title="Active Events" value={mock.DASHBOARD_STATS.today.activeEvents} trend="0%" icon={Calendar} />
+                    <StatCard title="Bookings" value={STATS.today.bookings} trend="0%" icon={Ticket} />
+                    <StatCard title="Revenue" value={`$${(STATS.today.revenue / 1000).toFixed(1)}k`} trend="0%" icon={CreditCard} />
+                    <StatCard title="New Users" value={`+${STATS.today.newUsers}`} trend="0%" icon={Users} />
+                    <StatCard title="Active Events" value={STATS.today.activeEvents} trend="0%" icon={Calendar} />
                 </div>
             </section>
 
@@ -51,28 +56,28 @@ const Dashboard = ({ setScreen }: { setScreen: (s: Screen) => void }) => {
                         <Card className="flex items-center gap-4">
                             <div className="p-3 bg-blue-50 text-blue-600 rounded-xl"><Users size={24} /></div>
                             <div>
-                                <h3 className="text-2xl font-bold text-gray-900">{mock.DASHBOARD_STATS.allTime.totalUsers.toLocaleString()}</h3>
+                                <h3 className="text-2xl font-bold text-gray-900">{STATS.allTime.totalUsers.toLocaleString()}</h3>
                                 <p className="text-gray-500 text-sm">Total Active Users</p>
                             </div>
                         </Card>
                         <Card className="flex items-center gap-4">
                             <div className="p-3 bg-purple-50 text-purple-600 rounded-xl"><CreditCard size={24} /></div>
                             <div>
-                                <h3 className="text-2xl font-bold text-gray-900">{mock.DASHBOARD_STATS.allTime.totalPartners}</h3>
+                                <h3 className="text-2xl font-bold text-gray-900">{STATS.allTime.totalPartners}</h3>
                                 <p className="text-gray-500 text-sm">Verified Partners</p>
                             </div>
                         </Card>
                         <Card className="flex items-center gap-4">
                             <div className="p-3 bg-orange-50 text-orange-600 rounded-xl"><Calendar size={24} /></div>
                             <div>
-                                <h3 className="text-2xl font-bold text-gray-900">{mock.DASHBOARD_STATS.allTime.totalEvents.toLocaleString()}</h3>
+                                <h3 className="text-2xl font-bold text-gray-900">{STATS.allTime.totalEvents.toLocaleString()}</h3>
                                 <p className="text-gray-500 text-sm">Events Hosted</p>
                             </div>
                         </Card>
                         <Card className="flex items-center gap-4">
                             <div className="p-3 bg-green-50 text-green-600 rounded-xl"><CreditCard size={24} /></div>
                             <div>
-                                <h3 className="text-2xl font-bold text-gray-900">${(mock.DASHBOARD_STATS.allTime.totalRevenue / 1000000).toFixed(2)}M</h3>
+                                <h3 className="text-2xl font-bold text-gray-900">${(STATS.allTime.totalRevenue / 1000000).toFixed(2)}M</h3>
                                 <p className="text-gray-500 text-sm">Gross Merchandise Volume</p>
                             </div>
                         </Card>
@@ -80,7 +85,7 @@ const Dashboard = ({ setScreen }: { setScreen: (s: Screen) => void }) => {
                             <div className="flex items-center gap-4">
                                 <div className="p-3 bg-yellow-400 text-gray-900 rounded-xl font-bold">%</div>
                                 <div>
-                                    <h3 className="text-xl font-bold text-gray-900">${mock.DASHBOARD_STATS.allTime.platformCommission.toLocaleString()}</h3>
+                                    <h3 className="text-xl font-bold text-gray-900">${STATS.allTime.platformCommission.toLocaleString()}</h3>
                                     <p className="text-gray-500 text-sm">Total Platform Commissions Earned</p>
                                 </div>
                             </div>
@@ -92,10 +97,10 @@ const Dashboard = ({ setScreen }: { setScreen: (s: Screen) => void }) => {
                         <h3 className="font-bold text-gray-900 mb-6">Quick Actions</h3>
                         <div className="space-y-3 flex-1">
                             {[
-                                { label: 'Approve Partners', sub: '3 pending requests', icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-50', screen: Screen.PARTNER_MANAGEMENT },
-                                { label: 'Approve Events', sub: '12 events waiting', icon: Calendar, color: 'text-blue-500', bg: 'bg-blue-50', screen: Screen.EVENT_APPROVAL },
+                                { label: 'Approve Partners', sub: 'Review pending requests', icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-50', screen: Screen.PARTNER_MANAGEMENT },
+                                { label: 'Approve Events', sub: 'Review waiting events', icon: Calendar, color: 'text-blue-500', bg: 'bg-blue-50', screen: Screen.EVENT_APPROVAL },
                                 { label: 'Team Management', sub: 'Add or edit admins', icon: UserCog, color: 'text-orange-500', bg: 'bg-orange-50', screen: Screen.ADMIN_MANAGEMENT },
-                                { label: 'Open Tickets', sub: '5 requires attention', icon: MessageSquare, color: 'text-purple-500', bg: 'bg-purple-50', screen: Screen.SUPPORT_SYSTEM },
+                                { label: 'Open Tickets', sub: 'View support tickets', icon: MessageSquare, color: 'text-purple-500', bg: 'bg-purple-50', screen: Screen.SUPPORT_SYSTEM },
                             ].map((action, i) => (
                                 <button
                                     key={i}
@@ -126,15 +131,15 @@ const Dashboard = ({ setScreen }: { setScreen: (s: Screen) => void }) => {
                                     <div>
                                         <div className="flex justify-between text-xs mb-1.5">
                                             <span className="text-slate-400">Server Load</span>
-                                            <span className="text-slate-200">24%</span>
+                                            <span className="text-slate-200">—</span>
                                         </div>
                                         <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                                            <div className="h-full bg-green-400 rounded-full" style={{ width: '24%' }} />
+                                            <div className="h-full bg-green-400 rounded-full" style={{ width: '0%' }} />
                                         </div>
                                     </div>
                                     <div className="flex justify-between items-center">
                                         <span className="text-xs text-slate-400">API Latency</span>
-                                        <span className="text-xs font-mono text-slate-200">42ms</span>
+                                        <span className="text-xs font-mono text-slate-200">—</span>
                                     </div>
                                 </div>
                             </div>

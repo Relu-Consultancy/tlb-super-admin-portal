@@ -10,8 +10,20 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Card from '../../shared/components/ui/Card';
+import EmptyState from '../../shared/components/ui/EmptyState';
 import { cn } from '../../shared/lib/utils';
-import * as mock from '../../data/mockData';
+
+interface Transaction {
+    id: string;
+    user: string;
+    partner: string;
+    amount: number;
+    status: string;
+    date: string;
+}
+
+// Empty until the transactions API is wired.
+const TRANSACTIONS: Transaction[] = [];
 
 const PaymentsFinance = () => {
     const [activeTab, setActiveTab] = useState('Transactions');
@@ -83,7 +95,18 @@ const PaymentsFinance = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
-                            {mock.TRANSACTIONS.map((tx) => (
+                            {TRANSACTIONS.length === 0 && (
+                                <tr>
+                                    <td colSpan={6}>
+                                        <EmptyState
+                                            icon={FileText}
+                                            title="No transactions yet"
+                                            description="Transactions will appear here once the payments API is connected."
+                                        />
+                                    </td>
+                                </tr>
+                            )}
+                            {TRANSACTIONS.map((tx) => (
                                 <tr key={tx.id} className="hover:bg-gray-50/50 transition-colors">
                                     <td className="px-6 py-4 font-mono text-xs text-gray-500">{tx.id}</td>
                                     <td className="px-6 py-4">
@@ -114,7 +137,7 @@ const PaymentsFinance = () => {
                     </table>
                 </div>
                 <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
-                    <span className="text-xs text-gray-500">Showing 1-10 of 248 transactions</span>
+                    <span className="text-xs text-gray-500">Showing 0 of 0 transactions</span>
                     <div className="flex gap-2">
                         <button className="px-3 py-1 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-400 disabled:opacity-50" disabled>Prev</button>
                         <button className="px-3 py-1 bg-yellow-400 rounded-lg text-xs font-bold text-gray-900">1</button>

@@ -18,11 +18,9 @@ describe('CouponsMarketing', () => {
         expect(screen.getByText('Active Coupons')).toBeInTheDocument();
     });
 
-    it('renders coupon cards from mock data', () => {
+    it('shows an empty state when there are no coupons', () => {
         render(<CouponsMarketing />);
-        // Mock data has SUMMER24 and WELCOME50
-        expect(screen.getByText('SUMMER24')).toBeInTheDocument();
-        expect(screen.getByText('WELCOME50')).toBeInTheDocument();
+        expect(screen.getByText('No coupons yet')).toBeInTheDocument();
     });
 
     it('renders the Create Coupon button', () => {
@@ -69,11 +67,5 @@ describe('CouponsMarketing', () => {
         expect(screen.getByText('Quick Stats')).toBeInTheDocument();
         expect(screen.getByText('Total Discount Given')).toBeInTheDocument();
         expect(screen.getByText('Conversion Rate')).toBeInTheDocument();
-    });
-
-    it('shows Active badge on each coupon', () => {
-        render(<CouponsMarketing />);
-        const activeBadges = screen.getAllByText('Active');
-        expect(activeBadges.length).toBeGreaterThan(0);
     });
 });

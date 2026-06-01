@@ -1,14 +1,19 @@
-import { useState, lazy, Suspense } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { BarChart3, Bell, Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './shared/lib/utils';
+import { useAuth } from './shared/auth/AuthContext';
+import { roleLabel } from './shared/lib/api';
 import { Screen } from './types';
 
 // Layout
 import Sidebar from './shared/components/layout/Sidebar';
 
 // Lazy-loaded modules (code-split per screen)
+const LandingPage = lazy(() => import('./modules/auth/LandingPage'));
 const LoginScreen = lazy(() => import('./modules/auth/LoginScreen'));
+const ForgotPasswordScreen = lazy(() => import('./modules/auth/ForgotPasswordScreen'));
+const ResetPasswordScreen = lazy(() => import('./modules/auth/ResetPasswordScreen'));
 const Dashboard = lazy(() => import('./modules/dashboard/Dashboard'));
 const PartnerManagement = lazy(() => import('./modules/partners/PartnerManagement'));
 const EventApproval = lazy(() => import('./modules/events/EventApproval'));
@@ -28,15 +33,84 @@ const LoadingFallback = () => (
   </div>
 );
 
+const FullScreenLoader = () => (
+  <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    <div className="loader" />
+  </div>
+);
+
+type AuthView = 'landing' | 'login' | 'forgot';
+
+/** Detect a password-reset deep link, e.g. `/reset-password?token=...` or `?reset_token=...`. */
+function getResetToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  const params = new URLSearchParams(window.location.search);
+  return (
+    params.get('reset_token') ||
+    (window.location.pathname.includes('reset-password') ? params.get('token') : null)
+  );
+}
+
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { status, admin, logout, sessionMessage, clearSessionMessage } = useAuth();
+  const [authView, setAuthView] = useState<AuthView>('landing');
   const [currentScreen, setCurrentScreen] = useState<Screen>(Screen.DASHBOARD);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [resetToken] = useState<string | null>(() => getResetToken());
 
-  if (!isLoggedIn) {
+  // Always land on the Dashboard whenever a session becomes authenticated
+  // (fresh login or a logout -> login cycle, since App stays mounted).
+  useEffect(() => {
+    if (status === 'authenticated') {
+      setCurrentScreen(Screen.DASHBOARD);
+    }
+  }, [status]);
+
+  // Password-reset deep link takes priority over everything else.
+  if (resetToken) {
     return (
-      <Suspense fallback={<LoadingFallback />}>
-        <LoginScreen onLogin={() => setIsLoggedIn(true)} />
+      <Suspense fallback={<FullScreenLoader />}>
+        <ResetPasswordScreen
+          token={resetToken}
+          onDone={() => {
+            // Strip the token from the URL and return to login.
+            if (typeof window !== 'undefined') {
+              window.history.replaceState({}, '', window.location.pathname);
+            }
+            setAuthView('login');
+            window.location.reload();
+          }}
+        />
+      </Suspense>
+    );
+  }
+
+  if (status === 'loading') {
+    return <FullScreenLoader />;
+  }
+
+  if (status !== 'authenticated') {
+    // A forced logout / expiry should drop the user straight to the login form.
+    const view: AuthView = sessionMessage ? 'login' : authView;
+    return (
+      <Suspense fallback={<FullScreenLoader />}>
+        {view === 'landing' && (
+          <LandingPage onGetStarted={() => setAuthView('login')} />
+        )}
+        {view === 'login' && (
+          <LoginScreen
+            onBack={() => setAuthView('landing')}
+            onForgotPassword={() => setAuthView('forgot')}
+          />
+        )}
+        {view === 'forgot' && (
+          <ForgotPasswordScreen
+            onBack={() => {
+              clearSessionMessage();
+              setAuthView('login');
+            }}
+          />
+        )}
       </Suspense>
     );
   }
@@ -71,6 +145,9 @@ export default function App() {
     }
   };
 
+  const displayName = admin?.full_name || admin?.email || 'Admin';
+  const displayRole = admin ? roleLabel(admin.role) : '';
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
@@ -78,7 +155,7 @@ export default function App() {
         currentScreen={currentScreen}
         setCurrentScreen={setCurrentScreen}
         sidebarOpen={sidebarOpen}
-        setIsLoggedIn={setIsLoggedIn}
+        setIsLoggedIn={(v) => { if (!v) logout(); }}
       />
 
       {/* Main Content */}
@@ -100,8 +177,8 @@ export default function App() {
             </div>
             <div className="flex items-center gap-3 pl-6 border-l border-gray-100">
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-bold text-gray-900">Vishesh S.</p>
-                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Super Admin</p>
+                <p className="text-sm font-bold text-gray-900">{displayName}</p>
+                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{displayRole}</p>
               </div>
               <img src="https://picsum.photos/seed/admin/100/100" className="w-10 h-10 rounded-xl border-2 border-yellow-400 p-0.5" alt="Avatar" />
             </div>

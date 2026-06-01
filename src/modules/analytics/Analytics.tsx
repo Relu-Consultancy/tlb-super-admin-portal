@@ -23,8 +23,13 @@ import {
 } from 'recharts';
 import { motion } from 'motion/react';
 import Card from '../../shared/components/ui/Card';
+import EmptyState from '../../shared/components/ui/EmptyState';
 import { cn } from '../../shared/lib/utils';
-import * as mock from '../../data/mockData';
+
+// Empty until the analytics API is wired.
+const BOOKINGS_TREND: { name: string; value: number }[] = [];
+const REVENUE_BY_CATEGORY: { name: string; value: number; color: string }[] = [];
+const TOP_EVENTS: { name: string; value: number }[] = [];
 
 const Analytics = () => {
     return (
@@ -36,7 +41,7 @@ const Analytics = () => {
                 </div>
                 <div className="flex flex-wrap gap-3">
                     <div className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700">
-                        <Calendar size={16} className="text-gray-400" /> Oct 1 - Oct 7, 2023
+                        <Calendar size={16} className="text-gray-400" /> Select date range
                     </div>
                     <button className="flex items-center gap-2 px-4 py-2 bg-yellow-400 rounded-xl text-sm font-bold text-gray-900">
                         <FileText size={16} /> PDF
@@ -52,24 +57,24 @@ const Analytics = () => {
                     <div className="absolute top-4 right-4 text-yellow-500 opacity-20"><Ticket size={40} /></div>
                     <p className="text-gray-500 text-sm font-medium">Current Bookings</p>
                     <div className="flex items-baseline gap-2 mt-1">
-                        <h3 className="text-3xl font-bold text-gray-900">1,248</h3>
-                        <span className="text-xs font-bold text-green-500">+12.5%</span>
+                        <h3 className="text-3xl font-bold text-gray-900">0</h3>
+                        <span className="text-xs font-bold text-gray-400">0%</span>
                     </div>
                 </Card>
                 <Card className="relative overflow-hidden">
                     <div className="absolute top-4 right-4 text-yellow-500 opacity-20"><CreditCard size={40} /></div>
                     <p className="text-gray-500 text-sm font-medium">Total Revenue</p>
                     <div className="flex items-baseline gap-2 mt-1">
-                        <h3 className="text-3xl font-bold text-gray-900">$45,200</h3>
-                        <span className="text-xs font-bold text-red-500">-5.2%</span>
+                        <h3 className="text-3xl font-bold text-gray-900">$0</h3>
+                        <span className="text-xs font-bold text-gray-400">0%</span>
                     </div>
                 </Card>
                 <Card className="relative overflow-hidden">
                     <div className="absolute top-4 right-4 text-yellow-500 opacity-20"><Users size={40} /></div>
                     <p className="text-gray-500 text-sm font-medium">Active Users</p>
                     <div className="flex items-baseline gap-2 mt-1">
-                        <h3 className="text-3xl font-bold text-gray-900">856</h3>
-                        <span className="text-xs font-bold text-green-500">+8.1%</span>
+                        <h3 className="text-3xl font-bold text-gray-900">0</h3>
+                        <span className="text-xs font-bold text-gray-400">0%</span>
                     </div>
                 </Card>
             </div>
@@ -81,8 +86,11 @@ const Analytics = () => {
                         <span className="text-xs text-gray-400">Last 7 Days</span>
                     </div>
                     <div className="h-64">
+                        {BOOKINGS_TREND.length === 0 ? (
+                            <EmptyState title="No booking data yet" className="h-full" />
+                        ) : (
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={mock.BOOKINGS_TREND}>
+                            <BarChart data={BOOKINGS_TREND}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
                                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9CA3AF' }} />
                                 <YAxis hide />
@@ -93,17 +101,21 @@ const Analytics = () => {
                                 <Bar dataKey="value" fill="#FACC15" radius={[4, 4, 0, 0]} barSize={24} />
                             </BarChart>
                         </ResponsiveContainer>
+                        )}
                     </div>
                 </Card>
 
                 <Card>
                     <h3 className="font-bold text-gray-900 mb-6">Revenue by Category</h3>
+                    {REVENUE_BY_CATEGORY.length === 0 ? (
+                        <EmptyState title="No revenue data yet" className="h-64" />
+                    ) : (
                     <div className="flex items-center justify-center gap-8 h-64">
                         <div className="w-1/2 h-full">
                             <ResponsiveContainer width="100%" height="100%">
                                 <RePieChart>
-                                    <Pie data={mock.REVENUE_BY_CATEGORY} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                                        {mock.REVENUE_BY_CATEGORY.map((entry, index) => (
+                                    <Pie data={REVENUE_BY_CATEGORY} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                                        {REVENUE_BY_CATEGORY.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={entry.color} />
                                         ))}
                                     </Pie>
@@ -112,7 +124,7 @@ const Analytics = () => {
                             </ResponsiveContainer>
                         </div>
                         <div className="w-1/2 space-y-3">
-                            {mock.REVENUE_BY_CATEGORY.map((item, i) => (
+                            {REVENUE_BY_CATEGORY.map((item, i) => (
                                 <div key={i} className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
@@ -123,6 +135,7 @@ const Analytics = () => {
                             ))}
                         </div>
                     </div>
+                    )}
                 </Card>
             </div>
 
@@ -130,7 +143,10 @@ const Analytics = () => {
                 <Card>
                     <h3 className="font-bold text-gray-900 mb-6">Top 5 Events</h3>
                     <div className="space-y-6">
-                        {mock.TOP_EVENTS.map((event, i) => (
+                        {TOP_EVENTS.length === 0 && (
+                            <EmptyState title="No event data yet" />
+                        )}
+                        {TOP_EVENTS.map((event, i) => (
                             <div key={i}>
                                 <div className="flex justify-between text-xs font-bold mb-2">
                                     <span className="text-gray-700">{event.name}</span>
@@ -153,9 +169,9 @@ const Analytics = () => {
                     <h3 className="font-bold text-gray-900 mb-6">Booking Status</h3>
                     <div className="space-y-3">
                         {[
-                            { label: 'Confirmed', value: 842, color: 'bg-green-500', bg: 'bg-green-50', icon: CheckCircle },
-                            { label: 'Pending', value: 312, color: 'bg-orange-500', bg: 'bg-orange-50', icon: Clock },
-                            { label: 'Cancelled', value: 94, color: 'bg-red-500', bg: 'bg-red-50', icon: X },
+                            { label: 'Confirmed', value: 0, color: 'bg-green-500', bg: 'bg-green-50', icon: CheckCircle },
+                            { label: 'Pending', value: 0, color: 'bg-orange-500', bg: 'bg-orange-50', icon: Clock },
+                            { label: 'Cancelled', value: 0, color: 'bg-red-500', bg: 'bg-red-50', icon: X },
                         ].map((status, i) => (
                             <div key={i} className={cn("flex items-center justify-between p-4 rounded-2xl", status.bg)}>
                                 <div className="flex items-center gap-3">

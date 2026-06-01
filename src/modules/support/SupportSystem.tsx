@@ -25,15 +25,19 @@ import {
 } from 'lucide-react';
 import Card from '../../shared/components/ui/Card';
 import { cn } from '../../shared/lib/utils';
-import * as mock from '../../data/mockData';
+
+// Empty until the support API is wired.
+const SUPPORT_CHATS: any[] = [];
+const SUPPORT_MESSAGES: Record<number, any[]> = {};
+const SUPPORT_QUICK_REPLIES: string[] = [];
 
 type TabFilter = 'All' | 'Active' | 'Pending' | 'Resolved';
 
 const SupportSystem = () => {
-    const [selectedChat, setSelectedChat] = useState<any>(mock.SUPPORT_CHATS[0]);
+    const [selectedChat, setSelectedChat] = useState<any>(SUPPORT_CHATS[0]);
     const [activeFilter, setActiveFilter] = useState<TabFilter>('All');
     const [messageInput, setMessageInput] = useState('');
-    const [messages, setMessages] = useState<Record<number, any[]>>({ ...mock.SUPPORT_MESSAGES });
+    const [messages, setMessages] = useState<Record<number, any[]>>({ ...SUPPORT_MESSAGES });
     const [showQuickReplies, setShowQuickReplies] = useState(false);
     const [showDetails, setShowDetails] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -47,7 +51,7 @@ const SupportSystem = () => {
         scrollToBottom();
     }, [messages, selectedChat]);
 
-    const filteredChats = mock.SUPPORT_CHATS.filter((chat) => {
+    const filteredChats = SUPPORT_CHATS.filter((chat) => {
         const matchesFilter = activeFilter === 'All' || chat.status === activeFilter;
         const matchesSearch = chat.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
             chat.ticketId.toLowerCase().includes(searchQuery.toLowerCase());
@@ -88,10 +92,10 @@ const SupportSystem = () => {
     const currentMessages = selectedChat ? (messages[selectedChat.id] || []) : [];
 
     const counts = {
-        All: mock.SUPPORT_CHATS.length,
-        Active: mock.SUPPORT_CHATS.filter(c => c.status === 'Active').length,
-        Pending: mock.SUPPORT_CHATS.filter(c => c.status === 'Pending').length,
-        Resolved: mock.SUPPORT_CHATS.filter(c => c.status === 'Resolved').length,
+        All: SUPPORT_CHATS.length,
+        Active: SUPPORT_CHATS.filter(c => c.status === 'Active').length,
+        Pending: SUPPORT_CHATS.filter(c => c.status === 'Pending').length,
+        Resolved: SUPPORT_CHATS.filter(c => c.status === 'Resolved').length,
     };
 
     return (
@@ -99,7 +103,7 @@ const SupportSystem = () => {
             {/* Stats Row */}
             <div className="grid grid-cols-4 gap-4">
                 {[
-                    { label: 'Total Tickets', value: '7', trend: '+3 today', icon: MessageSquare, color: 'text-gray-700', bg: 'bg-gray-50' },
+                    { label: 'Total Tickets', value: String(counts.All), trend: 'All tickets', icon: MessageSquare, color: 'text-gray-700', bg: 'bg-gray-50' },
                     { label: 'Active', value: String(counts.Active), trend: 'Being handled', icon: Headphones, color: 'text-blue-600', bg: 'bg-blue-50' },
                     { label: 'Pending', value: String(counts.Pending), trend: 'Awaiting agent', icon: Clock, color: 'text-orange-600', bg: 'bg-orange-50' },
                     { label: 'Resolved', value: String(counts.Resolved), trend: 'Closed today', icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-50' },
@@ -303,7 +307,7 @@ const SupportSystem = () => {
                                                 </button>
                                             </div>
                                             <div className="flex flex-wrap gap-2">
-                                                {mock.SUPPORT_QUICK_REPLIES.map((reply, i) => (
+                                                {SUPPORT_QUICK_REPLIES.map((reply, i) => (
                                                     <button
                                                         key={i}
                                                         onClick={() => handleQuickReply(reply)}

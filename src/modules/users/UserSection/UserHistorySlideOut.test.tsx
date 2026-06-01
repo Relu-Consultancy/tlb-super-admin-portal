@@ -41,10 +41,9 @@ describe('UserHistorySlideOut', () => {
         expect(screen.getByText('TLB Net')).toBeInTheDocument();
     });
 
-    it('renders transaction rows from mock data', () => {
+    it('shows an empty state in the bookings tab when there is no data', () => {
         render(<UserHistorySlideOut user={mockUser} onClose={vi.fn()} />);
-        expect(screen.getByText('#TXN-8801')).toBeInTheDocument();
-        expect(screen.getByText('Lippan Art Workshop')).toBeInTheDocument();
+        expect(screen.getByText('No bookings or enquiries')).toBeInTheDocument();
     });
 
     it('calls onClose when close button is clicked', () => {
@@ -59,8 +58,7 @@ describe('UserHistorySlideOut', () => {
     it('switches to Reviews & Ratings tab when clicked', () => {
         render(<UserHistorySlideOut user={mockUser} onClose={vi.fn()} />);
         fireEvent.click(screen.getByText('Reviews & Ratings'));
-        expect(screen.getByText('Lippan Art Workshop')).toBeInTheDocument(); // review item
-        expect(screen.getByText('Live on App')).toBeInTheDocument();
+        expect(screen.getByText('No reviews yet')).toBeInTheDocument();
     });
 
     it('switches to Security & Controls tab when clicked', () => {
