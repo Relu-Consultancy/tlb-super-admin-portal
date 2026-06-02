@@ -114,8 +114,8 @@ const PaymentsFinance = () => {
                                         <p className="text-[10px] text-gray-400">{tx.partner}</p>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <p className="text-sm font-bold text-gray-900">${tx.amount.toFixed(2)}</p>
-                                        <p className="text-[10px] text-gray-400">Fee: $2.50</p>
+                                        <p className="text-sm font-bold text-gray-900">₹{tx.amount.toFixed(2)}</p>
+                                        <p className="text-[10px] text-gray-400">Fee: ₹2.50</p>
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={cn(
@@ -234,12 +234,12 @@ const PaymentsFinance = () => {
                                     <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Amount Range</label>
                                     <div className="flex items-center gap-3">
                                         <div className="relative flex-1">
-                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">₹</span>
                                             <input type="number" placeholder="Min" className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
                                         </div>
                                         <span className="text-gray-400 font-bold">-</span>
                                         <div className="relative flex-1">
-                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">₹</span>
                                             <input type="number" placeholder="Max" className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
                                         </div>
                                     </div>

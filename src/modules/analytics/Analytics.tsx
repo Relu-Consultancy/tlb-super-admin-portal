@@ -65,7 +65,7 @@ const Analytics = () => {
                     <div className="absolute top-4 right-4 text-yellow-500 opacity-20"><CreditCard size={40} /></div>
                     <p className="text-gray-500 text-sm font-medium">Total Revenue</p>
                     <div className="flex items-baseline gap-2 mt-1">
-                        <h3 className="text-3xl font-bold text-gray-900">$0</h3>
+                        <h3 className="text-3xl font-bold text-gray-900">₹0</h3>
                         <span className="text-xs font-bold text-gray-400">0%</span>
                     </div>
                 </Card>

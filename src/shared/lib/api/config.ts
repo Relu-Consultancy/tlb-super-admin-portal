@@ -19,12 +19,23 @@ export const API_BASE_URL = (
 /** Shared path prefix for every admin endpoint. */
 export const ADMIN_API_PREFIX = '/api/v1/admin';
 
+/** Path prefix for the admin-facing Help / Support endpoints. */
+export const HELP_ADMIN_PREFIX = '/api/v1/help/admin';
+
 /**
  * Build an admin endpoint path. Trailing slashes are preserved (Django requires
  * them), e.g. `adminPath('auth/login/')` -> `/api/v1/admin/auth/login/`.
  */
 export function adminPath(path: string): string {
   return `${ADMIN_API_PREFIX}/${path.replace(/^\/+/, '')}`;
+}
+
+/**
+ * Build a Help/Support admin endpoint path, e.g.
+ * `helpPath('tickets/')` -> `/api/v1/help/admin/tickets/`.
+ */
+export function helpPath(path: string): string {
+  return `${HELP_ADMIN_PREFIX}/${path.replace(/^\/+/, '')}`;
 }
 
 /** Default request timeout in milliseconds. */

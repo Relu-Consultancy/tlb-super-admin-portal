@@ -40,9 +40,9 @@ const FinanceDashboard = () => {
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard title="Total GMV" value="$0" trend="0%" icon={CreditCard} colorClass="bg-blue-50 text-blue-600" />
-                <StatCard title="Platform Revenue" value="$0" trend="0%" icon={PieChart} colorClass="bg-green-50 text-green-600" />
-                <StatCard title="Pending Payouts" value="$0" trend="0%" icon={Clock} colorClass="bg-orange-50 text-orange-600" />
+                <StatCard title="Total GMV" value="₹0" trend="0%" icon={CreditCard} colorClass="bg-blue-50 text-blue-600" />
+                <StatCard title="Platform Revenue" value="₹0" trend="0%" icon={PieChart} colorClass="bg-green-50 text-green-600" />
+                <StatCard title="Pending Payouts" value="₹0" trend="0%" icon={Clock} colorClass="bg-orange-50 text-orange-600" />
                 <StatCard title="Refund Rate" value="0%" trend="0%" icon={ArrowLeft} colorClass="bg-red-50 text-red-600" />
             </div>
 

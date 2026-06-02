@@ -89,12 +89,12 @@ const EventApproval = () => {
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div className="p-4 rounded-2xl border border-gray-100 bg-gray-50/50">
                                             <p className="text-[10px] font-bold text-gray-400 uppercase">Early Bird</p>
-                                            <p className="text-xl font-bold text-yellow-600">$149.00</p>
+                                            <p className="text-xl font-bold text-yellow-600">₹149.00</p>
                                             <p className="text-[10px] text-gray-400">Available until July 1</p>
                                         </div>
                                         <div className="p-4 rounded-2xl border border-gray-100 bg-gray-50/50">
                                             <p className="text-[10px] font-bold text-gray-400 uppercase">VIP Pass</p>
-                                            <p className="text-xl font-bold text-yellow-600">$399.00</p>
+                                            <p className="text-xl font-bold text-yellow-600">₹399.00</p>
                                             <p className="text-[10px] text-gray-400">Includes lounge access</p>
                                         </div>
                                     </div>

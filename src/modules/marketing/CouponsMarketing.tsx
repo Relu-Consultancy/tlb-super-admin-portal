@@ -105,7 +105,7 @@ const CouponsMarketing = () => {
                             <div>
                                 <div className="flex justify-between text-xs mb-1.5">
                                     <span className="text-gray-500">Total Discount Given</span>
-                                    <span className="font-bold text-gray-900">$0</span>
+                                    <span className="font-bold text-gray-900">₹0</span>
                                 </div>
                                 <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                                     <div className="h-full bg-yellow-400 rounded-full" style={{ width: '0%' }} />

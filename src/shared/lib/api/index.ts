@@ -7,7 +7,7 @@
 // Core client
 export { api, ApiError, SESSION_EXPIRED_EVENT } from './client';
 export type { RequestOptions, SessionExpiredDetail } from './client';
-export { API_BASE_URL, API_TIMEOUT, ADMIN_API_PREFIX, adminPath } from './config';
+export { API_BASE_URL, API_TIMEOUT, ADMIN_API_PREFIX, adminPath, HELP_ADMIN_PREFIX, helpPath } from './config';
 
 // Token storage
 export {
@@ -87,3 +87,17 @@ export {
   AUDIT_ACTIONS,
 } from './auditLogs';
 export type { AuditLog, AuditAction, AuditLogParams } from './auditLogs';
+
+// Support tickets (Help / Admin)
+export {
+  listTickets,
+  getTicket,
+  getTicketMessages,
+  sendTicketMessage,
+  updateTicketStatus,
+  ticketStatusLabel,
+  ticketStatusTone,
+  ticketCategoryLabel,
+  TICKET_STATUSES,
+} from './support';
+export type { SupportTicket, TicketMessage, TicketStatus, ListTicketsParams } from './support';

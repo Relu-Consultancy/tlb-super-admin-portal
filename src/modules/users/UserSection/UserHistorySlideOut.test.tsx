@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import UserHistorySlideOut from './UserHistorySlideOut';
 
 vi.mock('motion/react', () => ({
@@ -11,68 +12,55 @@ vi.mock('motion/react', () => ({
 
 const mockUser = {
     id: '#TLB-U-9082',
-    name: 'Trushna',
     email: 'trushna@tlb.com',
+    role: 'customer',
+    auth_provider: 'otp',
+    is_active: true,
+    is_verified: true,
+    disabled_reason: '',
+    disabled_at: null,
+    last_login: '2026-06-01T10:00:00Z',
+    created_at: '2026-01-01T00:00:00Z',
 };
 
 describe('UserHistorySlideOut', () => {
-    it('renders the Activity Ledger heading with user name', () => {
+    it('renders the Activity Ledger heading with the customer email', () => {
         render(<UserHistorySlideOut user={mockUser} onClose={vi.fn()} />);
-        expect(screen.getByText(/Activity Ledger: Trushna/)).toBeInTheDocument();
+        expect(screen.getByText(/Activity Ledger: trushna@tlb.com/)).toBeInTheDocument();
     });
 
     it('renders the user ID', () => {
         render(<UserHistorySlideOut user={mockUser} onClose={vi.fn()} />);
-        expect(screen.getByText('#TLB-U-9082')).toBeInTheDocument();
+        // Appears in the header and the Account tab's User ID field.
+        expect(screen.getAllByText('#TLB-U-9082').length).toBeGreaterThan(0);
     });
 
     it('renders all four tabs', () => {
         render(<UserHistorySlideOut user={mockUser} onClose={vi.fn()} />);
+        expect(screen.getByText('Account & Security')).toBeInTheDocument();
         expect(screen.getByText('Bookings & Enquiries')).toBeInTheDocument();
         expect(screen.getByText('Reviews & Ratings')).toBeInTheDocument();
         expect(screen.getByText('Followed Partners')).toBeInTheDocument();
-        expect(screen.getByText('Security & Controls')).toBeInTheDocument();
     });
 
-    it('renders bookings table by default', () => {
+    it('shows real account fields on the Account tab by default', () => {
         render(<UserHistorySlideOut user={mockUser} onClose={vi.fn()} />);
-        // Column headers from the bookings tab
-        expect(screen.getByText('Ref ID & Date')).toBeInTheDocument();
-        expect(screen.getByText('TLB Net')).toBeInTheDocument();
+        expect(screen.getByText('trushna@tlb.com')).toBeInTheDocument();
+        expect(screen.getByText('Account Status')).toBeInTheDocument();
+        expect(screen.getByText('Active')).toBeInTheDocument();
     });
 
-    it('shows an empty state in the bookings tab when there is no data', () => {
+    it('shows "Not available yet" for the rich-history tabs', async () => {
         render(<UserHistorySlideOut user={mockUser} onClose={vi.fn()} />);
-        expect(screen.getByText('No bookings or enquiries')).toBeInTheDocument();
+        await userEvent.click(screen.getByText('Bookings & Enquiries'));
+        expect(screen.getByText('Not available yet')).toBeInTheDocument();
     });
 
-    it('calls onClose when close button is clicked', () => {
+    it('calls onClose when the close button is clicked', async () => {
         const onClose = vi.fn();
         render(<UserHistorySlideOut user={mockUser} onClose={onClose} />);
-        // The X button in the header
-        const closeButtons = screen.getAllByRole('button');
-        fireEvent.click(closeButtons[0]);
+        await userEvent.click(screen.getAllByRole('button')[0]);
         expect(onClose).toHaveBeenCalled();
-    });
-
-    it('switches to Reviews & Ratings tab when clicked', () => {
-        render(<UserHistorySlideOut user={mockUser} onClose={vi.fn()} />);
-        fireEvent.click(screen.getByText('Reviews & Ratings'));
-        expect(screen.getByText('No reviews yet')).toBeInTheDocument();
-    });
-
-    it('switches to Security & Controls tab when clicked', () => {
-        render(<UserHistorySlideOut user={mockUser} onClose={vi.fn()} />);
-        fireEvent.click(screen.getByText('Security & Controls'));
-        expect(screen.getByText('Login ID')).toBeInTheDocument();
-        expect(screen.getByText('Device Sessions')).toBeInTheDocument();
-        expect(screen.getByText('Suspend Account')).toBeInTheDocument();
-    });
-
-    it('shows email in the security tab', () => {
-        render(<UserHistorySlideOut user={mockUser} onClose={vi.fn()} />);
-        fireEvent.click(screen.getByText('Security & Controls'));
-        expect(screen.getByText('trushna@tlb.com')).toBeInTheDocument();
     });
 
     it('does not render when user is null', () => {

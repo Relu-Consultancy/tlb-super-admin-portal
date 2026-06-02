@@ -1,4 +1,4 @@
-import { Users, TrendingUp, UserMinus } from 'lucide-react';
+import { Users, TrendingUp, UserMinus, Info } from 'lucide-react';
 import Card from '../../../shared/components/ui/Card';
 
 // Empty until the user-metrics API is wired.
@@ -12,6 +12,10 @@ const GlobalHealthMetrics = () => {
     return (
         <section className="space-y-4">
             <h2 className="text-lg font-bold text-gray-900">ZONE 1: Global Health Metrics & Mass Broadcast Engine</h2>
+            <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 text-blue-700 text-xs rounded-xl px-4 py-3">
+                <Info size={16} className="shrink-0 mt-0.5" />
+                <span>Cohort metrics &amp; broadcast aren't available yet — they need a dedicated analytics/messaging endpoint that the API doesn't expose.</span>
+            </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <Card className="flex flex-col gap-3">
                     <div className="flex justify-between items-start">
@@ -59,7 +63,11 @@ const GlobalHealthMetrics = () => {
                 </Card>
             </div>
             <div className="flex justify-end">
-                <button className="px-6 py-2.5 bg-yellow-400 text-gray-900 font-bold rounded-xl shadow-sm hover:bg-yellow-500 transition-colors">
+                <button
+                    disabled
+                    title="Not available yet"
+                    className="px-6 py-2.5 bg-gray-100 text-gray-400 font-bold rounded-xl shadow-sm cursor-not-allowed"
+                >
                     Broadcast Message to Cohort
                 </button>
             </div>

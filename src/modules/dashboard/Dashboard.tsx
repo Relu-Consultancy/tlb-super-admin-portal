@@ -43,7 +43,7 @@ const Dashboard = ({ setScreen }: { setScreen: (s: Screen) => void }) => {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <StatCard title="Bookings" value={STATS.today.bookings} trend="0%" icon={Ticket} />
-                    <StatCard title="Revenue" value={`$${(STATS.today.revenue / 1000).toFixed(1)}k`} trend="0%" icon={CreditCard} />
+                    <StatCard title="Revenue" value={`₹${(STATS.today.revenue / 1000).toFixed(1)}k`} trend="0%" icon={CreditCard} />
                     <StatCard title="New Users" value={`+${STATS.today.newUsers}`} trend="0%" icon={Users} />
                     <StatCard title="Active Events" value={STATS.today.activeEvents} trend="0%" icon={Calendar} />
                 </div>
@@ -77,7 +77,7 @@ const Dashboard = ({ setScreen }: { setScreen: (s: Screen) => void }) => {
                         <Card className="flex items-center gap-4">
                             <div className="p-3 bg-green-50 text-green-600 rounded-xl"><CreditCard size={24} /></div>
                             <div>
-                                <h3 className="text-2xl font-bold text-gray-900">${(STATS.allTime.totalRevenue / 1000000).toFixed(2)}M</h3>
+                                <h3 className="text-2xl font-bold text-gray-900">₹{(STATS.allTime.totalRevenue / 1000000).toFixed(2)}M</h3>
                                 <p className="text-gray-500 text-sm">Gross Merchandise Volume</p>
                             </div>
                         </Card>
@@ -85,7 +85,7 @@ const Dashboard = ({ setScreen }: { setScreen: (s: Screen) => void }) => {
                             <div className="flex items-center gap-4">
                                 <div className="p-3 bg-yellow-400 text-gray-900 rounded-xl font-bold">%</div>
                                 <div>
-                                    <h3 className="text-xl font-bold text-gray-900">${STATS.allTime.platformCommission.toLocaleString()}</h3>
+                                    <h3 className="text-xl font-bold text-gray-900">₹{STATS.allTime.platformCommission.toLocaleString()}</h3>
                                     <p className="text-gray-500 text-sm">Total Platform Commissions Earned</p>
                                 </div>
                             </div>
