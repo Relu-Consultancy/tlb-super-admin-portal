@@ -41,6 +41,7 @@ const Sidebar = ({ currentScreen, setCurrentScreen, sidebarOpen, setIsLoggedIn }
             <SidebarItem icon={PieChart} label="Partner Management" active={currentScreen === Screen.PARTNER_MANAGEMENT} onClick={() => setCurrentScreen(Screen.PARTNER_MANAGEMENT)} />
             <SidebarItem icon={CheckCircle} label="Event Approval" active={currentScreen === Screen.EVENT_APPROVAL} onClick={() => setCurrentScreen(Screen.EVENT_APPROVAL)} />
             <SidebarItem icon={Users} label="User Management" active={currentScreen === Screen.USER_MANAGEMENT} onClick={() => setCurrentScreen(Screen.USER_MANAGEMENT)} />
+            <SidebarItem icon={Users} label="User Section (New)" active={currentScreen === Screen.USER_SECTION} onClick={() => setCurrentScreen(Screen.USER_SECTION)} />
             <SidebarItem icon={UserCog} label="Employee Admin Management" active={currentScreen === Screen.ADMIN_MANAGEMENT} onClick={() => setCurrentScreen(Screen.ADMIN_MANAGEMENT)} />
             <SidebarItem icon={BarChart3} label="Finance Dashboard" active={currentScreen === Screen.FINANCE_DASHBOARD} onClick={() => setCurrentScreen(Screen.FINANCE_DASHBOARD)} />
             <SidebarItem icon={CreditCard} label="Payments and Transactions" active={currentScreen === Screen.PAYMENTS_FINANCE} onClick={() => setCurrentScreen(Screen.PAYMENTS_FINANCE)} />

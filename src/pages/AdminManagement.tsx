@@ -35,74 +35,153 @@ const AdminManagement = () => {
                 </div>
             </header>
 
-            <div className="space-y-6">
-                <button
-                    onClick={() => setShowAddModal(true)}
-                    className="w-full py-4 bg-yellow-400 text-gray-900 font-bold rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-yellow-400/20 hover:bg-yellow-500 transition-all active:scale-[0.99]"
-                >
-                    <UserCog size={20} /> Add New Admin
-                </button>
+            <AnimatePresence mode="wait">
+                {activeTab === 'Admins' && (
+                    <motion.div
+                        key="admins"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.2 }}
+                        className="space-y-6"
+                    >
+                        <button
+                            onClick={() => setShowAddModal(true)}
+                            className="w-full py-4 bg-yellow-400 text-gray-900 font-bold rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-yellow-400/20 hover:bg-yellow-500 transition-all active:scale-[0.99]"
+                        >
+                            <UserCog size={20} /> Add New Admin
+                        </button>
 
-                <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Administrators</h3>
-                        <span className="text-xs text-gray-400">8 Active</span>
-                    </div>
-                    {mock.ADMINS.map((admin) => (
-                        <Card key={admin.id} className="flex items-center justify-between p-4">
-                            <div className="flex items-center gap-4">
-                                <div className="relative">
-                                    <img src={admin.avatar} className="w-12 h-12 rounded-full object-cover" alt="" />
-                                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-gray-900">{admin.name}</h4>
-                                    <div className="flex items-center gap-2">
-                                        <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-md uppercase tracking-wider">{admin.role}</span>
-                                        <span className="text-[10px] text-gray-400">Active • {admin.lastSeen}</span>
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Administrators</h3>
+                                <span className="text-xs text-gray-400">{mock.ADMINS.length} Active</span>
+                            </div>
+                            {mock.ADMINS.map((admin) => (
+                                <Card key={admin.id} className="flex items-center justify-between p-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className="relative">
+                                            <img src={admin.avatar} className="w-12 h-12 rounded-full object-cover" alt="" />
+                                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-gray-900">{admin.name}</h4>
+                                            <div className="flex items-center gap-2">
+                                                <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-md uppercase tracking-wider">{admin.role}</span>
+                                                <span className="text-[10px] text-gray-400">Active • {admin.lastSeen}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-all">
+                                            <SettingsIcon size={18} />
+                                        </button>
+                                        <button className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all">
+                                            <EyeOff size={18} />
+                                        </button>
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Recent Activity</h3>
+                                <button onClick={() => setActiveTab('Activity Log')} className="text-xs font-bold text-yellow-600 hover:text-yellow-700">View Full Log</button>
+                            </div>
+                            <Card className="p-0 overflow-hidden">
+                                {mock.ACTIVITY_LOGS.slice(0, 3).map((log) => (
+                                    <div key={log.id} className="p-4 flex gap-4 border-b border-gray-50 last:border-0">
+                                        <div className={cn("w-1.5 h-1.5 rounded-full mt-1.5", log.color)} />
+                                        <div className="flex-1">
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-bold text-gray-900">Admin {log.admin}</span> {log.action} <span className="italic">{log.target}</span>
+                                            </p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className="text-[10px] text-gray-400">{log.time}</span>
+                                                <span className="text-[10px] text-gray-300">•</span>
+                                                <span className="text-[10px] text-gray-400">{log.dept}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </Card>
+                        </div>
+                    </motion.div>
+                )}
+
+                {activeTab === 'Activity Log' && (
+                    <motion.div
+                        key="activity"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.2 }}
+                        className="space-y-6"
+                    >
+                        <div className="flex justify-between items-center">
+                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Full Activity Log</h3>
+                            <span className="text-xs text-gray-400">{mock.ACTIVITY_LOGS.length} entries</span>
+                        </div>
+                        <Card className="p-0 overflow-hidden">
+                            {mock.ACTIVITY_LOGS.map((log) => (
+                                <div key={log.id} className="p-4 flex gap-4 border-b border-gray-50 last:border-0">
+                                    <div className={cn("w-1.5 h-1.5 rounded-full mt-1.5 shrink-0", log.color)} />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm text-gray-600">
+                                            <span className="font-bold text-gray-900">Admin {log.admin}</span> {log.action} <span className="italic">{log.target}</span>
+                                        </p>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <span className="text-[10px] text-gray-400">{log.time}</span>
+                                            <span className="text-[10px] text-gray-300">•</span>
+                                            <span className="text-[10px] text-gray-400">{log.dept}</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div className="flex gap-2">
-                                <button className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-all">
-                                    <SettingsIcon size={18} />
-                                </button>
-                                <button className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all">
-                                    <EyeOff size={18} />
-                                </button>
-                            </div>
+                            ))}
                         </Card>
-                    ))}
-                </div>
+                    </motion.div>
+                )}
 
-                <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Internal Activity</h3>
-                        <button className="text-xs font-bold text-yellow-600">View Full Log</button>
-                    </div>
-                    <Card className="p-0 overflow-hidden">
-                        {[
-                            { admin: 'Alex Rivera', action: 'updated system permissions for', target: '"Event Moderators"', time: '15 mins ago', dept: 'System Management', color: 'bg-yellow-400' },
-                            { admin: 'Jordan Smith', action: 'approved', target: 'New User Verification queue', time: '1 hour ago', dept: 'User Operations', color: 'bg-blue-400' },
-                            { admin: 'Sarah Chen', action: 'modified event settings for', target: '"Global Tech Summit 2024"', time: '3 hours ago', dept: 'Event Coordination', color: 'bg-purple-400' },
-                        ].map((log, i) => (
-                            <div key={i} className="p-4 flex gap-4 border-b border-gray-50 last:border-0">
-                                <div className={cn("w-1.5 h-1.5 rounded-full mt-1.5", log.color)} />
-                                <div className="flex-1">
-                                    <p className="text-sm text-gray-600">
-                                        <span className="font-bold text-gray-900">Admin {log.admin}</span> {log.action} <span className="italic">{log.target}</span>
-                                    </p>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <span className="text-[10px] text-gray-400">{log.time}</span>
-                                        <span className="text-[10px] text-gray-300">•</span>
-                                        <span className="text-[10px] text-gray-400">{log.dept}</span>
+                {activeTab === 'Roles & Permissions' && (
+                    <motion.div
+                        key="roles"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.2 }}
+                        className="space-y-6"
+                    >
+                        <div className="flex justify-between items-center">
+                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Roles & Permissions</h3>
+                            <span className="text-xs text-gray-400">{mock.ROLES_AND_PERMISSIONS.length} roles</span>
+                        </div>
+                        <div className="space-y-4">
+                            {mock.ROLES_AND_PERMISSIONS.map((role) => (
+                                <Card key={role.id} className="p-4">
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div>
+                                            <h4 className="font-bold text-gray-900">{role.role}</h4>
+                                            <p className="text-sm text-gray-500 mt-0.5">{role.description}</p>
+                                            <span className="inline-block mt-2 text-[10px] text-gray-400">{role.admins} admin{role.admins !== 1 ? 's' : ''}</span>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2 max-w-xs">
+                                            {role.permissions.map((perm, i) => (
+                                                <span key={i} className="px-2 py-1 bg-gray-100 text-gray-600 text-[10px] font-medium rounded-md">
+                                                    {perm}
+                                                </span>
+                                            ))}
+                                        </div>
+                                        <button className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-all shrink-0">
+                                            <SettingsIcon size={18} />
+                                        </button>
                                     </div>
-                                </div>
-                            </div>
-                        ))}
-                    </Card>
-                </div>
-            </div>
+                                </Card>
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <AnimatePresence>
                 {showAddModal && (

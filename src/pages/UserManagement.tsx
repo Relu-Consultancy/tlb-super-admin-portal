@@ -31,7 +31,6 @@ const UserManagement = () => {
                     </button>
                 </div>
             </header>
-
             <Card className="p-0 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">

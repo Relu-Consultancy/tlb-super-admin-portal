@@ -50,7 +50,6 @@ const LoginScreen = ({ onLogin }: { onLogin: () => void }) => {
                             </button>
                         </div>
                     </div>
-
                     <button
                         type="submit"
                         className="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold py-4 rounded-xl shadow-lg shadow-yellow-400/20 transition-all active:scale-[0.98]"

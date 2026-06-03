@@ -1,0 +1,168 @@
+import { useState, useEffect } from 'react';
+import {
+    Users,
+    UserCheck,
+    Store,
+    BadgeCheck,
+    CreditCard,
+    MessageSquare,
+    ChevronRight,
+    Download,
+    Calendar,
+    CheckCircle,
+    UserCog,
+} from 'lucide-react';
+import Card from '../../shared/components/ui/Card';
+import StatCard from '../../shared/components/ui/StatCard';
+import { Screen } from '../../types';
+import { getPartnerMetrics, getUserMetrics, type PartnerMetrics, type UserMetrics } from '../../shared/lib/api';
+
+// Booking / revenue / event figures stay 0 until those APIs are wired.
+const STATS = {
+    allTime: { totalEvents: 0, totalRevenue: 0, platformCommission: 0 },
+};
+
+const Dashboard = ({ setScreen }: { setScreen: (s: Screen) => void }) => {
+    const [metrics, setMetrics] = useState<PartnerMetrics | null>(null);
+    const [userMetrics, setUserMetrics] = useState<UserMetrics | null>(null);
+
+    useEffect(() => {
+        getPartnerMetrics().then(setMetrics).catch(() => {});
+        getUserMetrics().then(setUserMetrics).catch(() => {});
+    }, []);
+
+    const usersTotal = userMetrics?.total_users ?? null;
+    const usersActive = userMetrics?.active_users ?? null;
+
+    // Show a number once loaded, otherwise an em dash placeholder.
+    const n = (v: number | null | undefined) => (v === null || v === undefined ? '—' : v.toLocaleString());
+
+    return (
+        <div className="space-y-8">
+            <header className="flex justify-between items-end">
+                <div>
+                    <p className="text-gray-500 text-sm">Good Morning,</p>
+                    <h1 className="text-2xl font-bold text-gray-900">Super Admin Dashboard</h1>
+                </div>
+                <div className="flex gap-3">
+                    <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                        <Download size={16} /> Export Report
+                    </button>
+                </div>
+            </header>
+
+            <section>
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-bold text-gray-900">Platform Overview</h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <StatCard title="Total Users" value={n(usersTotal)} icon={Users} colorClass="bg-blue-50 text-blue-600" />
+                    <StatCard title="Total Partners" value={n(metrics?.total_partners)} icon={Store} colorClass="bg-purple-50 text-purple-600" />
+                    <StatCard title="Verified Partners" value={n(metrics?.is_verified_count)} icon={BadgeCheck} colorClass="bg-green-50 text-green-600" />
+                    <StatCard title="New Partners (30d)" value={n(metrics?.new_this_month)} icon={Calendar} />
+                </div>
+            </section>
+
+            <section>
+                <h2 className="text-lg font-bold text-gray-900 mb-4">All-time Statistics</h2>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                        <Card className="flex items-center gap-4">
+                            <div className="p-3 bg-blue-50 text-blue-600 rounded-xl"><UserCheck size={24} /></div>
+                            <div>
+                                <h3 className="text-2xl font-bold text-gray-900">{n(usersActive)}</h3>
+                                <p className="text-gray-500 text-sm">Total Active Users</p>
+                            </div>
+                        </Card>
+                        <Card className="flex items-center gap-4">
+                            <div className="p-3 bg-amber-50 text-amber-600 rounded-xl"><Store size={24} /></div>
+                            <div>
+                                <h3 className="text-2xl font-bold text-gray-900">{n(metrics?.under_review)}</h3>
+                                <p className="text-gray-500 text-sm">Partners Under Review</p>
+                            </div>
+                        </Card>
+                        <Card className="flex items-center gap-4">
+                            <div className="p-3 bg-orange-50 text-orange-600 rounded-xl"><Calendar size={24} /></div>
+                            <div>
+                                <h3 className="text-2xl font-bold text-gray-900">{STATS.allTime.totalEvents.toLocaleString()}</h3>
+                                <p className="text-gray-500 text-sm">Events Hosted</p>
+                            </div>
+                        </Card>
+                        <Card className="flex items-center gap-4">
+                            <div className="p-3 bg-green-50 text-green-600 rounded-xl"><CreditCard size={24} /></div>
+                            <div>
+                                <h3 className="text-2xl font-bold text-gray-900">₹{(STATS.allTime.totalRevenue / 1000000).toFixed(2)}M</h3>
+                                <p className="text-gray-500 text-sm">Gross Merchandise Volume</p>
+                            </div>
+                        </Card>
+                        <Card className="flex items-center justify-between bg-yellow-50 border-yellow-100">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-yellow-400 text-gray-900 rounded-xl font-bold">%</div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-gray-900">₹{STATS.allTime.platformCommission.toLocaleString()}</h3>
+                                    <p className="text-gray-500 text-sm">Total Platform Commissions Earned</p>
+                                </div>
+                            </div>
+                            <ChevronRight className="text-gray-400" />
+                        </Card>
+                    </div>
+
+                    <Card className="flex flex-col">
+                        <h3 className="font-bold text-gray-900 mb-6">Quick Actions</h3>
+                        <div className="space-y-3 flex-1">
+                            {[
+                                { label: 'Approve Partners', sub: 'Review pending requests', icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-50', screen: Screen.PARTNER_MANAGEMENT },
+                                { label: 'Approve Events', sub: 'Review waiting events', icon: Calendar, color: 'text-blue-500', bg: 'bg-blue-50', screen: Screen.EVENT_APPROVAL },
+                                { label: 'Team Management', sub: 'Add or edit admins', icon: UserCog, color: 'text-orange-500', bg: 'bg-orange-50', screen: Screen.ADMIN_MANAGEMENT },
+                                { label: 'Open Tickets', sub: 'View support tickets', icon: MessageSquare, color: 'text-purple-500', bg: 'bg-purple-50', screen: Screen.SUPPORT_SYSTEM },
+                            ].map((action, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => setScreen(action.screen)}
+                                    className="w-full flex items-center justify-between p-4 rounded-2xl border border-gray-100 hover:bg-gray-50 transition-all group"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className={`p-2 rounded-xl ${action.bg} ${action.color}`}>
+                                            <action.icon size={20} />
+                                        </div>
+                                        <div className="text-left">
+                                            <p className="font-bold text-gray-900 text-sm">{action.label}</p>
+                                            <p className="text-xs text-gray-500">{action.sub}</p>
+                                        </div>
+                                    </div>
+                                    <ChevronRight size={18} className="text-gray-300 group-hover:text-gray-900 transition-colors" />
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="mt-8 pt-6 border-t border-gray-100">
+                            <div className="bg-slate-900 rounded-2xl p-5 text-white">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h4 className="font-bold text-sm">System Status</h4>
+                                    <span className="text-[10px] text-green-400 font-bold uppercase tracking-wider">Healthy</span>
+                                </div>
+                                <div className="space-y-4">
+                                    <div>
+                                        <div className="flex justify-between text-xs mb-1.5">
+                                            <span className="text-slate-400">Server Load</span>
+                                            <span className="text-slate-200">—</span>
+                                        </div>
+                                        <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                                            <div className="h-full bg-green-400 rounded-full" style={{ width: '0%' }} />
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs text-slate-400">API Latency</span>
+                                        <span className="text-xs font-mono text-slate-200">—</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
+                </div>
+            </section>
+        </div>
+    );
+};
+
+export default Dashboard;
