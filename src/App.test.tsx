@@ -52,6 +52,15 @@ const { apiMock } = vi.hoisted(() => ({
             }),
         ),
         hasSession: vi.fn(() => false),
+        // Dashboard (default authenticated screen) pulls these on mount.
+        getPartnerMetrics: vi.fn(() => Promise.resolve({
+            total_partners: 0, approved: 0, under_review: 0, rejected: 0,
+            activated_limited: 0, profile_created: 0, is_active_count: 0, is_verified_count: 0, new_this_month: 0,
+        })),
+        getUserMetrics: vi.fn(() => Promise.resolve({
+            total_users: 0, active_users: 0, inactive_users: 0, deleted_users: 0,
+            new_today: 0, new_this_week: 0, new_this_month: 0, by_auth_provider: { otp: 0, google: 0 },
+        })),
     },
 }));
 vi.mock('./shared/lib/api', () => ({

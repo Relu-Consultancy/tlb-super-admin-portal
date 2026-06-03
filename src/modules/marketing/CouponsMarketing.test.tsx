@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import CouponsMarketing from './CouponsMarketing';
 
 describe('CouponsMarketing', () => {
@@ -28,33 +28,18 @@ describe('CouponsMarketing', () => {
         expect(screen.getByText('Create Coupon')).toBeInTheDocument();
     });
 
-    it('opens Create Coupon modal when button is clicked', async () => {
-        render(<CouponsMarketing />);
+    it('navigates to the Create Coupon screen when the button is clicked', () => {
+        const onCreateCoupon = vi.fn();
+        render(<CouponsMarketing onCreateCoupon={onCreateCoupon} />);
         fireEvent.click(screen.getByText('Create Coupon'));
-        await waitFor(() => {
-            expect(screen.getByText('Create New Coupon')).toBeInTheDocument();
-        });
+        expect(onCreateCoupon).toHaveBeenCalledTimes(1);
     });
 
-    it('renders Generate Coupon button in the modal', async () => {
+    it('does not crash when no navigation handler is provided', () => {
         render(<CouponsMarketing />);
         fireEvent.click(screen.getByText('Create Coupon'));
-        await waitFor(() => {
-            expect(screen.getByText('Generate Coupon')).toBeInTheDocument();
-        });
-    });
-
-    it('closes modal when backdrop is clicked', async () => {
-        render(<CouponsMarketing />);
-        fireEvent.click(screen.getByText('Create Coupon'));
-        await waitFor(() => screen.getByText('Create New Coupon'));
-
-        // Click the backdrop overlay
-        const backdrop = document.querySelector('.fixed .absolute')!;
-        fireEvent.click(backdrop);
-        await waitFor(() => {
-            expect(screen.queryByText('Create New Coupon')).not.toBeInTheDocument();
-        });
+        // No modal is rendered inline anymore — creation lives on its own screen.
+        expect(screen.queryByText('Create New Coupon')).not.toBeInTheDocument();
     });
 
     it('renders Marketing Tips panel', () => {

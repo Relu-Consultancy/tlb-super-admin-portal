@@ -6,6 +6,7 @@ import {
     CreditCard,
     PieChart,
     Ticket,
+    TicketPlus,
     MessageSquare,
     BarChart3,
     LogOut,
@@ -27,7 +28,7 @@ const Sidebar = ({ currentScreen, setCurrentScreen, sidebarOpen, setIsLoggedIn }
     <motion.aside
         initial={false}
         animate={{ width: sidebarOpen ? 280 : 0, opacity: sidebarOpen ? 1 : 0 }}
-        className="fixed inset-y-0 left-0 bg-white border-r border-gray-100 z-40 overflow-hidden flex flex-col"
+        className="fixed inset-y-0 left-0 bg-white border-r border-gray-100 z-50 overflow-hidden flex flex-col"
     >
         <div className="p-6 flex items-center gap-3">
             <div className="w-10 h-10 bg-yellow-400 rounded-xl flex items-center justify-center shadow-lg shadow-yellow-400/20">
@@ -46,6 +47,7 @@ const Sidebar = ({ currentScreen, setCurrentScreen, sidebarOpen, setIsLoggedIn }
             <SidebarItem icon={BarChart3} label="Finance Dashboard" active={currentScreen === Screen.FINANCE_DASHBOARD} onClick={() => setCurrentScreen(Screen.FINANCE_DASHBOARD)} />
             <SidebarItem icon={CreditCard} label="Payments and Transactions" active={currentScreen === Screen.PAYMENTS_FINANCE} onClick={() => setCurrentScreen(Screen.PAYMENTS_FINANCE)} />
             <SidebarItem icon={Ticket} label="Marketing Coupons" active={currentScreen === Screen.COUPONS_MARKETING} onClick={() => setCurrentScreen(Screen.COUPONS_MARKETING)} />
+            <SidebarItem icon={TicketPlus} label="Create Coupon" active={currentScreen === Screen.CREATE_COUPON} onClick={() => setCurrentScreen(Screen.CREATE_COUPON)} />
             <SidebarItem icon={MessageSquare} label="Support System" active={currentScreen === Screen.SUPPORT_SYSTEM} onClick={() => setCurrentScreen(Screen.SUPPORT_SYSTEM)} />
             <SidebarItem icon={BarChart3} label="Analytics" active={currentScreen === Screen.ANALYTICS} onClick={() => setCurrentScreen(Screen.ANALYTICS)} />
         </nav>

@@ -1,7 +1,10 @@
+import { useState, useEffect } from 'react';
 import {
     Users,
+    UserCheck,
+    Store,
+    BadgeCheck,
     CreditCard,
-    Ticket,
     MessageSquare,
     ChevronRight,
     Download,
@@ -12,14 +15,28 @@ import {
 import Card from '../../shared/components/ui/Card';
 import StatCard from '../../shared/components/ui/StatCard';
 import { Screen } from '../../types';
+import { getPartnerMetrics, getUserMetrics, type PartnerMetrics, type UserMetrics } from '../../shared/lib/api';
 
-// Empty defaults until the dashboard stats API is wired.
+// Booking / revenue / event figures stay 0 until those APIs are wired.
 const STATS = {
-    today: { bookings: 0, revenue: 0, newUsers: 0, activeEvents: 0 },
-    allTime: { totalUsers: 0, totalPartners: 0, totalEvents: 0, totalRevenue: 0, platformCommission: 0 },
+    allTime: { totalEvents: 0, totalRevenue: 0, platformCommission: 0 },
 };
 
 const Dashboard = ({ setScreen }: { setScreen: (s: Screen) => void }) => {
+    const [metrics, setMetrics] = useState<PartnerMetrics | null>(null);
+    const [userMetrics, setUserMetrics] = useState<UserMetrics | null>(null);
+
+    useEffect(() => {
+        getPartnerMetrics().then(setMetrics).catch(() => {});
+        getUserMetrics().then(setUserMetrics).catch(() => {});
+    }, []);
+
+    const usersTotal = userMetrics?.total_users ?? null;
+    const usersActive = userMetrics?.active_users ?? null;
+
+    // Show a number once loaded, otherwise an em dash placeholder.
+    const n = (v: number | null | undefined) => (v === null || v === undefined ? '—' : v.toLocaleString());
+
     return (
         <div className="space-y-8">
             <header className="flex justify-between items-end">
@@ -36,16 +53,13 @@ const Dashboard = ({ setScreen }: { setScreen: (s: Screen) => void }) => {
 
             <section>
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-bold text-gray-900">Today's Overview</h2>
-                    <span className="text-xs text-blue-500 font-medium flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" /> Live Updates
-                    </span>
+                    <h2 className="text-lg font-bold text-gray-900">Platform Overview</h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <StatCard title="Bookings" value={STATS.today.bookings} trend="0%" icon={Ticket} />
-                    <StatCard title="Revenue" value={`₹${(STATS.today.revenue / 1000).toFixed(1)}k`} trend="0%" icon={CreditCard} />
-                    <StatCard title="New Users" value={`+${STATS.today.newUsers}`} trend="0%" icon={Users} />
-                    <StatCard title="Active Events" value={STATS.today.activeEvents} trend="0%" icon={Calendar} />
+                    <StatCard title="Total Users" value={n(usersTotal)} icon={Users} colorClass="bg-blue-50 text-blue-600" />
+                    <StatCard title="Total Partners" value={n(metrics?.total_partners)} icon={Store} colorClass="bg-purple-50 text-purple-600" />
+                    <StatCard title="Verified Partners" value={n(metrics?.is_verified_count)} icon={BadgeCheck} colorClass="bg-green-50 text-green-600" />
+                    <StatCard title="New Partners (30d)" value={n(metrics?.new_this_month)} icon={Calendar} />
                 </div>
             </section>
 
@@ -54,17 +68,17 @@ const Dashboard = ({ setScreen }: { setScreen: (s: Screen) => void }) => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div className="space-y-4">
                         <Card className="flex items-center gap-4">
-                            <div className="p-3 bg-blue-50 text-blue-600 rounded-xl"><Users size={24} /></div>
+                            <div className="p-3 bg-blue-50 text-blue-600 rounded-xl"><UserCheck size={24} /></div>
                             <div>
-                                <h3 className="text-2xl font-bold text-gray-900">{STATS.allTime.totalUsers.toLocaleString()}</h3>
+                                <h3 className="text-2xl font-bold text-gray-900">{n(usersActive)}</h3>
                                 <p className="text-gray-500 text-sm">Total Active Users</p>
                             </div>
                         </Card>
                         <Card className="flex items-center gap-4">
-                            <div className="p-3 bg-purple-50 text-purple-600 rounded-xl"><CreditCard size={24} /></div>
+                            <div className="p-3 bg-amber-50 text-amber-600 rounded-xl"><Store size={24} /></div>
                             <div>
-                                <h3 className="text-2xl font-bold text-gray-900">{STATS.allTime.totalPartners}</h3>
-                                <p className="text-gray-500 text-sm">Verified Partners</p>
+                                <h3 className="text-2xl font-bold text-gray-900">{n(metrics?.under_review)}</h3>
+                                <p className="text-gray-500 text-sm">Partners Under Review</p>
                             </div>
                         </Card>
                         <Card className="flex items-center gap-4">

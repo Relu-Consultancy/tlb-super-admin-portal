@@ -5,6 +5,7 @@ import UserHistorySlideOut from './UserHistorySlideOut';
 
 const UserSection = () => {
     const [selectedUser, setSelectedUser] = useState<any>(null);
+    const [refreshSignal, setRefreshSignal] = useState(0);
 
     return (
         <div className="space-y-8 relative">
@@ -17,13 +18,14 @@ const UserSection = () => {
             <GlobalHealthMetrics />
 
             {/* Zone 2 */}
-            <UserDirectoryGrid onOpenHistory={(user) => setSelectedUser(user)} />
+            <UserDirectoryGrid onOpenHistory={(user) => setSelectedUser(user)} refreshSignal={refreshSignal} />
 
             {/* Zone 3: Slide-out panel */}
             {selectedUser && (
                 <UserHistorySlideOut
                     user={selectedUser}
                     onClose={() => setSelectedUser(null)}
+                    onChanged={() => setRefreshSignal((n) => n + 1)}
                 />
             )}
         </div>

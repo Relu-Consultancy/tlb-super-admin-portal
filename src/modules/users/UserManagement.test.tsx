@@ -28,48 +28,62 @@ vi.mock('../../shared/auth/AuthContext', () => ({
 }));
 
 vi.mock('../../shared/lib/api', () => ({
-    listCustomers: vi.fn(),
-    getCustomer: vi.fn((id: string) => Promise.resolve({ id })),
-    disableCustomer: vi.fn(() => Promise.resolve({ detail: 'disabled' })),
-    enableCustomer: vi.fn(() => Promise.resolve({ detail: 'enabled' })),
+    listUsers: vi.fn(),
+    getUser: vi.fn((id: string) => Promise.resolve({
+        id, email: 'active@tlb.com', phone: '999', role: 'customer', auth_provider: 'otp',
+        is_active: true, is_verified: true, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-02T00:00:00Z',
+        last_login: '2026-06-01T10:00:00Z', forced_logout_at: null, disabled_at: null, disabled_reason: null, deleted_at: null,
+        customer_profile: {}, booking_summary: {},
+    })),
+    getUserMetrics: vi.fn(() => Promise.resolve({
+        total_users: 8, active_users: 5, inactive_users: 3, deleted_users: 0,
+        new_today: 1, new_this_week: 2, new_this_month: 4, by_auth_provider: { otp: 6, google: 2 },
+    })),
+    getUserLoginHistory: vi.fn(() => Promise.resolve([])),
+    getUserSecurityLog: vi.fn(() => Promise.resolve([])),
+    disableUser: vi.fn(() => Promise.resolve({ detail: 'disabled' })),
+    enableUser: vi.fn(() => Promise.resolve({ detail: 'enabled' })),
+    forceLogoutUser: vi.fn(() => Promise.resolve({ detail: 'logged out' })),
+    resetUserOtp: vi.fn(() => Promise.resolve({ detail: 'otp sent' })),
+    queueUserExport: vi.fn(() => Promise.resolve({ job_id: 'j1', status: 'done' })),
+    getUserExportJob: vi.fn(() => Promise.resolve({ job_id: 'j1', status: 'done' })),
+    downloadUserExport: vi.fn(() => Promise.resolve(new Blob(['csv']))),
+    userDisplayName: (u: any) => `${u.first_name ?? ''} ${u.last_name ?? ''}`.trim() || u.email,
+    pickStat: (s: any, ...keys: string[]) => { for (const k of keys) if (s && s[k] != null) return s[k]; return undefined; },
+    formatMoney: (a: any) => `₹${a}`,
+    humanizeKey: (k: string) => k,
     ApiError: class ApiError extends Error { code: string | null = null; },
 }));
-import { listCustomers, disableCustomer } from '../../shared/lib/api';
+import { listUsers, disableUser } from '../../shared/lib/api';
 
-const CUSTOMERS = [
-    { id: 'u-1', email: 'active@tlb.com', role: 'customer', auth_provider: 'otp', is_active: true, is_verified: true, disabled_reason: '', disabled_at: null, last_login: '2026-06-01T10:00:00Z', created_at: '2026-01-01T00:00:00Z' },
-    { id: 'u-2', email: 'disabled@tlb.com', role: 'customer', auth_provider: 'email', is_active: false, is_verified: false, disabled_reason: 'Spam', disabled_at: '2026-05-01T00:00:00Z', last_login: null, created_at: '2026-01-01T00:00:00Z' },
+const USERS = [
+    { id: 'u-1', email: 'active@tlb.com', first_name: 'Ann', last_name: 'A', phone: '1', auth_provider: 'otp', is_active: true, is_verified: true, is_profile_complete: true, disabled_at: null, last_login: '2026-06-01T10:00:00Z', created_at: '2026-01-01T00:00:00Z', booking_stats: { total_bookings: 7, total_spend: 1500 } },
+    { id: 'u-2', email: 'disabled@tlb.com', first_name: 'Bob', last_name: 'B', phone: null, auth_provider: 'google', is_active: false, is_verified: false, is_profile_complete: false, disabled_at: '2026-05-01T00:00:00Z', last_login: null, created_at: '2026-01-01T00:00:00Z', booking_stats: {} },
 ];
 
 describe('UserManagement', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         authState.canManage = true;
-        (listCustomers as any).mockResolvedValue({ count: 2, next: null, previous: null, results: CUSTOMERS });
+        (listUsers as any).mockResolvedValue(USERS);
     });
 
-    it('renders the heading and search', () => {
+    it('renders heading and metrics', async () => {
         render(<UserManagement />);
         expect(screen.getByText('User Management')).toBeInTheDocument();
-        expect(screen.getByPlaceholderText('Search by email...')).toBeInTheDocument();
+        expect(await screen.findByText('Total Users')).toBeInTheDocument();
+        expect(await screen.findByText('8')).toBeInTheDocument();
     });
 
-    it('renders customer rows fetched from the API', async () => {
+    it('lists users with booking stats', async () => {
         render(<UserManagement />);
         expect(await screen.findByText('active@tlb.com')).toBeInTheDocument();
         expect(screen.getByText('disabled@tlb.com')).toBeInTheDocument();
+        expect(screen.getByText('7')).toBeInTheDocument(); // total bookings
     });
 
-    it('shows Active and Disabled status badges', async () => {
-        render(<UserManagement />);
-        await screen.findByText('active@tlb.com');
-        // Each label appears as a row badge plus the filter dropdown option.
-        expect(screen.getAllByText('Active').length).toBeGreaterThanOrEqual(2);
-        expect(screen.getAllByText('Disabled').length).toBeGreaterThanOrEqual(2);
-    });
-
-    it('shows an empty state when no customers match', async () => {
-        (listCustomers as any).mockResolvedValue({ count: 0, next: null, previous: null, results: [] });
+    it('shows an empty state when no users match', async () => {
+        (listUsers as any).mockResolvedValue([]);
         render(<UserManagement />);
         expect(await screen.findByText('No users found')).toBeInTheDocument();
     });
@@ -77,19 +91,25 @@ describe('UserManagement', () => {
     it('opens the disable modal and submits a reason', async () => {
         render(<UserManagement />);
         await screen.findByText('active@tlb.com');
-        // The active row's disable (Ban) button
         await userEvent.click(screen.getByTitle('Disable account'));
         expect(await screen.findByText('Disable Customer')).toBeInTheDocument();
         await userEvent.type(screen.getByPlaceholderText(/Policy violation/i), 'Spamming');
         await userEvent.click(screen.getByRole('button', { name: 'Disable Account' }));
-        await waitFor(() => expect(disableCustomer).toHaveBeenCalledWith('u-1', 'Spamming'));
+        await waitFor(() => expect(disableUser).toHaveBeenCalledWith('u-1', 'Spamming'));
     });
 
-    it('hides disable/enable actions without MANAGE_CUSTOMERS', async () => {
+    it('hides disable/enable without MANAGE_CUSTOMERS', async () => {
         authState.canManage = false;
         render(<UserManagement />);
         await screen.findByText('active@tlb.com');
         expect(screen.queryByTitle('Disable account')).not.toBeInTheDocument();
         expect(screen.queryByTitle('Enable account')).not.toBeInTheDocument();
+    });
+
+    it('opens the detail slide-over with account info', async () => {
+        render(<UserManagement />);
+        await userEvent.click(await screen.findByText('active@tlb.com'));
+        expect(await screen.findByText('Account')).toBeInTheDocument();
+        expect(screen.getByText('Login History')).toBeInTheDocument();
     });
 });

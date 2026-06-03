@@ -21,6 +21,7 @@ const AdminManagement = lazy(() => import('./modules/admin/AdminManagement'));
 const PaymentsFinance = lazy(() => import('./modules/finance/PaymentsFinance'));
 const FinanceDashboard = lazy(() => import('./modules/finance/FinanceDashboard'));
 const CouponsMarketing = lazy(() => import('./modules/marketing/CouponsMarketing'));
+const CreateCoupon = lazy(() => import('./modules/marketing/CreateCoupon'));
 const SupportSystem = lazy(() => import('./modules/support/SupportSystem'));
 const UserManagement = lazy(() => import('./modules/users/UserManagement'));
 const Settings = lazy(() => import('./modules/settings/Settings'));
@@ -55,7 +56,10 @@ export default function App() {
   const { status, admin, logout, sessionMessage, clearSessionMessage } = useAuth();
   const [authView, setAuthView] = useState<AuthView>('landing');
   const [currentScreen, setCurrentScreen] = useState<Screen>(Screen.DASHBOARD);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  // Open by default on desktop; collapsed on mobile so content isn't pushed off-screen.
+  const [sidebarOpen, setSidebarOpen] = useState(() =>
+    typeof window === 'undefined' ? true : window.innerWidth >= 1024,
+  );
   const [resetToken] = useState<string | null>(() => getResetToken());
 
   // Always land on the Dashboard whenever a session becomes authenticated
@@ -123,7 +127,13 @@ export default function App() {
       case Screen.ADMIN_MANAGEMENT: return <AdminManagement />;
       case Screen.PAYMENTS_FINANCE: return <PaymentsFinance />;
       case Screen.FINANCE_DASHBOARD: return <FinanceDashboard />;
-      case Screen.COUPONS_MARKETING: return <CouponsMarketing />;
+      case Screen.COUPONS_MARKETING: return <CouponsMarketing onCreateCoupon={() => setCurrentScreen(Screen.CREATE_COUPON)} />;
+      case Screen.CREATE_COUPON: return (
+        <CreateCoupon
+          onBack={() => setCurrentScreen(Screen.COUPONS_MARKETING)}
+          onCreated={() => setCurrentScreen(Screen.COUPONS_MARKETING)}
+        />
+      );
       case Screen.SUPPORT_SYSTEM: return <SupportSystem />;
       case Screen.USER_MANAGEMENT: return <UserManagement />;
       case Screen.SETTINGS: return <Settings />;
@@ -148,19 +158,37 @@ export default function App() {
   const displayName = admin?.full_name || admin?.email || 'Admin';
   const displayRole = admin ? roleLabel(admin.role) : '';
 
+  // On mobile the sidebar is an overlay drawer — pick a screen and close it so
+  // the content is visible again.
+  const selectScreen = (s: Screen) => {
+    setCurrentScreen(s);
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      setSidebarOpen(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
       <Sidebar
         currentScreen={currentScreen}
-        setCurrentScreen={setCurrentScreen}
+        setCurrentScreen={selectScreen}
         sidebarOpen={sidebarOpen}
         setIsLoggedIn={(v) => { if (!v) logout(); }}
       />
 
+      {/* Mobile backdrop — closes the drawer when tapped (desktop pushes content instead) */}
+      {sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden"
+          aria-hidden="true"
+        />
+      )}
+
       {/* Main Content */}
-      <main className={cn("flex-1 transition-all duration-300", sidebarOpen ? "ml-[280px]" : "ml-0")}>
-        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-100 px-8 py-4 flex justify-between items-center">
+      <main className={cn("flex-1 min-w-0 transition-all duration-300", sidebarOpen ? "lg:ml-[280px]" : "ml-0")}>
+        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="p-2 hover:bg-gray-50 rounded-xl text-gray-500 transition-colors"
@@ -185,7 +213,7 @@ export default function App() {
           </div>
         </header>
 
-        <div className="p-8 max-w-7xl mx-auto">
+        <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
           <Suspense fallback={<LoadingFallback />}>
             <AnimatePresence mode="wait">
               <motion.div

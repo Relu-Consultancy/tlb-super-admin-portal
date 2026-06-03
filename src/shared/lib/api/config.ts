@@ -38,5 +38,19 @@ export function helpPath(path: string): string {
   return `${HELP_ADMIN_PREFIX}/${path.replace(/^\/+/, '')}`;
 }
 
+/**
+ * Resolve a media/file path returned by the API into an absolute URL.
+ *
+ * The backend returns relative paths (e.g. `media/partners/media/x.png`).
+ * Used as-is in a browser they resolve against the SPA origin (localhost) and
+ * 404 into the app shell — so prefix them with the API host. Absolute URLs
+ * (http/https, or protocol-relative) are returned unchanged.
+ */
+export function mediaUrl(path: string | null | undefined): string {
+  if (!path) return '';
+  if (/^(https?:)?\/\//i.test(path)) return path;
+  return `${API_BASE_URL}/${path.replace(/^\/+/, '')}`;
+}
+
 /** Default request timeout in milliseconds. */
 export const API_TIMEOUT = 30_000;

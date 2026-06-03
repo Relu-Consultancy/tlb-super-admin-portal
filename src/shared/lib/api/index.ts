@@ -7,7 +7,7 @@
 // Core client
 export { api, ApiError, SESSION_EXPIRED_EVENT } from './client';
 export type { RequestOptions, SessionExpiredDetail } from './client';
-export { API_BASE_URL, API_TIMEOUT, ADMIN_API_PREFIX, adminPath, HELP_ADMIN_PREFIX, helpPath } from './config';
+export { API_BASE_URL, API_TIMEOUT, ADMIN_API_PREFIX, adminPath, HELP_ADMIN_PREFIX, helpPath, mediaUrl } from './config';
 
 // Token storage
 export {
@@ -64,20 +64,83 @@ export {
 } from './admins';
 export type { AdminListItem, ListAdminsParams, AdminDetail, CreateAdminPayload } from './admins';
 
-// Customer accounts (§5)
-export { listCustomers, getCustomer, disableCustomer, enableCustomer } from './customers';
-export type { Customer, ListCustomersParams } from './customers';
+// Admin user (customer) management
+export {
+  listUsers,
+  getUser,
+  getUserMetrics,
+  getUserActivity,
+  getUserBookings,
+  getUserReviews,
+  getUserTransactions,
+  getUserWishlist,
+  disableUser,
+  enableUser,
+  forceLogoutUser,
+  resetUserOtp,
+  getUserLoginHistory,
+  getUserSecurityLog,
+  queueUserExport,
+  getUserExportJob,
+  downloadUserExport,
+  userDisplayName,
+  pickStat,
+  formatMoney,
+  humanizeKey,
+} from './users';
+export type {
+  AdminUserListItem,
+  AdminUserDetail,
+  UserMetrics,
+  UserActivityItem,
+  UserBooking,
+  UserReview,
+  UserTransaction,
+  UserWishlistItem,
+  UserLoginEvent,
+  UserSecurityLogEntry,
+  ListUsersParams,
+  UserExportJob,
+  ListingRef,
+} from './users';
 
-// Partner accounts (§5)
+// Partner management (admin partner workflow)
 export {
   listPartners,
+  getPartnerMetrics,
   getPartner,
-  disablePartner,
-  enablePartner,
+  getPartnerReviewLogs,
+  verifyPartner,
+  unverifyPartner,
+  verifyPartnerBank,
+  approvePartner,
+  rejectPartner,
+  requestPartnerChanges,
+  activatePartner,
+  deactivatePartner,
+  queuePartnerExport,
+  getPartnerExportJob,
+  downloadPartnerExport,
   partnerStatusLabel,
   partnerStatusTone,
+  isPartnerOnboarding,
+  PARTNER_STATUSES,
+  PARTNER_CATEGORIES,
 } from './partners';
-export type { Partner, ListPartnersParams } from './partners';
+export type {
+  PartnerListItem,
+  PartnerDetail,
+  PartnerProfile,
+  PartnerExtendedProfile,
+  PartnerVerification,
+  PartnerBankDetail,
+  PartnerMedia,
+  PartnerReviewLog,
+  PartnerMetrics,
+  PartnerStatus,
+  ListPartnersParams,
+  ExportJob,
+} from './partners';
 
 // Audit logs (§4)
 export {
@@ -101,3 +164,19 @@ export {
   TICKET_STATUSES,
 } from './support';
 export type { SupportTicket, TicketMessage, TicketStatus, ListTicketsParams } from './support';
+
+// Coupons & marketing (marketing API — not live yet)
+export {
+  listCoupons,
+  getCoupon,
+  createCoupon,
+  updateCoupon,
+  deleteCoupon,
+} from './coupons';
+export type {
+  Coupon,
+  CreateCouponInput,
+  ListCouponsParams,
+  CouponDiscountType,
+  CouponAppliesTo,
+} from './coupons';

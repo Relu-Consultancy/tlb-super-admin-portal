@@ -28,16 +28,17 @@ vi.mock('../../../shared/auth/AuthContext', () => ({
 }));
 
 vi.mock('../../../shared/lib/api', () => ({
-    listCustomers: vi.fn(),
-    disableCustomer: vi.fn(() => Promise.resolve({ detail: 'disabled' })),
-    enableCustomer: vi.fn(() => Promise.resolve({ detail: 'enabled' })),
+    listUsers: vi.fn(),
+    disableUser: vi.fn(() => Promise.resolve({ detail: 'disabled' })),
+    enableUser: vi.fn(() => Promise.resolve({ detail: 'enabled' })),
+    userDisplayName: (u: any) => `${u.first_name ?? ''} ${u.last_name ?? ''}`.trim() || u.email,
     ApiError: class ApiError extends Error { code: string | null = null; },
 }));
-import { listCustomers, disableCustomer } from '../../../shared/lib/api';
+import { listUsers, disableUser } from '../../../shared/lib/api';
 
 const CUSTOMERS = [
-    { id: 'u-1', email: 'active@tlb.com', role: 'customer', auth_provider: 'otp', is_active: true, is_verified: true, disabled_reason: '', disabled_at: null, last_login: '2026-06-01T10:00:00Z', created_at: '2026-01-01T00:00:00Z' },
-    { id: 'u-2', email: 'disabled@tlb.com', role: 'customer', auth_provider: 'email', is_active: false, is_verified: false, disabled_reason: 'Spam', disabled_at: '2026-05-01T00:00:00Z', last_login: null, created_at: '2026-01-01T00:00:00Z' },
+    { id: 'u-1', email: 'active@tlb.com', first_name: 'Ann', last_name: 'A', auth_provider: 'otp', is_active: true, is_verified: true, is_profile_complete: true, phone: '1', disabled_at: null, last_login: '2026-06-01T10:00:00Z', created_at: '2026-01-01T00:00:00Z', booking_stats: {} },
+    { id: 'u-2', email: 'disabled@tlb.com', first_name: 'Bob', last_name: 'B', auth_provider: 'google', is_active: false, is_verified: false, is_profile_complete: false, phone: null, disabled_at: '2026-05-01T00:00:00Z', last_login: null, created_at: '2026-01-01T00:00:00Z', booking_stats: {} },
 ];
 
 describe('UserDirectoryGrid', () => {
@@ -46,7 +47,7 @@ describe('UserDirectoryGrid', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         authState.canManage = true;
-        (listCustomers as any).mockResolvedValue({ count: 2, next: null, previous: null, results: CUSTOMERS });
+        (listUsers as any).mockResolvedValue(CUSTOMERS);
     });
 
     it('renders the ZONE 2 heading and search', () => {
@@ -75,7 +76,7 @@ describe('UserDirectoryGrid', () => {
         expect(await screen.findByText('Disable Customer')).toBeInTheDocument();
         await userEvent.type(screen.getByPlaceholderText(/Policy violation/i), 'Spamming');
         await userEvent.click(screen.getByRole('button', { name: 'Disable Account' }));
-        await waitFor(() => expect(disableCustomer).toHaveBeenCalledWith('u-1', 'Spamming'));
+        await waitFor(() => expect(disableUser).toHaveBeenCalledWith('u-1', 'Spamming'));
     });
 
     it('hides disable/enable without MANAGE_CUSTOMERS', async () => {

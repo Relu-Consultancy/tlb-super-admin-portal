@@ -1,8 +1,10 @@
+import { useEffect, useState } from 'react';
 import {
     CreditCard,
-    PieChart,
     Clock,
-    ArrowLeft,
+    Users,
+    BadgeCheck,
+    Info,
 } from 'lucide-react';
 import {
     BarChart,
@@ -17,11 +19,28 @@ import Card from '../../shared/components/ui/Card';
 import StatCard from '../../shared/components/ui/StatCard';
 import EmptyState from '../../shared/components/ui/EmptyState';
 import { cn } from '../../shared/lib/utils';
+import { getPartnerMetrics, getUserMetrics, type PartnerMetrics, type UserMetrics } from '../../shared/lib/api';
 
-// Empty until the finance API is wired.
+// Revenue trend stays empty until a finance/transactions aggregate API exists.
 const BOOKINGS_TREND: { name: string; value: number }[] = [];
 
 const FinanceDashboard = () => {
+    const [pm, setPm] = useState<PartnerMetrics | null>(null);
+    const [um, setUm] = useState<UserMetrics | null>(null);
+
+    useEffect(() => {
+        getPartnerMetrics().then(setPm).catch(() => {});
+        getUserMetrics().then(setUm).catch(() => {});
+    }, []);
+
+    const n = (v: number | undefined) => (v === undefined ? '—' : v.toLocaleString());
+
+    const payoutRows = [
+        { label: 'Verified Partners', count: pm?.is_verified_count, status: 'Ready', color: 'bg-green-500' },
+        { label: 'Pending Verification', count: pm?.under_review, status: 'On Hold', color: 'bg-yellow-500' },
+        { label: 'Rejected Partners', count: pm?.rejected, status: 'Review', color: 'bg-red-500' },
+    ];
+
     return (
         <div className="space-y-8">
             <header className="flex justify-between items-end">
@@ -39,11 +58,16 @@ const FinanceDashboard = () => {
                 </div>
             </header>
 
+            <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 text-blue-700 text-xs rounded-xl px-4 py-3">
+                <Info size={16} className="shrink-0 mt-0.5" />
+                <span>Revenue, GMV and payout amounts need a dedicated finance API that isn't available yet. Showing partner payout-readiness and user counts from existing data in the meantime.</span>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard title="Total GMV" value="₹0" trend="0%" icon={CreditCard} colorClass="bg-blue-50 text-blue-600" />
-                <StatCard title="Platform Revenue" value="₹0" trend="0%" icon={PieChart} colorClass="bg-green-50 text-green-600" />
-                <StatCard title="Pending Payouts" value="₹0" trend="0%" icon={Clock} colorClass="bg-orange-50 text-orange-600" />
-                <StatCard title="Refund Rate" value="0%" trend="0%" icon={ArrowLeft} colorClass="bg-red-50 text-red-600" />
+                <StatCard title="Total Partners" value={n(pm?.total_partners)} icon={CreditCard} colorClass="bg-blue-50 text-blue-600" />
+                <StatCard title="Payout-Ready Partners" value={n(pm?.is_verified_count)} icon={BadgeCheck} colorClass="bg-green-50 text-green-600" />
+                <StatCard title="Pending Verification" value={n(pm?.under_review)} icon={Clock} colorClass="bg-orange-50 text-orange-600" />
+                <StatCard title="Total Users" value={n(um?.total_users)} icon={Users} colorClass="bg-purple-50 text-purple-600" />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -72,15 +96,11 @@ const FinanceDashboard = () => {
                 <Card className="space-y-6">
                     <h3 className="font-bold text-gray-900">Payout Status</h3>
                     <div className="space-y-4">
-                        {[
-                            { label: 'Verified Partners', count: 0, status: 'Ready', color: 'bg-green-500' },
-                            { label: 'Pending Verification', count: 0, status: 'On Hold', color: 'bg-yellow-500' },
-                            { label: 'Disputed Payments', count: 0, status: 'Review', color: 'bg-red-500' },
-                        ].map((item, i) => (
+                        {payoutRows.map((item, i) => (
                             <div key={i} className="p-4 rounded-2xl border border-gray-100 space-y-3">
                                 <div className="flex justify-between items-center">
                                     <span className="text-sm font-bold text-gray-900">{item.label}</span>
-                                    <span className="text-xs text-gray-400">{item.count} partners</span>
+                                    <span className="text-xs text-gray-400">{n(item.count)} partners</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <div className={cn("w-2 h-2 rounded-full", item.color)} />
@@ -89,7 +109,11 @@ const FinanceDashboard = () => {
                             </div>
                         ))}
                     </div>
-                    <button className="w-full py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors">
+                    <button
+                        disabled
+                        title="Payout processing needs the finance API"
+                        className="w-full py-3 bg-gray-100 text-gray-400 font-bold rounded-xl cursor-not-allowed"
+                    >
                         Process All Payouts
                     </button>
                 </Card>

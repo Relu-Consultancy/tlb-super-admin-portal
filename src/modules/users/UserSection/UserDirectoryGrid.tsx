@@ -9,15 +9,13 @@ import {
     AlertCircle,
     CheckCircle2,
     X,
-    ChevronLeft,
-    ChevronRight,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Card from '../../../shared/components/ui/Card';
 import EmptyState from '../../../shared/components/ui/EmptyState';
 import { cn } from '../../../shared/lib/utils';
 import { useAuth } from '../../../shared/auth/AuthContext';
-import { listCustomers, disableCustomer, enableCustomer, ApiError, type Customer } from '../../../shared/lib/api';
+import { listUsers, disableUser, enableUser, userDisplayName, ApiError, type AdminUserListItem } from '../../../shared/lib/api';
 
 function formatDateTime(iso: string | null): string {
     if (!iso) return '—';
@@ -31,20 +29,18 @@ function formatDateTime(iso: string | null): string {
 type Toast = { type: 'success' | 'error'; text: string } | null;
 
 interface UserDirectoryGridProps {
-    onOpenHistory: (user: Customer) => void;
+    onOpenHistory: (user: AdminUserListItem) => void;
+    /** Bump to force a reload (e.g. after a security action in the slide-out). */
+    refreshSignal?: number;
 }
 
-const UserDirectoryGrid = ({ onOpenHistory }: UserDirectoryGridProps) => {
+const UserDirectoryGrid = ({ onOpenHistory, refreshSignal }: UserDirectoryGridProps) => {
     const { hasPermission } = useAuth();
     const canManage = hasPermission('MANAGE_CUSTOMERS');
 
-    const [customers, setCustomers] = useState<Customer[]>([]);
+    const [customers, setCustomers] = useState<AdminUserListItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [page, setPage] = useState(1);
-    const [count, setCount] = useState(0);
-    const [hasNext, setHasNext] = useState(false);
-    const [hasPrev, setHasPrev] = useState(false);
 
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -52,7 +48,7 @@ const UserDirectoryGrid = ({ onOpenHistory }: UserDirectoryGridProps) => {
 
     const [busyId, setBusyId] = useState<string | null>(null);
     const [toast, setToast] = useState<Toast>(null);
-    const [disableTarget, setDisableTarget] = useState<Customer | null>(null);
+    const [disableTarget, setDisableTarget] = useState<AdminUserListItem | null>(null);
     const [disableReason, setDisableReason] = useState('');
     const [disableSubmitting, setDisableSubmitting] = useState(false);
 
@@ -64,20 +60,15 @@ const UserDirectoryGrid = ({ onOpenHistory }: UserDirectoryGridProps) => {
     }, [search]);
 
     const loadCustomers = useCallback(
-        async (toPage: number) => {
+        async () => {
             setLoading(true);
             setError(null);
             try {
-                const res = await listCustomers({
-                    page: toPage,
+                const res = await listUsers({
                     search: debouncedSearch || undefined,
                     is_active: statusFilter === '' ? undefined : statusFilter === 'active',
                 });
-                setCustomers(res.results);
-                setCount(res.count);
-                setPage(res.page ?? toPage);
-                setHasNext(!!res.next);
-                setHasPrev(!!res.previous);
+                setCustomers(res);
             } catch (err) {
                 setError(err instanceof ApiError ? err.message : 'Failed to load users.');
             } finally {
@@ -88,18 +79,24 @@ const UserDirectoryGrid = ({ onOpenHistory }: UserDirectoryGridProps) => {
     );
 
     useEffect(() => {
-        loadCustomers(1);
+        loadCustomers();
     }, [loadCustomers]);
+
+    // Reload when the parent signals a change (e.g. a security action).
+    useEffect(() => {
+        if (refreshSignal) loadCustomers();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [refreshSignal]);
 
     const submitDisable = async () => {
         if (!disableTarget || !disableReason.trim()) return;
         setDisableSubmitting(true);
         try {
-            const res = await disableCustomer(disableTarget.id, disableReason.trim());
+            const res = await disableUser(disableTarget.id, disableReason.trim());
             flash('success', res.detail || 'Customer account has been disabled.');
             setDisableTarget(null);
             setDisableReason('');
-            loadCustomers(page);
+            loadCustomers();
         } catch (err) {
             const msg = err instanceof ApiError
                 ? err.code === 'USER_NOT_FOUND' ? 'Customer not found.'
@@ -112,13 +109,13 @@ const UserDirectoryGrid = ({ onOpenHistory }: UserDirectoryGridProps) => {
         }
     };
 
-    const handleEnable = async (c: Customer) => {
+    const handleEnable = async (c: AdminUserListItem) => {
         setBusyId(c.id);
         setToast(null);
         try {
-            const res = await enableCustomer(c.id);
+            const res = await enableUser(c.id);
             flash('success', res.detail || 'Customer account has been re-enabled.');
-            loadCustomers(page);
+            loadCustomers();
         } catch (err) {
             const msg = err instanceof ApiError
                 ? err.code === 'ALREADY_ENABLED' ? 'This account is already active.' : err.message
@@ -197,9 +194,9 @@ const UserDirectoryGrid = ({ onOpenHistory }: UserDirectoryGridProps) => {
                                             <div className="flex items-center gap-3">
                                                 <img src={`https://picsum.photos/seed/${c.email}/100/100`} className="w-10 h-10 rounded-xl object-cover border border-gray-100" alt="" />
                                                 <div>
-                                                    <p className="text-sm font-bold text-gray-900">{c.email}</p>
-                                                    <p className="text-[10px] text-gray-400 font-mono">{c.id}</p>
-                                                    <p className="text-[10px] text-gray-500">Joined {formatDateTime(c.created_at)}</p>
+                                                    <p className="text-sm font-bold text-gray-900">{userDisplayName(c)}</p>
+                                                    <p className="text-xs text-gray-500">{c.email}</p>
+                                                    <p className="text-[10px] text-gray-400">Joined {formatDateTime(c.created_at)}</p>
                                                 </div>
                                             </div>
                                         </td>
@@ -214,7 +211,6 @@ const UserDirectoryGrid = ({ onOpenHistory }: UserDirectoryGridProps) => {
                                         <td className="px-5 py-4 text-xs text-gray-500">{formatDateTime(c.last_login)}</td>
                                         <td className="px-5 py-4">
                                             <span
-                                                title={!c.is_active && c.disabled_reason ? c.disabled_reason : undefined}
                                                 className={cn('px-2.5 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider', c.is_active ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600')}
                                             >
                                                 {c.is_active ? 'Active' : 'Disabled'}
@@ -247,14 +243,8 @@ const UserDirectoryGrid = ({ onOpenHistory }: UserDirectoryGridProps) => {
                         </tbody>
                     </table>
                 </div>
-                {(hasPrev || hasNext) && (
-                    <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
-                        <span className="text-xs text-gray-500">Page {page} · {count} total</span>
-                        <div className="flex gap-2">
-                            <button onClick={() => loadCustomers(page - 1)} disabled={!hasPrev || loading} className="flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-600 disabled:opacity-50 hover:bg-gray-50"><ChevronLeft size={14} /> Prev</button>
-                            <button onClick={() => loadCustomers(page + 1)} disabled={!hasNext || loading} className="flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-600 disabled:opacity-50 hover:bg-gray-50">Next <ChevronRight size={14} /></button>
-                        </div>
-                    </div>
+                {!loading && !error && customers.length > 0 && (
+                    <div className="p-3 bg-gray-50 border-t border-gray-100 text-xs text-gray-500">{customers.length} users</div>
                 )}
             </Card>
 
