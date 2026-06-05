@@ -142,6 +142,36 @@ export type {
   ExportJob,
 } from './partners';
 
+// Listing moderation (unified admin listing approval workflow — all types)
+export {
+  listListings,
+  getListingStats,
+  getListing,
+  getListingHistory,
+  approveListing,
+  rejectListing,
+  setListingVisibility,
+  listingStatusLabel,
+  listingStatusTone,
+  listingTypeLabel,
+  listingTypeTone,
+  listingCategoryName,
+  LISTING_TYPES,
+  LISTING_STATUSES,
+} from './listings';
+export type {
+  ListingListItem,
+  ListingDetail,
+  ListingMedia,
+  ListingReviewLog,
+  ListingStats,
+  ListingType,
+  ListingStatus,
+  ListingCategory,
+  CategoryRef,
+  ListListingsParams,
+} from './listings';
+
 // Audit logs (§4)
 export {
   getAuditLogs,
@@ -161,9 +191,10 @@ export {
   ticketStatusLabel,
   ticketStatusTone,
   ticketCategoryLabel,
+  ticketPollInterval,
   TICKET_STATUSES,
 } from './support';
-export type { SupportTicket, TicketMessage, TicketStatus, ListTicketsParams } from './support';
+export type { SupportTicket, TicketMessage, TicketThread, TicketStatus, ListTicketsParams } from './support';
 
 // Coupons & marketing (marketing API — not live yet)
 export {

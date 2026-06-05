@@ -8,6 +8,7 @@ import { Screen } from './types';
 
 // Layout
 import Sidebar from './shared/components/layout/Sidebar';
+import ErrorBoundary from './shared/components/ErrorBoundary';
 
 // Lazy-loaded modules (code-split per screen)
 const LandingPage = lazy(() => import('./modules/auth/LandingPage'));
@@ -214,19 +215,21 @@ export default function App() {
         </header>
 
         <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-          <Suspense fallback={<LoadingFallback />}>
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentScreen}
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                transition={{ duration: 0.2 }}
-              >
-                {renderScreen()}
-              </motion.div>
-            </AnimatePresence>
-          </Suspense>
+          <ErrorBoundary label="screen" resetKey={currentScreen}>
+            <Suspense fallback={<LoadingFallback />}>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentScreen}
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {renderScreen()}
+                </motion.div>
+              </AnimatePresence>
+            </Suspense>
+          </ErrorBoundary>
         </div>
       </main>
     </div>

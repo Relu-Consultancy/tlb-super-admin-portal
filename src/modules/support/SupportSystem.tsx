@@ -32,6 +32,7 @@ import {
     ticketStatusLabel,
     ticketStatusTone,
     ticketCategoryLabel,
+    ticketPollInterval,
     ApiError,
     type SupportTicket,
     type TicketMessage,
@@ -129,13 +130,20 @@ const SupportSystem = () => {
         loadTickets();
     }, [loadTickets]);
 
-    // --- Load the thread for the selected ticket ---
+    // --- Load the full thread for the selected ticket (no `since` → full load) ---
     const loadMessages = useCallback(async (ticketId: string) => {
         setMessagesLoading(true);
+        lastStampRef.current = null; // reset cursor so we full-load on (re)open
         try {
             const thread = await getTicketMessages(ticketId);
-            setMessages(thread);
-            lastStampRef.current = thread.length ? thread[thread.length - 1].created_at : null;
+            setMessages(thread.messages);
+            lastStampRef.current = thread.messages.length
+                ? thread.messages[thread.messages.length - 1].created_at
+                : null;
+            // Keep the row/detail status in sync with the live thread status.
+            if (thread.ticket_status) {
+                setSelectedTicket((prev) => (prev && prev.status !== thread.ticket_status ? { ...prev, status: thread.ticket_status } : prev));
+            }
         } catch (err) {
             flash('error', err instanceof ApiError ? err.message : 'Failed to load conversation.');
             setMessages([]);
@@ -163,28 +171,37 @@ const SupportSystem = () => {
     );
 
     // --- Poll for new messages while a ticket is open ---
+    // Cadence follows ticket status (in_progress 5s, open 30s, resolved 60s);
+    // a closed ticket stops polling entirely.
+    const pollMs = selectedTicket ? ticketPollInterval(selectedTicket.status) : null;
     useEffect(() => {
-        if (!selectedId) return;
+        if (!selectedId || pollMs == null) return;
         const interval = setInterval(async () => {
             try {
+                // Send the cursor verbatim (server UTC, ends in "Z"). Never reformat.
                 const since = lastStampRef.current ?? undefined;
-                const fresh = await getTicketMessages(selectedId, since);
-                if (fresh.length) {
+                const thread = await getTicketMessages(selectedId, since);
+                if (thread.messages.length) {
                     setMessages((prev) => {
                         const seen = new Set(prev.map((m) => m.id));
-                        const added = fresh.filter((m) => !seen.has(m.id));
+                        const added = thread.messages.filter((m) => !seen.has(m.id));
                         if (!added.length) return prev;
                         const merged = [...prev, ...added];
                         lastStampRef.current = merged[merged.length - 1].created_at;
                         return merged;
                     });
                 }
+                // Reflect a live status change (e.g. ticket got closed elsewhere).
+                if (thread.ticket_status) {
+                    setSelectedTicket((prev) => (prev && prev.status !== thread.ticket_status ? { ...prev, status: thread.ticket_status } : prev));
+                    setTickets((prev) => prev.map((t) => (t.id === selectedId && t.status !== thread.ticket_status ? { ...t, status: thread.ticket_status } : t)));
+                }
             } catch {
                 /* transient — try again next tick */
             }
-        }, 8000);
+        }, pollMs);
         return () => clearInterval(interval);
-    }, [selectedId]);
+    }, [selectedId, pollMs]);
 
     const handleSend = async () => {
         const body = messageInput.trim();
@@ -199,14 +216,19 @@ const SupportSystem = () => {
                 return merged;
             });
             setMessageInput('');
+            // The first admin reply auto-transitions the ticket open → in_progress.
+            setSelectedTicket((prev) => (prev && prev.status === 'open' ? { ...prev, status: 'in_progress' } : prev));
+            setTickets((prev) => prev.map((t) => (t.id === selectedId && t.status === 'open' ? { ...t, status: 'in_progress' } : t)));
         } catch (err) {
-            const msg =
+            const text =
                 err instanceof ApiError
-                    ? err.code === 'TICKET_NOT_FOUND'
+                    ? err.code === 'NOT_FOUND'
                         ? 'This ticket no longer exists.'
-                        : err.message
+                        : err.code === 'TICKET_CLOSED'
+                            ? 'This ticket is closed — no more replies can be sent.'
+                            : err.message
                     : 'Could not send your reply.';
-            flash('error', msg);
+            flash('error', text);
         } finally {
             setSending(false);
         }
@@ -222,13 +244,17 @@ const SupportSystem = () => {
             setTickets((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
             flash('success', `Ticket marked as ${ticketStatusLabel(updated.status)}.`);
         } catch (err) {
-            const msg =
+            const text =
                 err instanceof ApiError
-                    ? err.code === 'TICKET_NOT_FOUND'
+                    ? err.code === 'NOT_FOUND'
                         ? 'This ticket no longer exists.'
-                        : err.message
+                        : err.code === 'TICKET_CLOSED'
+                            ? 'This ticket is closed and can no longer be updated.'
+                            : err.code === 'INVALID_STATUS'
+                                ? 'That status value is not valid.'
+                                : err.message
                     : 'Could not update the ticket.';
-            flash('error', msg);
+            flash('error', text);
         } finally {
             setStatusBusy(false);
         }

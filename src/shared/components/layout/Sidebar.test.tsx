@@ -20,7 +20,7 @@ describe('Sidebar', () => {
         render(<Sidebar {...defaultProps} />);
         expect(screen.getByText('Dashboard')).toBeInTheDocument();
         expect(screen.getByText('Partner Management')).toBeInTheDocument();
-        expect(screen.getByText('Event Approval')).toBeInTheDocument();
+        expect(screen.getByText('Listings Approval')).toBeInTheDocument();
         expect(screen.getByText('User Management')).toBeInTheDocument();
         expect(screen.getByText('Analytics')).toBeInTheDocument();
         expect(screen.getByText('Support System')).toBeInTheDocument();

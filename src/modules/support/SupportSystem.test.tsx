@@ -18,15 +18,17 @@ vi.mock('../../shared/auth/AuthContext', () => ({
 vi.mock('../../shared/lib/api', () => ({
     listTickets: vi.fn(),
     getTicket: vi.fn((id: string) => Promise.resolve({ id, raised_by_email: 'alice@x.com', raised_by_role: 'customer', category: 'refund_status', subject: 'Where is my refund', status: 'open', booking_reference: 'BK-1', created_at: '2026-06-01T00:00:00Z', updated_at: '2026-06-02T00:00:00Z' })),
-    getTicketMessages: vi.fn(() => Promise.resolve([])),
+    getTicketMessages: vi.fn(() => Promise.resolve({ ticket_status: 'open', messages: [] })),
     sendTicketMessage: vi.fn(() => Promise.resolve({ id: 'm-new', sender_email: 'admin@tlb.com', sender_role: 'admin', body: 'hi', is_read: false, created_at: '2026-06-02T13:00:00Z' })),
     updateTicketStatus: vi.fn((_id: string, status: string) => Promise.resolve({ id: 't-1', raised_by_email: 'user@x.com', raised_by_role: 'customer', category: 'refund_status', subject: 'Refund', status, booking_reference: 'BK-1', created_at: '2026-06-01T00:00:00Z', updated_at: '2026-06-02T00:00:00Z' })),
     ticketStatusLabel: (s: string) => s,
     ticketStatusTone: () => ({ color: 'text-gray-600', bg: 'bg-gray-100' }),
     ticketCategoryLabel: (c: string) => c,
+    // Return a long interval so the poller registers but never fires during a test.
+    ticketPollInterval: (s: string) => (s === 'closed' ? null : 100_000),
     ApiError: class ApiError extends Error { code: string | null = null; },
 }));
-import { listTickets, getTicketMessages, updateTicketStatus } from '../../shared/lib/api';
+import { listTickets, getTicketMessages, updateTicketStatus, sendTicketMessage } from '../../shared/lib/api';
 
 const TICKETS = [
     { id: 't-1', raised_by_email: 'alice@x.com', raised_by_role: 'customer', category: 'refund_status', subject: 'Where is my refund', status: 'open', booking_reference: 'BK-1', created_at: '2026-06-01T00:00:00Z', updated_at: '2026-06-02T00:00:00Z' },
@@ -38,7 +40,7 @@ describe('SupportSystem', () => {
         vi.clearAllMocks();
         authState.canManage = true;
         (listTickets as any).mockResolvedValue(TICKETS);
-        (getTicketMessages as any).mockResolvedValue([]);
+        (getTicketMessages as any).mockResolvedValue({ ticket_status: 'open', messages: [] });
     });
 
     it('renders stat cards', async () => {
@@ -70,12 +72,36 @@ describe('SupportSystem', () => {
         expect(screen.getByText('Select a ticket to start')).toBeInTheDocument();
     });
 
+    it('full-loads a thread (no since) and renders its messages', async () => {
+        (getTicketMessages as any).mockResolvedValue({
+            ticket_status: 'in_progress',
+            messages: [
+                { id: 'm1', sender_email: 'alice@x.com', sender_role: 'customer', body: 'Please help', is_read: true, created_at: '2026-06-02T10:00:00Z' },
+            ],
+        });
+        render(<SupportSystem />);
+        await userEvent.click(await screen.findByText('alice@x.com'));
+        await waitFor(() => expect(getTicketMessages).toHaveBeenCalledWith('t-1'));
+        expect(await screen.findByText('Please help')).toBeInTheDocument();
+    });
+
     it('opens a ticket thread and resolves it', async () => {
         render(<SupportSystem />);
         await userEvent.click(await screen.findByText('alice@x.com'));
         await waitFor(() => expect(getTicketMessages).toHaveBeenCalledWith('t-1'));
         await userEvent.click(await screen.findByRole('button', { name: /Mark as Resolved/i }));
         await waitFor(() => expect(updateTicketStatus).toHaveBeenCalledWith('t-1', 'resolved'));
+    });
+
+    it('optimistically moves an open ticket to in_progress after the first admin reply', async () => {
+        render(<SupportSystem />);
+        await userEvent.click(await screen.findByText('alice@x.com'));
+        const input = await screen.findByPlaceholderText(/Type your reply/i);
+        await userEvent.type(input, 'On it');
+        await userEvent.click(screen.getByRole('button', { name: /Send/i }));
+        await waitFor(() => expect(sendTicketMessage).toHaveBeenCalledWith('t-1', 'On it'));
+        // Header + row status badges flip from "open" to "in_progress".
+        await waitFor(() => expect(screen.getAllByText('in_progress').length).toBeGreaterThanOrEqual(1));
     });
 
     it('hides reply actions without MANAGE_ENQUIRIES', async () => {
