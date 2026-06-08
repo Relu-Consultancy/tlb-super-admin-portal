@@ -172,6 +172,114 @@ export type {
   ListListingsParams,
 } from './listings';
 
+// Homepage sections (UserApp Alignment — curate consumer-app homepage)
+export {
+  listHomepageSections,
+  getSectionListings,
+  addListingToSection,
+  removeListingFromSection,
+  setSectionListings,
+  sectionLabel,
+  sectionErrorMessage,
+  SECTION_ERROR_LABELS,
+  SECTION_MIN_LISTINGS,
+  SECTION_MAX_LISTINGS,
+  TLB_SIGNATURE_SECTION,
+} from './homepageSections';
+export type {
+  HomepageSection,
+  SectionListing,
+  SectionListingRef,
+  SectionListingsParams,
+} from './homepageSections';
+
+// Payments & Finance (transactions — Phase 1)
+export {
+  listTransactions,
+  getTransaction,
+  registerPayment,
+  queueTransactionExport,
+  getTransactionExportJob,
+  downloadTransactionExport,
+  sourceLabel,
+  sourceTone,
+  paymentModeLabel,
+  bookingTypeLabel,
+  TRANSACTION_SOURCES,
+  PAYMENT_MODES,
+  BOOKING_TYPES,
+  FINANCE_PERIODS,
+  FINANCE_PERIOD_LABELS,
+} from './finance';
+export type {
+  TransactionListItem,
+  TransactionDetail,
+  TransactionBooking,
+  PaymentDetail,
+  RegisterPaymentInput,
+  ListTransactionsParams,
+  FinanceExportJob,
+  TransactionSource,
+  FinancePeriod,
+} from './finance';
+
+// Admin statistics (dashboard analytics)
+export {
+  getOverviewStats,
+  getCustomerStats,
+  getPartnerStats,
+  parseAmount,
+  safeCurrency,
+  STATS_PERIODS,
+  STATS_PERIOD_LABELS,
+} from './stats';
+export type {
+  StatsParams,
+  StatsPeriod,
+  StatsPeriodInfo,
+  OverviewStats,
+  CustomerStats,
+  PartnerStats,
+  OverviewRevenue,
+  OverviewTrendPoint,
+  RecentBooking,
+  RecentSignup,
+  RecentTicket,
+  TopCustomer,
+  TopPartner,
+} from './stats';
+
+// Broadcasts (admin mass-notification engine)
+export {
+  listBroadcasts,
+  createBroadcast,
+  getBroadcast,
+  cancelBroadcast,
+  listDeliveries,
+  sendBroadcastTest,
+  estimateAudience,
+  broadcastStatusLabel,
+  broadcastStatusTone,
+  deliveryStatusTone,
+  isBroadcastCancellable,
+  BROADCAST_STATUSES,
+  BROADCAST_AUDIENCES,
+  DELIVERY_CHANNELS,
+  DELIVERY_STATUSES,
+} from './broadcasts';
+export type {
+  BroadcastListItem,
+  BroadcastDetail,
+  BroadcastDelivery,
+  CreateBroadcastInput,
+  ListBroadcastsParams,
+  DeliveriesParams,
+  BroadcastStatus,
+  BroadcastAudience,
+  DeliveryChannel,
+  DeliveryStatus,
+} from './broadcasts';
+
 // Audit logs (§4)
 export {
   getAuditLogs,
@@ -196,18 +304,40 @@ export {
 } from './support';
 export type { SupportTicket, TicketMessage, TicketThread, TicketStatus, ListTicketsParams } from './support';
 
-// Coupons & marketing (marketing API — not live yet)
+// Admin coupons (platform + partner) with analytics & redemption report
 export {
   listCoupons,
   getCoupon,
   createCoupon,
   updateCoupon,
-  deleteCoupon,
+  activateCoupon,
+  deactivateCoupon,
+  getCouponUsages,
+  getPlatformCouponAnalytics,
+  getPartnerCouponAnalytics,
+  getTopCoupons,
+  getCouponUsageOverTime,
+  getRedemptionReport,
+  couponDiscountLabel,
+  couponTypeLabel,
+  couponTypeTone,
+  isCouponExpired,
+  COUPON_TYPES,
+  DISCOUNT_TYPES,
 } from './coupons';
 export type {
-  Coupon,
-  CreateCouponInput,
+  CouponListItem,
+  CouponDetail,
+  CouponUsage,
+  CouponInput,
   ListCouponsParams,
-  CouponDiscountType,
-  CouponAppliesTo,
+  CouponAnalytics,
+  TopCoupon,
+  UsageOverTimePoint,
+  RedemptionRow,
+  RedemptionParams,
+  TargetListing,
+  TargetCategory,
+  CouponType,
+  DiscountType,
 } from './coupons';

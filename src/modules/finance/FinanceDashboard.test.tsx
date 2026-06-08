@@ -1,12 +1,12 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import FinanceDashboard from './FinanceDashboard';
 
-// Recharts uses SVG which jsdom doesn't fully support; mock the relevant components
 vi.mock('recharts', () => ({
     ResponsiveContainer: ({ children }: any) => <div data-testid="responsive-container">{children}</div>,
-    BarChart: ({ children }: any) => <div data-testid="bar-chart">{children}</div>,
-    Bar: () => null,
+    AreaChart: ({ children }: any) => <div data-testid="area-chart">{children}</div>,
+    Area: () => null,
     XAxis: () => null,
     YAxis: () => null,
     CartesianGrid: () => null,
@@ -14,69 +14,57 @@ vi.mock('recharts', () => ({
 }));
 
 vi.mock('../../shared/lib/api', () => ({
-    getPartnerMetrics: vi.fn(() => Promise.resolve({
-        total_partners: 9, approved: 5, under_review: 3, rejected: 1,
-        activated_limited: 0, profile_created: 0, is_active_count: 7, is_verified_count: 6, new_this_month: 2,
-    })),
-    getUserMetrics: vi.fn(() => Promise.resolve({
-        total_users: 40, active_users: 35, inactive_users: 5, deleted_users: 0,
-        new_today: 1, new_this_week: 4, new_this_month: 12, by_auth_provider: { otp: 30, google: 10 },
-    })),
+    getOverviewStats: vi.fn(),
+    parseAmount: (v: any) => (v == null || v === '' || v === '-' ? null : Number(v)),
+    safeCurrency: () => 'INR',
+    formatMoney: (n: any) => `₹${Number(n).toLocaleString()}`,
+    STATS_PERIODS: ['today', 'this_week', 'this_month', 'custom'],
+    STATS_PERIOD_LABELS: { today: 'Today', this_week: 'This Week', this_month: 'This Month', custom: 'Custom' },
+    ApiError: class ApiError extends Error { code: string | null = null; },
 }));
+import { getOverviewStats } from '../../shared/lib/api';
+
+const OVERVIEW = {
+    period: { type: 'this_month', date_from: '2026-06-01', date_to: '2026-06-30', label: 'This Month' },
+    users: { total_customers: 0, total_partners: 0, new_customers: 0, new_partners: 0 },
+    listings: { total: 0, published: 0, pending_moderation: 0, rejected: 0, draft: 0, by_type: {} },
+    bookings: { total: 540, confirmed: 500, cancelled: 0, refunded: 10, pending: 0, attended: 0 },
+    revenue: { gross: '500000', refunds: '8000', net: '460000', platform_fees: '32000', avg_order_value: '925', currency: 'INR' },
+    support: { open: 0, in_progress: 0, resolved_in_period: 0, total_open: 0 },
+    trend: [{ date: '2026-06-01', bookings: 10, revenue: '9000', signups: 5 }],
+    recent_activity: { bookings: [], signups: [], tickets: [] },
+};
 
 describe('FinanceDashboard', () => {
-    it('renders the Finance Dashboard heading', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        (getOverviewStats as any).mockResolvedValue(OVERVIEW);
+    });
+
+    it('renders the heading and loads overview stats', async () => {
         render(<FinanceDashboard />);
         expect(screen.getByText('Finance Dashboard')).toBeInTheDocument();
+        await waitFor(() => expect(getOverviewStats).toHaveBeenCalledWith({ period: 'this_month' }));
     });
 
-    it('renders the sub-heading', () => {
+    it('shows real revenue KPIs from the stats API', async () => {
         render(<FinanceDashboard />);
-        expect(screen.getByText('Revenue flow and payout tracking')).toBeInTheDocument();
+        expect(await screen.findByText('Gross Revenue')).toBeInTheDocument();
+        expect(screen.getByText('Net Revenue')).toBeInTheDocument();
+        expect(screen.getByText((t) => t.replace(/,/g, '').includes('460000'))).toBeInTheDocument(); // net revenue
+        expect(screen.getByTestId('area-chart')).toBeInTheDocument();
     });
 
-    it('renders the partner/user stat cards', async () => {
+    it('re-fetches when the period changes', async () => {
         render(<FinanceDashboard />);
-        expect(screen.getByText('Total Partners')).toBeInTheDocument();
-        expect(screen.getByText('Payout-Ready Partners')).toBeInTheDocument();
-        expect(screen.getAllByText('Pending Verification').length).toBeGreaterThanOrEqual(1);
-        expect(screen.getByText('Total Users')).toBeInTheDocument();
+        await screen.findByText('Gross Revenue');
+        await userEvent.click(screen.getByRole('button', { name: 'Today' }));
+        await waitFor(() => expect(getOverviewStats).toHaveBeenCalledWith({ period: 'today' }));
     });
 
-    it('fills stat cards with values from the existing metrics APIs', async () => {
+    it('shows an error state when the API fails', async () => {
+        (getOverviewStats as any).mockRejectedValue(new Error('boom'));
         render(<FinanceDashboard />);
-        expect(await screen.findByText('9')).toBeInTheDocument(); // total partners
-        expect(screen.getByText('6')).toBeInTheDocument(); // payout-ready (verified)
-        expect(screen.getByText('40')).toBeInTheDocument(); // total users
-    });
-
-    it('shows an empty state for the revenue chart when there is no data', () => {
-        render(<FinanceDashboard />);
-        expect(screen.getByText('No revenue data yet')).toBeInTheDocument();
-    });
-
-    it('renders Revenue Inflow vs Outflow chart section', () => {
-        render(<FinanceDashboard />);
-        expect(screen.getByText('Revenue Inflow vs Outflow')).toBeInTheDocument();
-    });
-
-    it('renders Payout Status section with partner counts', async () => {
-        render(<FinanceDashboard />);
-        expect(screen.getByText('Payout Status')).toBeInTheDocument();
-        expect(screen.getByText('Verified Partners')).toBeInTheDocument();
-        // "Pending Verification" appears both as a stat card and a payout row.
-        expect(screen.getAllByText('Pending Verification').length).toBeGreaterThanOrEqual(1);
-        expect(screen.getByText('Rejected Partners')).toBeInTheDocument();
-    });
-
-    it('renders Process All Payouts button', () => {
-        render(<FinanceDashboard />);
-        expect(screen.getByText('Process All Payouts')).toBeInTheDocument();
-    });
-
-    it('renders Monthly View and Generate Report buttons', () => {
-        render(<FinanceDashboard />);
-        expect(screen.getByText('Monthly View')).toBeInTheDocument();
-        expect(screen.getByText('Generate Report')).toBeInTheDocument();
+        expect(await screen.findByText("Couldn't load finance data")).toBeInTheDocument();
     });
 });

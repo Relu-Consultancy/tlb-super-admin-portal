@@ -8,7 +8,9 @@ import {
     Ticket,
     TicketPlus,
     MessageSquare,
+    Megaphone,
     BarChart3,
+    Smartphone,
     LogOut,
     ShieldCheck,
     Settings as SettingsIcon,
@@ -41,6 +43,7 @@ const Sidebar = ({ currentScreen, setCurrentScreen, sidebarOpen, setIsLoggedIn }
             <SidebarItem icon={LayoutDashboard} label="Dashboard" active={currentScreen === Screen.DASHBOARD} onClick={() => setCurrentScreen(Screen.DASHBOARD)} />
             <SidebarItem icon={PieChart} label="Partner Management" active={currentScreen === Screen.PARTNER_MANAGEMENT} onClick={() => setCurrentScreen(Screen.PARTNER_MANAGEMENT)} />
             <SidebarItem icon={CheckCircle} label="Listings Approval" active={currentScreen === Screen.EVENT_APPROVAL} onClick={() => setCurrentScreen(Screen.EVENT_APPROVAL)} />
+            <SidebarItem icon={Smartphone} label="UserApp Alignment" active={currentScreen === Screen.USERAPP_ALIGNMENT} onClick={() => setCurrentScreen(Screen.USERAPP_ALIGNMENT)} />
             <SidebarItem icon={Users} label="User Management" active={currentScreen === Screen.USER_MANAGEMENT} onClick={() => setCurrentScreen(Screen.USER_MANAGEMENT)} />
             <SidebarItem icon={Users} label="User Section (New)" active={currentScreen === Screen.USER_SECTION} onClick={() => setCurrentScreen(Screen.USER_SECTION)} />
             <SidebarItem icon={UserCog} label="Employee Admin Management" active={currentScreen === Screen.ADMIN_MANAGEMENT} onClick={() => setCurrentScreen(Screen.ADMIN_MANAGEMENT)} />
@@ -48,6 +51,7 @@ const Sidebar = ({ currentScreen, setCurrentScreen, sidebarOpen, setIsLoggedIn }
             <SidebarItem icon={CreditCard} label="Payments and Transactions" active={currentScreen === Screen.PAYMENTS_FINANCE} onClick={() => setCurrentScreen(Screen.PAYMENTS_FINANCE)} />
             <SidebarItem icon={Ticket} label="Marketing Coupons" active={currentScreen === Screen.COUPONS_MARKETING} onClick={() => setCurrentScreen(Screen.COUPONS_MARKETING)} />
             <SidebarItem icon={TicketPlus} label="Create Coupon" active={currentScreen === Screen.CREATE_COUPON} onClick={() => setCurrentScreen(Screen.CREATE_COUPON)} />
+            <SidebarItem icon={Megaphone} label="Broadcasts" active={currentScreen === Screen.BROADCASTS} onClick={() => setCurrentScreen(Screen.BROADCASTS)} />
             <SidebarItem icon={MessageSquare} label="Support System" active={currentScreen === Screen.SUPPORT_SYSTEM} onClick={() => setCurrentScreen(Screen.SUPPORT_SYSTEM)} />
             <SidebarItem icon={BarChart3} label="Analytics" active={currentScreen === Screen.ANALYTICS} onClick={() => setCurrentScreen(Screen.ANALYTICS)} />
         </nav>

@@ -1,420 +1,278 @@
-import { useMemo, useState } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import {
-    Ticket,
+    ArrowLeft,
+    Loader2,
+    AlertCircle,
+    CheckCircle,
+    CheckCircle2,
+    X,
+    Tag,
+    Store,
+    Building2,
     Percent,
     IndianRupee,
-    Tag,
-    CalendarClock,
-    Users,
-    CheckCircle2,
-    AlertCircle,
-    ArrowLeft,
-    Sparkles,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import Card from '../../shared/components/ui/Card';
-import { ApiError, createCoupon } from '../../shared/lib/api';
-import type { CouponAppliesTo, CouponDiscountType, CreateCouponInput } from '../../shared/lib/api';
+import { cn } from '../../shared/lib/utils';
+import {
+    createCoupon,
+    listPartners,
+    LISTING_TYPES,
+    ApiError,
+    type CouponInput,
+    type PartnerListItem,
+} from '../../shared/lib/api';
 
 interface CreateCouponProps {
-    /** Navigate back to the coupons list. */
     onBack?: () => void;
-    /** Called after a coupon is successfully created. */
     onCreated?: () => void;
 }
 
-type FieldErrors = Partial<Record<keyof FormState, string>>;
-
-interface FormState {
-    code: string;
-    description: string;
-    discountType: CouponDiscountType;
-    discountValue: string;
-    maxDiscount: string;
-    minOrderValue: string;
-    usageLimit: string;
-    appliesTo: CouponAppliesTo;
-    targetId: string;
-    startsAt: string;
-    expiresAt: string;
-}
-
-const INITIAL: FormState = {
-    code: '',
-    description: '',
-    discountType: 'percentage',
-    discountValue: '',
-    maxDiscount: '',
-    minOrderValue: '',
-    usageLimit: '',
-    appliesTo: 'all_events',
-    targetId: '',
-    startsAt: '',
-    expiresAt: '',
-};
-
-const inputCls =
-    'w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all';
-const labelCls = 'block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2';
+const GENDERS = ['male', 'female', 'other'] as const;
 
 const CreateCoupon = ({ onBack, onCreated }: CreateCouponProps) => {
-    const [form, setForm] = useState<FormState>(INITIAL);
-    const [errors, setErrors] = useState<FieldErrors>({});
+    const [couponType, setCouponType] = useState<'platform' | 'partner'>('platform');
+    const [partnerId, setPartnerId] = useState('');
+    const [partners, setPartners] = useState<PartnerListItem[]>([]);
+
+    const [code, setCode] = useState('');
+    const [description, setDescription] = useState('');
+    const [discountType, setDiscountType] = useState<'percent' | 'fixed'>('percent');
+    const [discountValue, setDiscountValue] = useState('');
+    const [maxDiscount, setMaxDiscount] = useState('');
+    const [minOrder, setMinOrder] = useState('');
+    const [usageLimit, setUsageLimit] = useState('');
+    const [perUserLimit, setPerUserLimit] = useState('');
+    const [startsAt, setStartsAt] = useState('');
+    const [expiresAt, setExpiresAt] = useState('');
+    const [isActive, setIsActive] = useState(true);
+
+    const [targetTypes, setTargetTypes] = useState<string[]>([]);
+    const [targetGenders, setTargetGenders] = useState<string[]>([]);
+    const [minAge, setMinAge] = useState('');
+    const [maxAge, setMaxAge] = useState('');
+
     const [submitting, setSubmitting] = useState(false);
-    const [banner, setBanner] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const [fieldError, setFieldError] = useState<string | null>(null);
+    const [done, setDone] = useState(false);
 
-    const set = <K extends keyof FormState>(key: K, value: FormState[K]) => {
-        setForm((prev) => ({ ...prev, [key]: value }));
-        if (errors[key]) setErrors((prev) => ({ ...prev, [key]: undefined }));
-        if (banner) setBanner(null);
+    // Load partners for the partner-coupon picker.
+    useEffect(() => {
+        listPartners().then(setPartners).catch(() => setPartners([]));
+    }, []);
+
+    const toggle = (list: string[], setList: (v: string[]) => void, value: string) =>
+        setList(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
+
+    const validate = (): string | null => {
+        if (!code.trim()) return 'Coupon code is required.';
+        if (couponType === 'partner' && !partnerId) return 'Select a partner for a partner coupon.';
+        const dv = Number(discountValue);
+        if (!discountValue || Number.isNaN(dv) || dv <= 0) return 'Enter a valid discount value.';
+        if (discountType === 'percent' && dv > 100) return 'Percentage cannot exceed 100.';
+        if (startsAt && expiresAt && new Date(expiresAt) < new Date(startsAt)) return 'Expiry must be after the start date.';
+        return null;
     };
 
-    const validate = (): boolean => {
-        const e: FieldErrors = {};
-        const code = form.code.trim();
-        if (!code) e.code = 'Coupon code is required.';
-        else if (!/^[A-Z0-9_-]{3,20}$/.test(code)) e.code = 'Use 3–20 chars: A–Z, 0–9, - or _.';
-
-        const val = Number(form.discountValue);
-        if (!form.discountValue.trim()) e.discountValue = 'Discount value is required.';
-        else if (Number.isNaN(val) || val <= 0) e.discountValue = 'Enter a value greater than 0.';
-        else if (form.discountType === 'percentage' && val > 100) e.discountValue = 'Percentage cannot exceed 100.';
-
-        if (form.maxDiscount && Number(form.maxDiscount) <= 0) e.maxDiscount = 'Must be greater than 0.';
-        if (form.minOrderValue && Number(form.minOrderValue) < 0) e.minOrderValue = 'Cannot be negative.';
-        if (form.usageLimit && (!Number.isInteger(Number(form.usageLimit)) || Number(form.usageLimit) < 1))
-            e.usageLimit = 'Enter a whole number ≥ 1.';
-
-        if (form.startsAt && form.expiresAt && form.startsAt > form.expiresAt)
-            e.expiresAt = 'Expiry must be after the start date.';
-
-        if (form.appliesTo !== 'all_events' && !form.targetId.trim())
-            e.targetId = form.appliesTo === 'specific_partner' ? 'Partner ID is required.' : 'Category is required.';
-
-        setErrors(e);
-        return Object.keys(e).length === 0;
+    const buildPayload = (): CouponInput => {
+        const str = (v: string) => (v.trim() === '' ? undefined : v.trim());
+        const int = (v: string) => (v.trim() === '' ? undefined : Number(v));
+        return {
+            code: code.trim().toUpperCase(),
+            partner_id: couponType === 'partner' ? partnerId : undefined,
+            description: description.trim() || undefined,
+            is_active: isActive,
+            discount_type: discountType,
+            discount_value: discountValue.trim(),
+            max_discount: discountType === 'percent' ? str(maxDiscount) : undefined,
+            min_order_value: str(minOrder),
+            usage_limit: int(usageLimit),
+            per_user_limit: int(perUserLimit),
+            starts_at: str(startsAt),
+            expires_at: str(expiresAt),
+            target_listing_types: targetTypes.length ? targetTypes : undefined,
+            target_genders: targetGenders.length ? targetGenders : undefined,
+            target_min_age: int(minAge),
+            target_max_age: int(maxAge),
+        };
     };
 
-    const buildPayload = (): CreateCouponInput => ({
-        code: form.code.trim().toUpperCase(),
-        description: form.description.trim() || undefined,
-        discount_type: form.discountType,
-        discount_value: Number(form.discountValue),
-        max_discount: form.discountType === 'percentage' && form.maxDiscount ? Number(form.maxDiscount) : null,
-        min_order_value: form.minOrderValue ? Number(form.minOrderValue) : null,
-        usage_limit: form.usageLimit ? Number(form.usageLimit) : null,
-        applies_to: form.appliesTo,
-        target_id: form.appliesTo === 'all_events' ? null : form.targetId.trim(),
-        starts_at: form.startsAt || null,
-        expires_at: form.expiresAt || null,
-    });
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!validate()) return;
+    const submit = async () => {
+        const err = validate();
+        if (err) { setFieldError(err); return; }
+        setFieldError(null);
         setSubmitting(true);
-        setBanner(null);
         try {
             await createCoupon(buildPayload());
-            setBanner({ type: 'success', text: `Coupon "${form.code.trim().toUpperCase()}" created successfully.` });
-            setForm(INITIAL);
-            onCreated?.();
-        } catch (err) {
-            const msg =
-                err instanceof ApiError
-                    ? err.isNetworkError || err.status === 404
-                        ? 'The marketing API is not connected yet. Your coupon could not be saved.'
-                        : err.message
-                    : 'Something went wrong while creating the coupon.';
-            setBanner({ type: 'error', text: msg });
+            setDone(true);
+        } catch (e) {
+            setFieldError(e instanceof ApiError ? e.message : 'Could not create the coupon.');
         } finally {
             setSubmitting(false);
         }
     };
 
-    // ── Live preview values ──
-    const previewCode = form.code.trim().toUpperCase() || 'YOURCODE';
-    const previewDiscount = useMemo(() => {
-        const v = Number(form.discountValue);
-        if (!form.discountValue || Number.isNaN(v)) return form.discountType === 'percentage' ? '0%' : '₹0';
-        return form.discountType === 'percentage' ? `${v}%` : `₹${v}`;
-    }, [form.discountValue, form.discountType]);
+    if (done) {
+        return (
+            <div className="max-w-lg mx-auto py-16 text-center">
+                <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-16 h-16 mx-auto rounded-2xl bg-green-50 flex items-center justify-center mb-4">
+                    <CheckCircle size={32} className="text-green-500" />
+                </motion.div>
+                <h1 className="text-2xl font-bold text-gray-900">Coupon created</h1>
+                <p className="text-gray-500 mt-1">
+                    <span className="font-mono font-bold uppercase">{code}</span> is now {isActive ? 'active' : 'inactive'}.
+                </p>
+                <div className="flex items-center justify-center gap-3 mt-6">
+                    <button onClick={() => onCreated?.()} className="px-6 py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-all">Back to Coupons</button>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <header className="flex items-center gap-4">
-                {onBack && (
-                    <button
-                        onClick={onBack}
-                        className="p-2 hover:bg-gray-100 rounded-xl text-gray-500 transition-colors"
-                        aria-label="Back to coupons"
-                    >
-                        <ArrowLeft size={20} />
-                    </button>
-                )}
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Create Coupon</h1>
-                    <p className="text-gray-500 text-sm">Set up a new discount or promotional code</p>
-                </div>
+        <div className="space-y-6 max-w-4xl">
+            <button onClick={onBack} className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors">
+                <ArrowLeft size={20} /> Back to Coupons
+            </button>
+
+            <header>
+                <h1 className="text-2xl font-bold text-gray-900">Create Coupon</h1>
+                <p className="text-gray-500 text-sm">Set up a platform-wide or partner-specific discount</p>
             </header>
 
-            {banner && (
-                <motion.div
-                    initial={{ opacity: 0, y: -6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`flex items-start gap-3 rounded-2xl px-4 py-3 text-sm font-medium ${
-                        banner.type === 'success'
-                            ? 'bg-green-50 text-green-700 border border-green-200'
-                            : 'bg-red-50 text-red-700 border border-red-200'
-                    }`}
-                >
-                    {banner.type === 'success' ? (
-                        <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
-                    ) : (
-                        <AlertCircle size={18} className="mt-0.5 shrink-0" />
-                    )}
-                    <span>{banner.text}</span>
-                </motion.div>
+            {fieldError && (
+                <div role="alert" className="flex items-start gap-2 text-sm rounded-xl px-4 py-3 border bg-red-50 border-red-200 text-red-700">
+                    <AlertCircle size={18} className="shrink-0 mt-0.5" /> <span className="flex-1">{fieldError}</span>
+                    <button onClick={() => setFieldError(null)}><X size={16} /></button>
+                </div>
             )}
 
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* ── Form fields ── */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-6">
-                    <Card className="space-y-5">
-                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Coupon Details</h3>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label className={labelCls}>Coupon Code *</label>
-                                <input
-                                    type="text"
-                                    value={form.code}
-                                    onChange={(ev) => set('code', ev.target.value.toUpperCase())}
-                                    placeholder="e.g. SAVE20"
-                                    className={`${inputCls} font-mono ${errors.code ? 'border-red-300 ring-1 ring-red-200' : ''}`}
-                                />
-                                {errors.code && <p className="text-xs text-red-500 mt-1.5">{errors.code}</p>}
-                            </div>
-                            <div>
-                                <label className={labelCls}>Discount Type *</label>
-                                <div className="grid grid-cols-2 gap-2">
-                                    {([
-                                        { v: 'percentage' as const, label: 'Percent', icon: Percent },
-                                        { v: 'fixed' as const, label: 'Fixed ₹', icon: IndianRupee },
-                                    ]).map(({ v, label, icon: Icon }) => {
-                                        const active = form.discountType === v;
-                                        return (
-                                            <button
-                                                key={v}
-                                                type="button"
-                                                onClick={() => set('discountType', v)}
-                                                className={`flex items-center justify-center gap-1.5 px-3 py-3 rounded-xl text-sm font-bold border transition-all ${
-                                                    active
-                                                        ? 'bg-yellow-400 border-yellow-400 text-gray-900'
-                                                        : 'bg-gray-50 border-gray-200 text-gray-500 hover:text-gray-900'
-                                                }`}
-                                            >
-                                                <Icon size={15} /> {label}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
+                    {/* Scope */}
+                    <Card className="space-y-4">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Coupon scope</p>
+                        <div className="grid grid-cols-2 gap-2">
+                            <ScopeButton active={couponType === 'platform'} onClick={() => setCouponType('platform')} icon={Store} title="Platform" sub="Applies across TLB" />
+                            <ScopeButton active={couponType === 'partner'} onClick={() => setCouponType('partner')} icon={Building2} title="Partner" sub="Scoped to one partner" />
                         </div>
+                        {couponType === 'partner' && (
+                            <Labeled label="Partner" required>
+                                <select value={partnerId} onChange={(e) => setPartnerId(e.target.value)} className={inputCls}>
+                                    <option value="">Select a partner…</option>
+                                    {partners.map((p) => <option key={p.id} value={p.id}>{p.business_name || p.email}</option>)}
+                                </select>
+                            </Labeled>
+                        )}
+                    </Card>
 
+                    {/* Basics */}
+                    <Card className="space-y-4">
+                        <Labeled label="Coupon code" required>
+                            <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="SAVE20" className={cn(inputCls, 'font-mono uppercase tracking-wider')} />
+                        </Labeled>
+                        <Labeled label="Description">
+                            <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Internal note shown to customers" className={inputCls} />
+                        </Labeled>
                         <div>
-                            <label className={labelCls}>Description</label>
-                            <input
-                                type="text"
-                                value={form.description}
-                                onChange={(ev) => set('description', ev.target.value)}
-                                placeholder="Shown to customers (optional)"
-                                className={inputCls}
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label className={labelCls}>
-                                    {form.discountType === 'percentage' ? 'Discount % *' : 'Discount ₹ *'}
-                                </label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={form.discountValue}
-                                    onChange={(ev) => set('discountValue', ev.target.value)}
-                                    placeholder={form.discountType === 'percentage' ? '20' : '500'}
-                                    className={`${inputCls} ${errors.discountValue ? 'border-red-300 ring-1 ring-red-200' : ''}`}
-                                />
-                                {errors.discountValue && <p className="text-xs text-red-500 mt-1.5">{errors.discountValue}</p>}
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5">Discount type</p>
+                            <div className="grid grid-cols-2 gap-2">
+                                <ScopeButton active={discountType === 'percent'} onClick={() => setDiscountType('percent')} icon={Percent} title="Percentage" sub="% off the order" compact />
+                                <ScopeButton active={discountType === 'fixed'} onClick={() => setDiscountType('fixed')} icon={IndianRupee} title="Fixed" sub="Flat ₹ off" compact />
                             </div>
-                            {form.discountType === 'percentage' && (
-                                <div>
-                                    <label className={labelCls}>Max Discount ₹</label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        value={form.maxDiscount}
-                                        onChange={(ev) => set('maxDiscount', ev.target.value)}
-                                        placeholder="Cap (optional)"
-                                        className={`${inputCls} ${errors.maxDiscount ? 'border-red-300 ring-1 ring-red-200' : ''}`}
-                                    />
-                                    {errors.maxDiscount && <p className="text-xs text-red-500 mt-1.5">{errors.maxDiscount}</p>}
-                                </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <Labeled label={discountType === 'percent' ? 'Percentage (%)' : 'Amount (₹)'} required>
+                                <input type="number" value={discountValue} onChange={(e) => setDiscountValue(e.target.value)} placeholder={discountType === 'percent' ? '20' : '150'} className={inputCls} />
+                            </Labeled>
+                            {discountType === 'percent' && (
+                                <Labeled label="Max discount (₹)">
+                                    <input type="number" value={maxDiscount} onChange={(e) => setMaxDiscount(e.target.value)} placeholder="Optional cap" className={inputCls} />
+                                </Labeled>
                             )}
+                            <Labeled label="Min order value (₹)">
+                                <input type="number" value={minOrder} onChange={(e) => setMinOrder(e.target.value)} placeholder="Optional" className={inputCls} />
+                            </Labeled>
                         </div>
                     </Card>
 
-                    <Card className="space-y-5">
-                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Rules & Limits</h3>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label className={labelCls}>Min Order Value ₹</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={form.minOrderValue}
-                                    onChange={(ev) => set('minOrderValue', ev.target.value)}
-                                    placeholder="No minimum"
-                                    className={`${inputCls} ${errors.minOrderValue ? 'border-red-300 ring-1 ring-red-200' : ''}`}
-                                />
-                                {errors.minOrderValue && <p className="text-xs text-red-500 mt-1.5">{errors.minOrderValue}</p>}
-                            </div>
-                            <div>
-                                <label className={labelCls}>Usage Limit</label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    value={form.usageLimit}
-                                    onChange={(ev) => set('usageLimit', ev.target.value)}
-                                    placeholder="Unlimited"
-                                    className={`${inputCls} ${errors.usageLimit ? 'border-red-300 ring-1 ring-red-200' : ''}`}
-                                />
-                                {errors.usageLimit && <p className="text-xs text-red-500 mt-1.5">{errors.usageLimit}</p>}
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label className={labelCls}>Starts On</label>
-                                <input
-                                    type="date"
-                                    value={form.startsAt}
-                                    onChange={(ev) => set('startsAt', ev.target.value)}
-                                    className={inputCls}
-                                />
-                            </div>
-                            <div>
-                                <label className={labelCls}>Expires On</label>
-                                <input
-                                    type="date"
-                                    value={form.expiresAt}
-                                    onChange={(ev) => set('expiresAt', ev.target.value)}
-                                    className={`${inputCls} ${errors.expiresAt ? 'border-red-300 ring-1 ring-red-200' : ''}`}
-                                />
-                                {errors.expiresAt && <p className="text-xs text-red-500 mt-1.5">{errors.expiresAt}</p>}
-                            </div>
-                        </div>
-
+                    {/* Targeting (optional) */}
+                    <Card className="space-y-4">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5"><Tag size={12} /> Targeting (optional)</p>
                         <div>
-                            <label className={labelCls}>Apply To</label>
-                            <select
-                                value={form.appliesTo}
-                                onChange={(ev) => set('appliesTo', ev.target.value as CouponAppliesTo)}
-                                className={`${inputCls} appearance-none`}
-                            >
-                                <option value="all_events">All Events</option>
-                                <option value="specific_partner">Specific Partner</option>
-                                <option value="category">Category</option>
-                            </select>
-                        </div>
-
-                        {form.appliesTo !== 'all_events' && (
-                            <div>
-                                <label className={labelCls}>
-                                    {form.appliesTo === 'specific_partner' ? 'Partner ID *' : 'Category *'}
-                                </label>
-                                <input
-                                    type="text"
-                                    value={form.targetId}
-                                    onChange={(ev) => set('targetId', ev.target.value)}
-                                    placeholder={form.appliesTo === 'specific_partner' ? 'Partner UUID' : 'e.g. Music'}
-                                    className={`${inputCls} ${errors.targetId ? 'border-red-300 ring-1 ring-red-200' : ''}`}
-                                />
-                                {errors.targetId && <p className="text-xs text-red-500 mt-1.5">{errors.targetId}</p>}
+                            <p className="text-[11px] text-gray-500 mb-1.5">Listing types</p>
+                            <div className="flex flex-wrap gap-2">
+                                {LISTING_TYPES.map((t) => <ChipToggle key={t} active={targetTypes.includes(t)} onClick={() => toggle(targetTypes, setTargetTypes, t)} label={t} />)}
                             </div>
-                        )}
+                        </div>
+                        <div>
+                            <p className="text-[11px] text-gray-500 mb-1.5">Genders</p>
+                            <div className="flex flex-wrap gap-2">
+                                {GENDERS.map((g) => <ChipToggle key={g} active={targetGenders.includes(g)} onClick={() => toggle(targetGenders, setTargetGenders, g)} label={g} />)}
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <Labeled label="Min age"><input type="number" value={minAge} onChange={(e) => setMinAge(e.target.value)} placeholder="Any" className={inputCls} /></Labeled>
+                            <Labeled label="Max age"><input type="number" value={maxAge} onChange={(e) => setMaxAge(e.target.value)} placeholder="Any" className={inputCls} /></Labeled>
+                        </div>
                     </Card>
                 </div>
 
-                {/* ── Live preview + submit ── */}
+                {/* Sidebar: schedule + status + submit */}
                 <div className="space-y-6">
                     <Card className="space-y-4">
-                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Preview</h3>
-                        <div className="relative bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-5 text-white overflow-hidden">
-                            <Sparkles size={64} className="absolute -right-3 -top-3 text-yellow-400/20" />
-                            <div className="flex items-center gap-2 mb-3">
-                                <div className="w-10 h-10 bg-yellow-400/15 border border-yellow-400/30 rounded-xl flex items-center justify-center">
-                                    <span className="text-sm font-black text-yellow-400">{previewDiscount}</span>
-                                </div>
-                                <div>
-                                    <p className="font-mono font-bold tracking-wider">{previewCode}</p>
-                                    <p className="text-[10px] text-slate-400 uppercase tracking-widest">
-                                        {form.discountType === 'percentage' ? 'Percentage off' : 'Flat discount'}
-                                    </p>
-                                </div>
-                            </div>
-                            {form.description && <p className="text-xs text-slate-300 mb-2">{form.description}</p>}
-                            <div className="flex flex-wrap gap-3 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                                <span className="flex items-center gap-1">
-                                    <CalendarClock size={12} /> {form.expiresAt || 'No expiry'}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                    <Users size={12} /> {form.usageLimit ? `${form.usageLimit} uses` : 'Unlimited'}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                    <Tag size={12} />{' '}
-                                    {form.appliesTo === 'all_events'
-                                        ? 'All events'
-                                        : form.appliesTo === 'specific_partner'
-                                          ? 'Partner'
-                                          : 'Category'}
-                                </span>
-                            </div>
-                        </div>
-
-                        <button
-                            type="submit"
-                            disabled={submitting}
-                            className="w-full py-4 bg-yellow-400 text-gray-900 font-bold rounded-xl hover:bg-yellow-500 shadow-lg shadow-yellow-400/20 transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-                        >
-                            {submitting ? (
-                                <>
-                                    <span className="w-4 h-4 border-2 border-gray-900/30 border-t-gray-900 rounded-full animate-spin" />
-                                    Creating…
-                                </>
-                            ) : (
-                                <>
-                                    <Ticket size={18} /> Generate Coupon
-                                </>
-                            )}
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Schedule & limits</p>
+                        <Labeled label="Starts at"><input type="date" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} className={inputCls} /></Labeled>
+                        <Labeled label="Expires at"><input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} className={inputCls} /></Labeled>
+                        <Labeled label="Total usage limit"><input type="number" value={usageLimit} onChange={(e) => setUsageLimit(e.target.value)} placeholder="Unlimited" className={inputCls} /></Labeled>
+                        <Labeled label="Per-user limit"><input type="number" value={perUserLimit} onChange={(e) => setPerUserLimit(e.target.value)} placeholder="Unlimited" className={inputCls} /></Labeled>
+                        <button type="button" onClick={() => setIsActive((v) => !v)} className={cn('w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all text-sm font-medium', isActive ? 'bg-green-50 border-green-200 text-gray-900' : 'bg-white border-gray-200 text-gray-500')}>
+                            <CheckCircle2 size={16} className={isActive ? 'text-green-500' : 'text-gray-300'} />
+                            <span className="flex-1 text-left">Active immediately</span>
+                            <span className={cn('w-9 h-5 rounded-full relative transition-colors', isActive ? 'bg-green-500' : 'bg-gray-200')}>
+                                <span className={cn('absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all', isActive ? 'left-4.5' : 'left-0.5')} />
+                            </span>
                         </button>
-                        {onBack && (
-                            <button
-                                type="button"
-                                onClick={onBack}
-                                className="w-full py-3 text-sm font-bold text-gray-500 hover:text-gray-900 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                        )}
+                        <button onClick={submit} disabled={submitting} className="w-full flex items-center justify-center gap-2 py-3 bg-yellow-400 text-gray-900 font-bold rounded-xl hover:bg-yellow-500 shadow-md shadow-yellow-400/20 transition-all disabled:opacity-60">
+                            {submitting ? <Loader2 size={16} className="animate-spin" /> : <Tag size={16} />} Generate Coupon
+                        </button>
                     </Card>
                 </div>
-            </form>
+            </div>
         </div>
     );
 };
+
+const inputCls = 'w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400';
+
+function Labeled({ label, required, children }: { label: string; required?: boolean; children: ReactNode }) {
+    return (
+        <div>
+            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5">{label} {required && <span className="text-red-400">*</span>}</label>
+            {children}
+        </div>
+    );
+}
+
+function ScopeButton({ active, onClick, icon: Icon, title, sub, compact }: { active: boolean; onClick: () => void; icon: typeof Store; title: string; sub: string; compact?: boolean }) {
+    return (
+        <button type="button" onClick={onClick} className={cn('flex items-center gap-3 p-3 rounded-xl border text-left transition-all', active ? 'bg-yellow-50 border-yellow-300' : 'bg-white border-gray-200 hover:bg-gray-50')}>
+            <div className={cn('p-2 rounded-lg', active ? 'bg-yellow-400 text-gray-900' : 'bg-gray-100 text-gray-400')}><Icon size={compact ? 16 : 18} /></div>
+            <div>
+                <p className="text-sm font-bold text-gray-900">{title}</p>
+                <p className="text-[11px] text-gray-400">{sub}</p>
+            </div>
+        </button>
+    );
+}
+
+function ChipToggle({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
+    return (
+        <button type="button" onClick={onClick} className={cn('px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-all border', active ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50')}>
+            {label}
+        </button>
+    );
+}
 
 export default CreateCoupon;

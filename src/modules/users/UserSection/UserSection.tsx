@@ -2,8 +2,9 @@ import { useState } from 'react';
 import GlobalHealthMetrics from './GlobalHealthMetrics';
 import UserDirectoryGrid from './UserDirectoryGrid';
 import UserHistorySlideOut from './UserHistorySlideOut';
+import { Screen } from '../../../types';
 
-const UserSection = () => {
+const UserSection = ({ setScreen }: { setScreen?: (s: Screen) => void }) => {
     const [selectedUser, setSelectedUser] = useState<any>(null);
     const [refreshSignal, setRefreshSignal] = useState(0);
 
@@ -15,7 +16,7 @@ const UserSection = () => {
             </header>
 
             {/* Zone 1 */}
-            <GlobalHealthMetrics />
+            <GlobalHealthMetrics onBroadcast={setScreen ? () => setScreen(Screen.BROADCASTS) : undefined} />
 
             {/* Zone 2 */}
             <UserDirectoryGrid onOpenHistory={(user) => setSelectedUser(user)} refreshSignal={refreshSignal} />

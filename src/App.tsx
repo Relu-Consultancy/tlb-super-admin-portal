@@ -1,5 +1,5 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
-import { BarChart3, Bell, Menu } from 'lucide-react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import { BarChart3, Bell, Menu, LogOut, Settings as SettingsIcon, Megaphone, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './shared/lib/utils';
 import { useAuth } from './shared/auth/AuthContext';
@@ -25,6 +25,8 @@ const CouponsMarketing = lazy(() => import('./modules/marketing/CouponsMarketing
 const CreateCoupon = lazy(() => import('./modules/marketing/CreateCoupon'));
 const SupportSystem = lazy(() => import('./modules/support/SupportSystem'));
 const UserManagement = lazy(() => import('./modules/users/UserManagement'));
+const Broadcasts = lazy(() => import('./modules/broadcasts/Broadcasts'));
+const UserAppAlignment = lazy(() => import('./modules/userapp/UserAppAlignment'));
 const Settings = lazy(() => import('./modules/settings/Settings'));
 const Analytics = lazy(() => import('./modules/analytics/Analytics'));
 const UserSection = lazy(() => import('./modules/users/UserSection/UserSection'));
@@ -62,6 +64,22 @@ export default function App() {
     typeof window === 'undefined' ? true : window.innerWidth >= 1024,
   );
   const [resetToken] = useState<string | null>(() => getResetToken());
+
+  // Header dropdowns (notifications + profile menu)
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  // Close header dropdowns on an outside click.
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false);
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileOpen(false);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, []);
 
   // Always land on the Dashboard whenever a session becomes authenticated
   // (fresh login or a logout -> login cycle, since App stays mounted).
@@ -137,9 +155,11 @@ export default function App() {
       );
       case Screen.SUPPORT_SYSTEM: return <SupportSystem />;
       case Screen.USER_MANAGEMENT: return <UserManagement />;
+      case Screen.BROADCASTS: return <Broadcasts />;
+      case Screen.USERAPP_ALIGNMENT: return <UserAppAlignment />;
       case Screen.SETTINGS: return <Settings />;
       case Screen.ANALYTICS: return <Analytics />;
-      case Screen.USER_SECTION: return <UserSection />;
+      case Screen.USER_SECTION: return <UserSection setScreen={setCurrentScreen} />;
       default: return (
         <div className="flex flex-col items-center justify-center h-[60vh] text-gray-400">
           <BarChart3 size={64} className="mb-4 opacity-20" />
@@ -197,19 +217,71 @@ export default function App() {
             <Menu size={20} />
           </button>
 
-          <div className="flex items-center gap-6">
-            <div className="relative">
-              <button className="p-2 text-gray-400 hover:text-gray-900 transition-colors relative">
+          <div className="flex items-center gap-4">
+            {/* Notifications */}
+            <div className="relative" ref={notifRef}>
+              <button
+                onClick={() => { setNotifOpen((o) => !o); setProfileOpen(false); }}
+                aria-label="Notifications"
+                className={cn('p-2 rounded-xl transition-colors', notifOpen ? 'text-gray-900 bg-gray-100' : 'text-gray-400 hover:text-gray-900 hover:bg-gray-50')}
+              >
                 <Bell size={20} />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
               </button>
+              {notifOpen && (
+                <div className="absolute right-0 mt-2 w-72 bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden z-50">
+                  <div className="px-4 py-3 border-b border-gray-50">
+                    <p className="text-sm font-bold text-gray-900">Notifications</p>
+                  </div>
+                  <div className="px-4 py-8 text-center">
+                    <Bell size={28} className="mx-auto text-gray-300 mb-2" />
+                    <p className="text-xs text-gray-500">You're all caught up — no new notifications.</p>
+                  </div>
+                  <button
+                    onClick={() => { setNotifOpen(false); setCurrentScreen(Screen.BROADCASTS); }}
+                    className="w-full flex items-center gap-2 px-4 py-3 border-t border-gray-50 text-xs font-bold text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <Megaphone size={14} className="text-yellow-500" /> Send a broadcast
+                  </button>
+                </div>
+              )}
             </div>
-            <div className="flex items-center gap-3 pl-6 border-l border-gray-100">
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-bold text-gray-900">{displayName}</p>
-                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{displayRole}</p>
-              </div>
-              <img src="https://picsum.photos/seed/admin/100/100" className="w-10 h-10 rounded-xl border-2 border-yellow-400 p-0.5" alt="Avatar" />
+
+            {/* Profile menu */}
+            <div className="relative pl-4 border-l border-gray-100" ref={profileRef}>
+              <button
+                onClick={() => { setProfileOpen((o) => !o); setNotifOpen(false); }}
+                className="flex items-center gap-2.5 group"
+              >
+                <div className="text-right hidden sm:block">
+                  <p className="text-sm font-bold text-gray-900">{displayName}</p>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{displayRole}</p>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-yellow-400 flex items-center justify-center font-bold text-gray-900">
+                  {(displayName || 'A').slice(0, 1).toUpperCase()}
+                </div>
+                <ChevronDown size={16} className={cn('text-gray-400 transition-transform', profileOpen && 'rotate-180')} />
+              </button>
+              {profileOpen && (
+                <div className="absolute right-0 mt-2 w-60 bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden z-50">
+                  <div className="px-4 py-3 border-b border-gray-50">
+                    <p className="text-sm font-bold text-gray-900 truncate">{displayName}</p>
+                    {admin?.email && <p className="text-xs text-gray-500 truncate">{admin.email}</p>}
+                    <span className="inline-block mt-1.5 px-2 py-0.5 bg-yellow-50 text-yellow-700 text-[10px] font-bold rounded-full uppercase tracking-wider">{displayRole}</span>
+                  </div>
+                  <button
+                    onClick={() => { setProfileOpen(false); setCurrentScreen(Screen.SETTINGS); }}
+                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <SettingsIcon size={16} className="text-gray-400" /> Settings
+                  </button>
+                  <button
+                    onClick={() => { setProfileOpen(false); logout(); }}
+                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors border-t border-gray-50"
+                  >
+                    <LogOut size={16} /> Log out
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </header>
