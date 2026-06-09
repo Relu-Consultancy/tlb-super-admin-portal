@@ -62,11 +62,27 @@ export interface SectionListingsParams {
   type?: string;
 }
 
-/** Normalize an array-or-paginated response into a plain array. */
+/**
+ * Normalize a list response into a plain array.
+ *
+ * The section-detail endpoint doesn't return the bare array the docs promise —
+ * it wraps the rows inside an object (e.g. `{ section, listings: [...] }`). So
+ * we check the common collection keys, then fall back to the first
+ * array-of-objects value found on the object.
+ */
 function asArray<T>(res: unknown): T[] {
   if (Array.isArray(res)) return res as T[];
-  if (res && typeof res === 'object' && Array.isArray((res as { results?: T[] }).results)) {
-    return (res as { results: T[] }).results;
+  if (!res || typeof res !== 'object') return [];
+  const obj = res as Record<string, unknown>;
+
+  for (const key of ['results', 'listings', 'items', 'data']) {
+    if (Array.isArray(obj[key])) return obj[key] as T[];
+  }
+  // Last resort: any property holding an array of objects.
+  for (const value of Object.values(obj)) {
+    if (Array.isArray(value) && (value.length === 0 || typeof value[0] === 'object')) {
+      return value as T[];
+    }
   }
   return [];
 }

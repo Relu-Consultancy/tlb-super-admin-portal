@@ -50,6 +50,18 @@ describe('homepageSections service', () => {
     expect(out).toHaveLength(1);
   });
 
+  it('unwraps a section detail object that nests rows under "listings"', async () => {
+    (api.get as any).mockResolvedValue({
+      section: 'spotlight', label: 'Spotlight', total_count: 2, published_count: 2,
+      listings: [
+        { sort_order: 1, added_at: '', listing: { id: 'a' } },
+        { sort_order: 2, added_at: '', listing: { id: 'b' } },
+      ],
+    });
+    const out = await getSectionListings('spotlight');
+    expect(out.map((i) => i.listing.id)).toEqual(['a', 'b']);
+  });
+
   it('adds a listing with the body', async () => {
     await addListingToSection('featured', 'lid-1');
     expect(api.post).toHaveBeenCalledWith('/api/v1/admin/listings/homepage-sections/featured/add/', { listing_id: 'lid-1' });
