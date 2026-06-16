@@ -11,6 +11,7 @@ import {
     Megaphone,
     BarChart3,
     Smartphone,
+    Sparkles,
     LogOut,
     ShieldCheck,
     Settings as SettingsIcon,
@@ -44,6 +45,7 @@ const Sidebar = ({ currentScreen, setCurrentScreen, sidebarOpen, setIsLoggedIn }
             <SidebarItem icon={PieChart} label="Partner Management" active={currentScreen === Screen.PARTNER_MANAGEMENT} onClick={() => setCurrentScreen(Screen.PARTNER_MANAGEMENT)} />
             <SidebarItem icon={CheckCircle} label="Listings Approval" active={currentScreen === Screen.EVENT_APPROVAL} onClick={() => setCurrentScreen(Screen.EVENT_APPROVAL)} />
             <SidebarItem icon={Smartphone} label="UserApp Alignment" active={currentScreen === Screen.USERAPP_ALIGNMENT} onClick={() => setCurrentScreen(Screen.USERAPP_ALIGNMENT)} />
+            <SidebarItem icon={Sparkles} label="TLB Signature" active={currentScreen === Screen.TLB_SIGNATURE || currentScreen === Screen.CREATE_TLB_SIGNATURE} onClick={() => setCurrentScreen(Screen.TLB_SIGNATURE)} />
             <SidebarItem icon={Users} label="User Management" active={currentScreen === Screen.USER_MANAGEMENT} onClick={() => setCurrentScreen(Screen.USER_MANAGEMENT)} />
             <SidebarItem icon={Users} label="User Section (New)" active={currentScreen === Screen.USER_SECTION} onClick={() => setCurrentScreen(Screen.USER_SECTION)} />
             <SidebarItem icon={UserCog} label="Employee Admin Management" active={currentScreen === Screen.ADMIN_MANAGEMENT} onClick={() => setCurrentScreen(Screen.ADMIN_MANAGEMENT)} />

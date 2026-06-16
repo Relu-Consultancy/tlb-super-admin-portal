@@ -14,6 +14,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Sparkles,
+  Home,
   Ticket,
   Building2,
   GraduationCap,
@@ -30,11 +31,12 @@ import EmptyState from '../../shared/components/ui/EmptyState';
 import { cn } from '../../shared/lib/utils';
 import { useAuth } from '../../shared/auth/AuthContext';
 import {
-  listHomepageSections,
-  getSectionListings,
-  addListingToSection,
-  removeListingFromSection,
-  setSectionListings,
+  ALIGNMENT_PAGES,
+  listSections,
+  getSectionRows,
+  addToSection,
+  removeFromSection,
+  setSection,
   sectionLabel,
   sectionErrorMessage,
   SECTION_MIN_LISTINGS,
@@ -46,7 +48,9 @@ import {
   listingStatusLabel,
   listingStatusTone,
   ApiError,
-  type HomepageSection,
+  type AlignmentPage,
+  type AlignmentPageId,
+  type AlignmentSection,
   type SectionListing,
   type ListingListItem,
 } from '../../shared/lib/api';
@@ -60,11 +64,28 @@ function formatDate(iso: string | null | undefined): string {
   }
 }
 
+/** Icon per alignment page. */
+const PAGE_ICONS: Record<AlignmentPageId, LucideIcon> = {
+  homepage: Home,
+  events: Ticket,
+  classes: BookOpen,
+  programs: GraduationCap,
+  venues: Building2,
+};
+
 const UserAppAlignment = () => {
   const { hasPermission } = useAuth();
-  const canManage = hasPermission('MANAGE_LISTINGS');
 
-  const [sections, setSections] = useState<HomepageSection[]>([]);
+  // Only the pages the admin is allowed to curate.
+  const pages = useMemo(() => ALIGNMENT_PAGES.filter((p) => hasPermission(p.permission)), [hasPermission]);
+  const [pageId, setPageId] = useState<AlignmentPageId | null>(() => pages[0]?.id ?? null);
+  const page: AlignmentPage | null = useMemo(
+    () => pages.find((p) => p.id === pageId) ?? pages[0] ?? null,
+    [pages, pageId],
+  );
+  const base = page?.base ?? '';
+
+  const [sections, setSections] = useState<AlignmentSection[]>([]);
   const [sectionsLoading, setSectionsLoading] = useState(true);
   const [sectionsError, setSectionsError] = useState<string | null>(null);
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
@@ -78,35 +99,41 @@ const UserAppAlignment = () => {
   const [reordering, setReordering] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  // Listings for EVERY section, powering the live phone preview (the active
-  // section reads from `items` so optimistic edits show instantly).
+  // Listings for EVERY section on the page, powering the live phone preview
+  // (the active section reads from `items` so optimistic edits show instantly).
   const [previewMap, setPreviewMap] = useState<Record<string, SectionListing[]>>({});
 
   const activeSection = useMemo(
     () => sections.find((s) => s.section === activeSlug) ?? null,
     [sections, activeSlug],
   );
-  const isSignatureSection = activeSlug === TLB_SIGNATURE_SECTION;
+  const isSignatureSection = page?.id === 'homepage' && activeSlug === TLB_SIGNATURE_SECTION;
 
-  const loadSections = useCallback(async () => {
+  // Tracks which page's sections are currently loaded, so the items/preview
+  // effects never fetch with a new `base` but a stale slug/section list (which
+  // would 404 against the wrong screen and could race in late).
+  const [loadedBase, setLoadedBase] = useState('');
+
+  const loadSectionsList = useCallback(async (b: string) => {
     setSectionsLoading(true);
     setSectionsError(null);
     try {
-      const data = await listHomepageSections();
+      const data = await listSections(b);
       setSections(data);
       setActiveSlug((prev) => prev ?? data[0]?.section ?? null);
+      setLoadedBase(b);
     } catch (err) {
-      setSectionsError(err instanceof ApiError ? err.message : 'Failed to load homepage sections.');
+      setSectionsError(err instanceof ApiError ? err.message : 'Failed to load sections.');
     } finally {
       setSectionsLoading(false);
     }
   }, []);
 
-  const loadItems = useCallback(async (slug: string) => {
+  const loadItems = useCallback(async (b: string, slug: string) => {
     setItemsLoading(true);
     setItemsError(null);
     try {
-      setItems(await getSectionListings(slug));
+      setItems(await getSectionRows(b, slug));
     } catch (err) {
       setItemsError(err instanceof ApiError ? err.message : 'Failed to load this section.');
       setItems([]);
@@ -115,22 +142,33 @@ const UserAppAlignment = () => {
     }
   }, []);
 
-  useEffect(() => { if (canManage) loadSections(); }, [canManage, loadSections]);
-  useEffect(() => { if (canManage && activeSlug) loadItems(activeSlug); }, [canManage, activeSlug, loadItems]);
+  // Page change: reset selection + caches, then load that page's sections.
+  useEffect(() => {
+    if (!base) return;
+    setActiveSlug(null);
+    setItems([]);
+    setPreviewMap({});
+    setLoadedBase('');
+    loadSectionsList(base);
+  }, [base, loadSectionsList]);
+
+  // Load the active section's listings (only once this page's sections loaded).
+  useEffect(() => {
+    if (base && activeSlug && loadedBase === base) loadItems(base, activeSlug);
+  }, [base, activeSlug, loadedBase, loadItems]);
 
   // Hydrate the phone preview with every section's listings, in parallel.
-  // Re-runs whenever `sections` is refreshed after a mutation.
   useEffect(() => {
-    if (!canManage || sections.length === 0) return;
+    if (!base || loadedBase !== base || sections.length === 0) return;
     let cancelled = false;
     Promise.all(
       sections.map(async (s) => {
-        try { return [s.section, await getSectionListings(s.section)] as const; }
+        try { return [s.section, await getSectionRows(base, s.section)] as const; }
         catch { return [s.section, [] as SectionListing[]] as const; }
       }),
     ).then((entries) => { if (!cancelled) setPreviewMap(Object.fromEntries(entries)); });
     return () => { cancelled = true; };
-  }, [canManage, sections]);
+  }, [base, loadedBase, sections]);
 
   // Active section reads from the live editable `items`; others from the map.
   const itemsFor = useCallback(
@@ -146,15 +184,15 @@ const UserAppAlignment = () => {
   }, [banner]);
 
   const refresh = useCallback(async () => {
-    if (activeSlug) await loadItems(activeSlug);
-    await loadSections();
-  }, [activeSlug, loadItems, loadSections]);
+    if (activeSlug) await loadItems(base, activeSlug);
+    await loadSectionsList(base);
+  }, [base, activeSlug, loadItems, loadSectionsList]);
 
   const handleAdd = useCallback(async (listingId: string) => {
-    if (!activeSlug) return;
+    if (!base || !activeSlug) return;
     setBusyId(listingId);
     try {
-      await addListingToSection(activeSlug, listingId);
+      await addToSection(base, activeSlug, listingId);
       setBanner({ kind: 'success', text: 'Listing added to the section.' });
       setPickerOpen(false);
       await refresh();
@@ -164,13 +202,13 @@ const UserAppAlignment = () => {
     } finally {
       setBusyId(null);
     }
-  }, [activeSlug, refresh]);
+  }, [base, activeSlug, refresh]);
 
   const handleRemove = useCallback(async (listingId: string) => {
-    if (!activeSlug) return;
+    if (!base || !activeSlug) return;
     setBusyId(listingId);
     try {
-      await removeListingFromSection(activeSlug, listingId);
+      await removeFromSection(base, activeSlug, listingId);
       setBanner({ kind: 'success', text: 'Listing removed from the section.' });
       await refresh();
     } catch (err) {
@@ -179,10 +217,10 @@ const UserAppAlignment = () => {
     } finally {
       setBusyId(null);
     }
-  }, [activeSlug, refresh]);
+  }, [base, activeSlug, refresh]);
 
   const handleMove = useCallback(async (index: number, dir: -1 | 1) => {
-    if (!activeSlug) return;
+    if (!base || !activeSlug) return;
     const next = [...items];
     const target = index + dir;
     if (target < 0 || target >= next.length) return;
@@ -192,9 +230,9 @@ const UserAppAlignment = () => {
     setItems(next);
     setReordering(true);
     try {
-      await setSectionListings(activeSlug, next.map((i) => i.listing.id));
+      await setSection(base, activeSlug, next.map((i) => i.listing.id));
       setBanner({ kind: 'success', text: 'Order updated.' });
-      await loadItems(activeSlug);
+      await loadItems(base, activeSlug);
     } catch (err) {
       setItems(previous);
       const code = err instanceof ApiError ? err.code : null;
@@ -202,14 +240,14 @@ const UserAppAlignment = () => {
     } finally {
       setReordering(false);
     }
-  }, [activeSlug, items, loadItems]);
+  }, [base, activeSlug, items, loadItems]);
 
-  if (!canManage) {
+  if (!page) {
     return (
       <EmptyState
         icon={AlertCircle}
         title="No access"
-        description="You need the Manage Listings permission to curate the user-app homepage."
+        description="You need the Manage Listings or Manage TLB Listings permission to curate the user app."
       />
     );
   }
@@ -220,12 +258,33 @@ const UserAppAlignment = () => {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">UserApp Alignment</h1>
-          <p className="text-gray-500 text-sm">Curate which listings appear in each section of the user-app homepage.</p>
-        </div>
+      <header>
+        <h1 className="text-2xl font-bold text-gray-900">UserApp Alignment</h1>
+        <p className="text-gray-500 text-sm">Curate which listings appear on the app homepage and each discovery screen.</p>
       </header>
+
+      {/* Page selector */}
+      <div className="flex flex-wrap gap-2">
+        {pages.map((p) => {
+          const Icon = PAGE_ICONS[p.id];
+          const active = p.id === page.id;
+          return (
+            <button
+              key={p.id}
+              onClick={() => setPageId(p.id)}
+              className={cn(
+                'inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold border transition-all',
+                active
+                  ? 'bg-gray-900 text-white border-gray-900 shadow-sm'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300',
+              )}
+            >
+              <Icon size={16} />
+              {p.label}
+            </button>
+          );
+        })}
+      </div>
 
       {banner && (
         <div
@@ -242,13 +301,13 @@ const UserAppAlignment = () => {
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
         {/* Sections list */}
         <div className="xl:col-span-3 space-y-3">
-          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-1">Homepage Sections</h2>
+          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-1">{page.label} Sections</h2>
           {sectionsError ? (
             <EmptyState icon={AlertCircle} title="Couldn't load sections" description={sectionsError} />
           ) : sectionsLoading ? (
             <div className="flex items-center justify-center py-16 text-gray-400"><Loader2 className="animate-spin" size={24} /></div>
           ) : sections.length === 0 ? (
-            <EmptyState icon={LayoutGrid} title="No sections" description="The homepage has no configurable sections yet." />
+            <EmptyState icon={LayoutGrid} title="No sections" description="This screen has no configurable sections yet." />
           ) : (
             sections.map((s) => {
               const fill = Math.min(100, Math.round((s.published_count / SECTION_MAX_LISTINGS) * 100));
@@ -264,7 +323,7 @@ const UserAppAlignment = () => {
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-bold text-gray-900 flex items-center gap-1.5">
-                      {s.section === TLB_SIGNATURE_SECTION && <Sparkles size={14} className="text-yellow-500" />}
+                      {page.id === 'homepage' && s.section === TLB_SIGNATURE_SECTION && <Sparkles size={14} className="text-yellow-500" />}
                       {sectionLabel(s.section, s.label)}
                     </span>
                     <span className="text-xs font-bold text-gray-500">{s.published_count}/{SECTION_MAX_LISTINGS}</span>
@@ -287,7 +346,7 @@ const UserAppAlignment = () => {
         {/* Active section detail */}
         <div className="xl:col-span-5">
           {!activeSection ? (
-            <Card><EmptyState icon={LayoutGrid} title="Select a section" description="Pick a homepage section to curate its listings." /></Card>
+            <Card><EmptyState icon={LayoutGrid} title="Select a section" description={`Pick a ${page.label} section to curate its listings.`} /></Card>
           ) : (
             <Card className="space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -313,12 +372,17 @@ const UserAppAlignment = () => {
                 </button>
               </div>
 
-              {isSignatureSection && (
+              {isSignatureSection ? (
                 <div className="flex items-start gap-2 px-3 py-2 bg-yellow-50 text-yellow-800 rounded-xl text-xs">
                   <Sparkles size={14} className="mt-0.5 shrink-0" />
                   Only TLB Signature listings can be placed in this section.
                 </div>
-              )}
+              ) : page.listingType ? (
+                <div className="flex items-start gap-2 px-3 py-2 bg-gray-50 text-gray-500 rounded-xl text-xs">
+                  <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                  This screen accepts only published <span className="font-bold">{page.label}</span> listings.
+                </div>
+              ) : null}
 
               {itemsError ? (
                 <EmptyState icon={AlertCircle} title="Couldn't load section" description={itemsError} />
@@ -397,6 +461,7 @@ const UserAppAlignment = () => {
         {/* Live phone preview */}
         <div className="xl:col-span-4">
           <PhonePreview
+            page={page}
             sections={sections}
             activeSlug={activeSlug}
             itemsFor={itemsFor}
@@ -408,8 +473,8 @@ const UserAppAlignment = () => {
       <AnimatePresence>
         {pickerOpen && activeSlug && (
           <AddListingPicker
-            slug={activeSlug}
-            signatureOnly={isSignatureSection}
+            listingType={page.listingType}
+            signatureOnly={!!isSignatureSection}
             existingIds={new Set(items.map((i) => i.listing.id))}
             busyId={busyId}
             onAdd={handleAdd}
@@ -421,7 +486,7 @@ const UserAppAlignment = () => {
   );
 };
 
-// --- Live phone preview (renders the homepage as the consumer app would) ---
+// --- Live phone preview (renders the screen as the consumer app would) ---
 
 const TYPE_VISUALS: Record<string, { grad: string; Icon: LucideIcon }> = {
   event: { grad: 'from-blue-400 to-indigo-500', Icon: Ticket },
@@ -434,13 +499,18 @@ function typeVisual(type: string) {
 }
 
 interface PhonePreviewProps {
-  sections: HomepageSection[];
+  page: AlignmentPage;
+  sections: AlignmentSection[];
   activeSlug: string | null;
   itemsFor: (slug: string) => SectionListing[];
   onSelect: (slug: string) => void;
 }
 
-function PhonePreview({ sections, activeSlug, itemsFor, onSelect }: PhonePreviewProps) {
+function PhonePreview({ page, sections, activeSlug, itemsFor, onSelect }: PhonePreviewProps) {
+  const headerTitle = page.id === 'homepage' ? 'Discover' : page.label;
+  const searchPlaceholder = page.id === 'homepage' ? 'Search events, venues…' : `Search ${page.label.toLowerCase()}…`;
+  const signatureSlug = page.id === 'homepage' ? TLB_SIGNATURE_SECTION : null;
+
   return (
     <div className="xl:sticky xl:top-6 xl:-mt-24">
       <div className="mx-auto w-[300px] rounded-[2.75rem] border-[10px] border-gray-900 bg-gray-900 shadow-2xl overflow-hidden">
@@ -455,17 +525,17 @@ function PhonePreview({ sections, activeSlug, itemsFor, onSelect }: PhonePreview
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[9px] text-gray-400 font-bold flex items-center gap-0.5"><MapPin size={9} /> Pune</p>
-                <p className="text-base font-black text-gray-900 leading-tight">Discover</p>
+                <p className="text-base font-black text-gray-900 leading-tight">{headerTitle}</p>
               </div>
               <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center text-[11px] font-black text-gray-900">T</div>
             </div>
             <div className="mt-2.5 flex items-center gap-1.5 bg-gray-100 rounded-xl px-2.5 py-2 text-[10px] text-gray-400">
-              <Search size={11} /> Search events, venues…
+              <Search size={11} /> {searchPlaceholder}
             </div>
           </div>
         </div>
 
-        {/* Scrollable homepage */}
+        {/* Scrollable screen */}
         <div className="bg-gray-50 h-[440px] overflow-y-auto pb-6">
           {sections.length === 0 ? (
             <div className="flex items-center justify-center h-full text-[11px] text-gray-300">No sections</div>
@@ -480,7 +550,7 @@ function PhonePreview({ sections, activeSlug, itemsFor, onSelect }: PhonePreview
                     className="w-full flex items-center justify-between px-4 mb-2"
                   >
                     <span className={cn('text-xs font-black flex items-center gap-1', active ? 'text-gray-900' : 'text-gray-700')}>
-                      {s.section === TLB_SIGNATURE_SECTION && <Sparkles size={11} className="text-yellow-500" />}
+                      {s.section === signatureSlug && <Sparkles size={11} className="text-yellow-500" />}
                       {sectionLabel(s.section, s.label)}
                     </span>
                     <span className="text-[9px] font-bold text-gray-400 flex items-center">See all <ChevronRight size={10} /></span>
@@ -523,10 +593,11 @@ function PhonePreview({ sections, activeSlug, itemsFor, onSelect }: PhonePreview
   );
 }
 
-// --- Add-listing picker (searches published listings) ---
+// --- Add-listing picker (searches published listings of the right type) ---
 
 interface PickerProps {
-  slug: string;
+  /** Restrict results to this listing type (discovery screens); null = any. */
+  listingType: string | null;
   signatureOnly: boolean;
   existingIds: Set<string>;
   busyId: string | null;
@@ -534,7 +605,7 @@ interface PickerProps {
   onClose: () => void;
 }
 
-function AddListingPicker({ signatureOnly, existingIds, busyId, onAdd, onClose }: PickerProps) {
+function AddListingPicker({ listingType, signatureOnly, existingIds, busyId, onAdd, onClose }: PickerProps) {
   const [search, setSearch] = useState('');
   const [results, setResults] = useState<ListingListItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -546,7 +617,11 @@ function AddListingPicker({ signatureOnly, existingIds, busyId, onAdd, onClose }
       setLoading(true);
       setError(null);
       try {
-        const data = await listListings({ status: 'published', search: search.trim() || undefined });
+        const data = await listListings({
+          status: 'published',
+          search: search.trim() || undefined,
+          listing_type: listingType ?? undefined,
+        });
         if (!cancelled) setResults(data);
       } catch (err) {
         if (!cancelled) setError(err instanceof ApiError ? err.message : 'Failed to search listings.');
@@ -555,7 +630,7 @@ function AddListingPicker({ signatureOnly, existingIds, busyId, onAdd, onClose }
       }
     }, 300);
     return () => { cancelled = true; clearTimeout(t); };
-  }, [search]);
+  }, [search, listingType]);
 
   return (
     <>
@@ -590,11 +665,15 @@ function AddListingPicker({ signatureOnly, existingIds, busyId, onAdd, onClose }
               className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40"
             />
           </div>
-          {signatureOnly && (
+          {signatureOnly ? (
             <p className="mt-2 text-[11px] text-yellow-700 flex items-center gap-1">
               <Sparkles size={12} /> This section accepts only TLB Signature listings.
             </p>
-          )}
+          ) : listingType ? (
+            <p className="mt-2 text-[11px] text-gray-400 flex items-center gap-1">
+              <AlertCircle size={12} /> Showing published {listingType} listings only.
+            </p>
+          ) : null}
         </div>
 
         <div className="flex-1 overflow-y-auto p-3">

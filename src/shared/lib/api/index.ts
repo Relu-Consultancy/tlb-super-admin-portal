@@ -172,26 +172,61 @@ export type {
   ListListingsParams,
 } from './listings';
 
-// Homepage sections (UserApp Alignment — curate consumer-app homepage)
+// Listing sections (UserApp Alignment — homepage + discovery-screen curation)
 export {
-  listHomepageSections,
-  getSectionListings,
-  addListingToSection,
-  removeListingFromSection,
-  setSectionListings,
+  listSections,
+  getSectionRows,
+  addToSection,
+  removeFromSection,
+  setSection,
   sectionLabel,
   sectionErrorMessage,
   SECTION_ERROR_LABELS,
   SECTION_MIN_LISTINGS,
   SECTION_MAX_LISTINGS,
   TLB_SIGNATURE_SECTION,
-} from './homepageSections';
+  ALIGNMENT_PAGES,
+} from './listingSections';
 export type {
-  HomepageSection,
+  AlignmentSection,
+  AlignmentPage,
+  AlignmentPageId,
   SectionListing,
   SectionListingRef,
-  SectionListingsParams,
-} from './homepageSections';
+} from './listingSections';
+
+// TLB Signature listings (admin-authored first-party listings)
+export {
+  listTlbSignature,
+  getTlbSignature,
+  archiveTlbSignature,
+  updateTlbSignature,
+  toggleTlbVisibility,
+  createTlbEvent,
+  createTlbClass,
+  createTlbProgram,
+  createTlbVenue,
+  tlbErrorMessage,
+  TLB_ERROR_LABELS,
+  TLB_STATUSES,
+  TLB_CREATE_TYPES,
+} from './tlbSignature';
+export type {
+  TlbListItem,
+  TlbDetail,
+  ListTlbParams,
+  TlbStatus,
+  TlbCreateType,
+  TlbEventInput,
+  TlbEventTicket,
+  TlbClassInput,
+  TlbClassBatch,
+  TlbProgramInput,
+  TlbProgramBatch,
+  TlbVenueInput,
+  TlbVenuePackage,
+  TlbUpdateInput,
+} from './tlbSignature';
 
 // Payments & Finance (transactions — Phase 1)
 export {

@@ -27,6 +27,8 @@ const SupportSystem = lazy(() => import('./modules/support/SupportSystem'));
 const UserManagement = lazy(() => import('./modules/users/UserManagement'));
 const Broadcasts = lazy(() => import('./modules/broadcasts/Broadcasts'));
 const UserAppAlignment = lazy(() => import('./modules/userapp/UserAppAlignment'));
+const TlbSignature = lazy(() => import('./modules/tlb/TlbSignature'));
+const CreateTlbSignature = lazy(() => import('./modules/tlb/CreateTlbSignature'));
 const Settings = lazy(() => import('./modules/settings/Settings'));
 const Analytics = lazy(() => import('./modules/analytics/Analytics'));
 const UserSection = lazy(() => import('./modules/users/UserSection/UserSection'));
@@ -157,6 +159,13 @@ export default function App() {
       case Screen.USER_MANAGEMENT: return <UserManagement />;
       case Screen.BROADCASTS: return <Broadcasts />;
       case Screen.USERAPP_ALIGNMENT: return <UserAppAlignment />;
+      case Screen.TLB_SIGNATURE: return <TlbSignature onCreate={() => setCurrentScreen(Screen.CREATE_TLB_SIGNATURE)} />;
+      case Screen.CREATE_TLB_SIGNATURE: return (
+        <CreateTlbSignature
+          onBack={() => setCurrentScreen(Screen.TLB_SIGNATURE)}
+          onCreated={() => setCurrentScreen(Screen.TLB_SIGNATURE)}
+        />
+      );
       case Screen.SETTINGS: return <Settings />;
       case Screen.ANALYTICS: return <Analytics />;
       case Screen.USER_SECTION: return <UserSection setScreen={setCurrentScreen} />;

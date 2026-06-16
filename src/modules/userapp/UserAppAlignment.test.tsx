@@ -15,17 +15,21 @@ vi.mock('motion/react', async () => {
   };
 });
 
-const { authState } = vi.hoisted(() => ({ authState: { manage: true } }));
+const { authState } = vi.hoisted(() => ({ authState: { manage: true, tlb: true } }));
 vi.mock('../../shared/auth/AuthContext', () => ({
-  useAuth: () => ({ hasPermission: (p: string) => (p === 'MANAGE_LISTINGS' ? authState.manage : false) }),
+  useAuth: () => ({ hasPermission: (p: string) => (p === 'MANAGE_LISTINGS' ? authState.manage : p === 'MANAGE_TLB_LISTINGS' ? authState.tlb : false) }),
 }));
 
 vi.mock('../../shared/lib/api', () => ({
-  listHomepageSections: vi.fn(),
-  getSectionListings: vi.fn(),
-  addListingToSection: vi.fn(() => Promise.resolve({})),
-  removeListingFromSection: vi.fn(() => Promise.resolve({})),
-  setSectionListings: vi.fn(() => Promise.resolve({})),
+  ALIGNMENT_PAGES: [
+    { id: 'homepage', label: 'App Homepage', screen: null, listingType: null, permission: 'MANAGE_LISTINGS', base: 'listings/homepage-sections/' },
+    { id: 'events', label: 'Events', screen: 'events', listingType: 'event', permission: 'MANAGE_TLB_LISTINGS', base: 'listings/discovery-sections/events/' },
+  ],
+  listSections: vi.fn(),
+  getSectionRows: vi.fn(),
+  addToSection: vi.fn(() => Promise.resolve({})),
+  removeFromSection: vi.fn(() => Promise.resolve({})),
+  setSection: vi.fn(() => Promise.resolve({})),
   listListings: vi.fn(() => Promise.resolve([])),
   sectionLabel: (slug: string, label?: string) => label ?? slug,
   sectionErrorMessage: (code: string | null, fallback: string) => (code ? `ERR:${code}` : fallback),
@@ -39,11 +43,11 @@ vi.mock('../../shared/lib/api', () => ({
   ApiError: class ApiError extends Error { code: string | null = null; constructor(m: string, code: string | null = null) { super(m); this.code = code; } },
 }));
 import {
-  listHomepageSections,
-  getSectionListings,
-  addListingToSection,
-  removeListingFromSection,
-  setSectionListings,
+  listSections,
+  getSectionRows,
+  addToSection,
+  removeFromSection,
+  setSection,
   listListings,
   ApiError,
 } from '../../shared/lib/api';
@@ -67,46 +71,53 @@ function makeItems(n: number) {
 describe('UserAppAlignment', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    authState.manage = true;
-    (listHomepageSections as any).mockResolvedValue(SECTIONS);
-    (getSectionListings as any).mockResolvedValue(makeItems(5));
+    authState.manage = true; authState.tlb = true;
+    (listSections as any).mockResolvedValue(SECTIONS);
+    (getSectionRows as any).mockResolvedValue(makeItems(5));
     (listListings as any).mockResolvedValue([]);
   });
 
-  it('blocks access without MANAGE_LISTINGS', async () => {
-    authState.manage = false;
+  it('blocks access without any manage permission', async () => {
+    authState.manage = false; authState.tlb = false;
     render(<UserAppAlignment />);
     expect(await screen.findByText('No access')).toBeInTheDocument();
-    expect(listHomepageSections).not.toHaveBeenCalled();
+    expect(listSections).not.toHaveBeenCalled();
   });
 
-  it('renders sections and loads the first section by default', async () => {
+  it('renders the page selector and loads the homepage page by default', async () => {
     render(<UserAppAlignment />);
     expect(screen.getByText('UserApp Alignment')).toBeInTheDocument();
-    expect((await screen.findAllByText('Featured')).length).toBeGreaterThanOrEqual(1);
-    await waitFor(() => expect(getSectionListings).toHaveBeenCalledWith('featured'));
+    expect(screen.getByRole('button', { name: /App Homepage/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Events/i })).toBeInTheDocument();
+    await waitFor(() => expect(listSections).toHaveBeenCalledWith('listings/homepage-sections/'));
+    await waitFor(() => expect(getSectionRows).toHaveBeenCalledWith('listings/homepage-sections/', 'featured'));
     expect((await screen.findAllByText('Listing 1')).length).toBeGreaterThanOrEqual(1);
   });
 
-  it('switches the active section on click', async () => {
+  it('switches to the Events discovery screen', async () => {
+    render(<UserAppAlignment />);
+    await screen.findAllByText('Listing 1');
+    await userEvent.click(screen.getByRole('button', { name: /Events/i }));
+    await waitFor(() => expect(listSections).toHaveBeenCalledWith('listings/discovery-sections/events/'));
+    await waitFor(() => expect(getSectionRows).toHaveBeenCalledWith('listings/discovery-sections/events/', 'featured'));
+  });
+
+  it('shows the TLB Signature hint on that homepage section', async () => {
     render(<UserAppAlignment />);
     await screen.findAllByText('Listing 1');
     await userEvent.click(screen.getAllByText('TLB Signature')[0]);
-    await waitFor(() => expect(getSectionListings).toHaveBeenCalledWith('tlb_signature'));
-    // Signature section shows its constraint hint.
     expect(await screen.findByText(/only TLB Signature listings/i)).toBeInTheDocument();
   });
 
   it('removes a listing', async () => {
     render(<UserAppAlignment />);
     await screen.findAllByText('Listing 1');
-    const removeButtons = screen.getAllByLabelText('Remove from section');
-    await userEvent.click(removeButtons[0]);
-    await waitFor(() => expect(removeListingFromSection).toHaveBeenCalledWith('featured', 'l1'));
+    await userEvent.click(screen.getAllByLabelText('Remove from section')[0]);
+    await waitFor(() => expect(removeFromSection).toHaveBeenCalledWith('listings/homepage-sections/', 'featured', 'l1'));
   });
 
   it('disables remove at the minimum count', async () => {
-    (getSectionListings as any).mockResolvedValue(makeItems(4));
+    (getSectionRows as any).mockResolvedValue(makeItems(4));
     render(<UserAppAlignment />);
     await screen.findAllByText('Listing 1');
     screen.getAllByLabelText('Remove from section').forEach((b) => expect(b).toBeDisabled());
@@ -115,13 +126,12 @@ describe('UserAppAlignment', () => {
   it('reorders via move-down using the set endpoint', async () => {
     render(<UserAppAlignment />);
     await screen.findAllByText('Listing 1');
-    const downButtons = screen.getAllByLabelText('Move down');
-    await userEvent.click(downButtons[0]); // swap l1 <-> l2
-    await waitFor(() => expect(setSectionListings).toHaveBeenCalledWith('featured', ['l2', 'l1', 'l3', 'l4', 'l5']));
+    await userEvent.click(screen.getAllByLabelText('Move down')[0]);
+    await waitFor(() => expect(setSection).toHaveBeenCalledWith('listings/homepage-sections/', 'featured', ['l2', 'l1', 'l3', 'l4', 'l5']));
   });
 
   it('disables Add Listing when the section is at maximum', async () => {
-    (getSectionListings as any).mockResolvedValue(makeItems(10));
+    (getSectionRows as any).mockResolvedValue(makeItems(10));
     render(<UserAppAlignment />);
     await screen.findAllByText('Listing 1');
     expect(screen.getByRole('button', { name: /Add Listing/i })).toBeDisabled();
@@ -136,13 +146,21 @@ describe('UserAppAlignment', () => {
     await userEvent.click(screen.getByRole('button', { name: /Add Listing/i }));
     const dialog = await screen.findByRole('dialog');
     expect(await within(dialog).findByText('Fresh Event')).toBeInTheDocument();
-    await waitFor(() => expect(listListings).toHaveBeenCalledWith(expect.objectContaining({ status: 'published' })));
     await userEvent.click(within(dialog).getByRole('button', { name: /^Add$/i }));
-    await waitFor(() => expect(addListingToSection).toHaveBeenCalledWith('featured', 'new-1'));
+    await waitFor(() => expect(addToSection).toHaveBeenCalledWith('listings/homepage-sections/', 'featured', 'new-1'));
+  });
+
+  it('filters the picker by listing type on a discovery screen', async () => {
+    render(<UserAppAlignment />);
+    await screen.findAllByText('Listing 1');
+    await userEvent.click(screen.getByRole('button', { name: /Events/i }));
+    await waitFor(() => expect(getSectionRows).toHaveBeenCalledWith('listings/discovery-sections/events/', 'featured'));
+    await userEvent.click(screen.getByRole('button', { name: /Add Listing/i }));
+    await waitFor(() => expect(listListings).toHaveBeenCalledWith(expect.objectContaining({ status: 'published', listing_type: 'event' })));
   });
 
   it('surfaces a mapped error when a mutation fails', async () => {
-    (removeListingFromSection as any).mockRejectedValue(new (ApiError as any)('boom', 'MINIMUM_LISTINGS_REQUIRED'));
+    (removeFromSection as any).mockRejectedValue(new (ApiError as any)('boom', 'MINIMUM_LISTINGS_REQUIRED'));
     render(<UserAppAlignment />);
     await screen.findAllByText('Listing 1');
     await userEvent.click(screen.getAllByLabelText('Remove from section')[0]);
