@@ -40,6 +40,7 @@ vi.mock('../../shared/lib/api', () => ({
   listingTypeTone: () => 'bg-blue-50 text-blue-600',
   listingStatusLabel: (s: string) => s,
   listingStatusTone: () => 'bg-green-50 text-green-600',
+  LISTING_TYPES: ['event', 'venue', 'program', 'class'],
   ApiError: class ApiError extends Error { code: string | null = null; constructor(m: string, code: string | null = null) { super(m); this.code = code; } },
 }));
 import {

@@ -47,6 +47,7 @@ import {
   listingTypeTone,
   listingStatusLabel,
   listingStatusTone,
+  LISTING_TYPES,
   ApiError,
   type AlignmentPage,
   type AlignmentPageId,
@@ -607,9 +608,15 @@ interface PickerProps {
 
 function AddListingPicker({ listingType, signatureOnly, existingIds, busyId, onAdd, onClose }: PickerProps) {
   const [search, setSearch] = useState('');
+  // Active type tab (homepage only — discovery is already locked to one type).
+  const [typeTab, setTypeTab] = useState<string>('');
   const [results, setResults] = useState<ListingListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Discovery screens fix the type; on the homepage the tab narrows it.
+  const effectiveType = listingType ?? (typeTab || undefined);
+  const grouped = !listingType && !typeTab; // show type-segregated sections
 
   useEffect(() => {
     let cancelled = false;
@@ -620,7 +627,7 @@ function AddListingPicker({ listingType, signatureOnly, existingIds, busyId, onA
         const data = await listListings({
           status: 'published',
           search: search.trim() || undefined,
-          listing_type: listingType ?? undefined,
+          listing_type: effectiveType,
         });
         if (!cancelled) setResults(data);
       } catch (err) {
@@ -630,20 +637,49 @@ function AddListingPicker({ listingType, signatureOnly, existingIds, busyId, onA
       }
     }, 300);
     return () => { cancelled = true; clearTimeout(t); };
-  }, [search, listingType]);
+  }, [search, effectiveType]);
+
+  const renderRow = (l: ListingListItem) => {
+    const already = existingIds.has(l.id);
+    const busy = busyId === l.id;
+    return (
+      <div key={l.id} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50">
+        <div className="flex-1 min-w-0">
+          <p className="font-medium text-gray-900 truncate text-sm">{l.title}</p>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <span className={cn('px-1.5 py-0.5 rounded text-[10px] font-bold', listingTypeTone(l.listing_type))}>
+              {listingTypeLabel(l.listing_type)}
+            </span>
+            {l.city && <span className="text-[10px] text-gray-400">{l.city}</span>}
+          </div>
+        </div>
+        <button
+          onClick={() => onAdd(l.id)}
+          disabled={already || busy}
+          className={cn(
+            'inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors',
+            already ? 'bg-green-50 text-green-600 cursor-default' : 'bg-yellow-400 text-gray-900 hover:bg-yellow-300',
+          )}
+        >
+          {busy ? <Loader2 size={12} className="animate-spin" /> : already ? <CheckCircle2 size={12} /> : <Plus size={12} />}
+          {already ? 'Added' : 'Add'}
+        </button>
+      </div>
+    );
+  };
+
+  const groups = LISTING_TYPES.map((t) => ({ type: t, items: results.filter((r) => r.listing_type === t) })).filter((g) => g.items.length > 0);
 
   return (
-    <>
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+    >
+      <div onClick={onClose} className="absolute inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true" />
       <motion.div
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        onClick={onClose}
-        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
-        aria-hidden="true"
-      />
-      <motion.div
-        initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 40 }}
-        transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-        className="fixed inset-y-0 right-0 w-full max-w-md bg-white z-50 shadow-2xl flex flex-col"
+        initial={{ opacity: 0, scale: 0.96, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 12 }}
+        transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+        className="relative w-full max-w-2xl h-[72vh] max-h-[640px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden"
         role="dialog"
         aria-label="Add a listing to the section"
       >
@@ -654,7 +690,7 @@ function AddListingPicker({ listingType, signatureOnly, existingIds, busyId, onA
           </button>
         </div>
 
-        <div className="p-4 border-b border-gray-100">
+        <div className="p-4 border-b border-gray-100 space-y-3">
           <div className="relative">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
@@ -665,12 +701,23 @@ function AddListingPicker({ listingType, signatureOnly, existingIds, busyId, onA
               className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40"
             />
           </div>
+
+          {/* Type segregation — only on the homepage (discovery is single-type) */}
+          {!listingType && (
+            <div className="flex flex-wrap gap-1.5">
+              <TypeChip label="All" active={typeTab === ''} onClick={() => setTypeTab('')} />
+              {LISTING_TYPES.map((t) => (
+                <TypeChip key={t} label={listingTypeLabel(t)} active={typeTab === t} onClick={() => setTypeTab(t)} />
+              ))}
+            </div>
+          )}
+
           {signatureOnly ? (
-            <p className="mt-2 text-[11px] text-yellow-700 flex items-center gap-1">
+            <p className="text-[11px] text-yellow-700 flex items-center gap-1">
               <Sparkles size={12} /> This section accepts only TLB Signature listings.
             </p>
           ) : listingType ? (
-            <p className="mt-2 text-[11px] text-gray-400 flex items-center gap-1">
+            <p className="text-[11px] text-gray-400 flex items-center gap-1">
               <AlertCircle size={12} /> Showing published {listingType} listings only.
             </p>
           ) : null}
@@ -683,41 +730,38 @@ function AddListingPicker({ listingType, signatureOnly, existingIds, busyId, onA
             <div className="flex items-center justify-center py-16 text-gray-400"><Loader2 className="animate-spin" size={24} /></div>
           ) : results.length === 0 ? (
             <EmptyState icon={Search} title="No published listings" description="Try a different search term." />
-          ) : (
-            <div className="space-y-1.5">
-              {results.map((l) => {
-                const already = existingIds.has(l.id);
-                const busy = busyId === l.id;
-                return (
-                  <div key={l.id} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 truncate text-sm">{l.title}</p>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className={cn('px-1.5 py-0.5 rounded text-[10px] font-bold', listingTypeTone(l.listing_type))}>
-                          {listingTypeLabel(l.listing_type)}
-                        </span>
-                        {l.city && <span className="text-[10px] text-gray-400">{l.city}</span>}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => onAdd(l.id)}
-                      disabled={already || busy}
-                      className={cn(
-                        'inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors',
-                        already ? 'bg-green-50 text-green-600 cursor-default' : 'bg-yellow-400 text-gray-900 hover:bg-yellow-300',
-                      )}
-                    >
-                      {busy ? <Loader2 size={12} className="animate-spin" /> : already ? <CheckCircle2 size={12} /> : <Plus size={12} />}
-                      {already ? 'Added' : 'Add'}
-                    </button>
+          ) : grouped ? (
+            <div className="space-y-4">
+              {groups.map((g) => (
+                <div key={g.type}>
+                  <div className="flex items-center gap-1.5 px-2.5 pb-1.5">
+                    <span className={cn('px-1.5 py-0.5 rounded text-[10px] font-bold', listingTypeTone(g.type))}>{listingTypeLabel(g.type)}</span>
+                    <span className="text-[10px] font-bold text-gray-400">{g.items.length}</span>
                   </div>
-                );
-              })}
+                  <div className="space-y-1">{g.items.map(renderRow)}</div>
+                </div>
+              ))}
             </div>
+          ) : (
+            <div className="space-y-1">{results.map(renderRow)}</div>
           )}
         </div>
       </motion.div>
-    </>
+    </motion.div>
+  );
+}
+
+function TypeChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        'px-3 py-1 rounded-lg text-xs font-bold transition-colors',
+        active ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
+      )}
+    >
+      {label}
+    </button>
   );
 }
 

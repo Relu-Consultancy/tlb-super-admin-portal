@@ -5,6 +5,7 @@ import { cn } from './shared/lib/utils';
 import { useAuth } from './shared/auth/AuthContext';
 import { roleLabel } from './shared/lib/api';
 import { Screen } from './types';
+import { sectionOfScreen, firstScreenOfSection, type SectionId } from './shared/nav/sections';
 
 // Layout
 import Sidebar from './shared/components/layout/Sidebar';
@@ -32,6 +33,7 @@ const CreateTlbSignature = lazy(() => import('./modules/tlb/CreateTlbSignature')
 const Settings = lazy(() => import('./modules/settings/Settings'));
 const Analytics = lazy(() => import('./modules/analytics/Analytics'));
 const UserSection = lazy(() => import('./modules/users/UserSection/UserSection'));
+const Hub = lazy(() => import('./modules/home/Hub'));
 
 const LoadingFallback = () => (
   <div className="flex items-center justify-center h-[60vh]">
@@ -60,7 +62,9 @@ function getResetToken(): string | null {
 export default function App() {
   const { status, admin, logout, sessionMessage, clearSessionMessage } = useAuth();
   const [authView, setAuthView] = useState<AuthView>('landing');
-  const [currentScreen, setCurrentScreen] = useState<Screen>(Screen.DASHBOARD);
+  const [currentScreen, setCurrentScreen] = useState<Screen>(Screen.HOME);
+  // Which top-level workspace (Customer/Partner/Admin) is active; null = Home hub.
+  const [activeSection, setActiveSection] = useState<SectionId | null>(null);
   // Open by default on desktop; collapsed on mobile so content isn't pushed off-screen.
   const [sidebarOpen, setSidebarOpen] = useState(() =>
     typeof window === 'undefined' ? true : window.innerWidth >= 1024,
@@ -83,11 +87,12 @@ export default function App() {
     return () => document.removeEventListener('mousedown', onDocClick);
   }, []);
 
-  // Always land on the Dashboard whenever a session becomes authenticated
+  // Always land on the Home hub whenever a session becomes authenticated
   // (fresh login or a logout -> login cycle, since App stays mounted).
   useEffect(() => {
     if (status === 'authenticated') {
-      setCurrentScreen(Screen.DASHBOARD);
+      setCurrentScreen(Screen.HOME);
+      setActiveSection(null);
     }
   }, [status]);
 
@@ -140,45 +145,73 @@ export default function App() {
     );
   }
 
+  // On mobile the sidebar is an overlay drawer — close it after navigating.
+  const closeMobileSidebar = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) setSidebarOpen(false);
+  };
+
+  // Navigate to a screen, keeping the active workspace in sync with it.
+  const selectScreen = (s: Screen) => {
+    setCurrentScreen(s);
+    if (s === Screen.HOME) setActiveSection(null);
+    else setActiveSection((prev) => sectionOfScreen(s)?.id ?? prev);
+    closeMobileSidebar();
+  };
+
+  // Enter a workspace from the hub — land on its first feature.
+  const enterSection = (id: SectionId) => {
+    setActiveSection(id);
+    setCurrentScreen(firstScreenOfSection(id));
+    closeMobileSidebar();
+  };
+
+  // Back to the Home hub.
+  const goHome = () => {
+    setCurrentScreen(Screen.HOME);
+    setActiveSection(null);
+    closeMobileSidebar();
+  };
+
   const renderScreen = () => {
     switch (currentScreen) {
-      case Screen.DASHBOARD: return <Dashboard setScreen={setCurrentScreen} />;
+      case Screen.HOME: return <Hub onEnterSection={enterSection} onSelectScreen={selectScreen} />;
+      case Screen.DASHBOARD: return <Dashboard setScreen={selectScreen} />;
       case Screen.PARTNER_MANAGEMENT: return <PartnerManagement />;
       case Screen.EVENT_APPROVAL: return <EventApproval />;
       case Screen.ADMIN_MANAGEMENT: return <AdminManagement />;
       case Screen.PAYMENTS_FINANCE: return <PaymentsFinance />;
       case Screen.FINANCE_DASHBOARD: return <FinanceDashboard />;
-      case Screen.COUPONS_MARKETING: return <CouponsMarketing onCreateCoupon={() => setCurrentScreen(Screen.CREATE_COUPON)} />;
+      case Screen.COUPONS_MARKETING: return <CouponsMarketing onCreateCoupon={() => selectScreen(Screen.CREATE_COUPON)} />;
       case Screen.CREATE_COUPON: return (
         <CreateCoupon
-          onBack={() => setCurrentScreen(Screen.COUPONS_MARKETING)}
-          onCreated={() => setCurrentScreen(Screen.COUPONS_MARKETING)}
+          onBack={() => selectScreen(Screen.COUPONS_MARKETING)}
+          onCreated={() => selectScreen(Screen.COUPONS_MARKETING)}
         />
       );
       case Screen.SUPPORT_SYSTEM: return <SupportSystem />;
       case Screen.USER_MANAGEMENT: return <UserManagement />;
       case Screen.BROADCASTS: return <Broadcasts />;
       case Screen.USERAPP_ALIGNMENT: return <UserAppAlignment />;
-      case Screen.TLB_SIGNATURE: return <TlbSignature onCreate={() => setCurrentScreen(Screen.CREATE_TLB_SIGNATURE)} />;
+      case Screen.TLB_SIGNATURE: return <TlbSignature onCreate={() => selectScreen(Screen.CREATE_TLB_SIGNATURE)} />;
       case Screen.CREATE_TLB_SIGNATURE: return (
         <CreateTlbSignature
-          onBack={() => setCurrentScreen(Screen.TLB_SIGNATURE)}
-          onCreated={() => setCurrentScreen(Screen.TLB_SIGNATURE)}
+          onBack={() => selectScreen(Screen.TLB_SIGNATURE)}
+          onCreated={() => selectScreen(Screen.TLB_SIGNATURE)}
         />
       );
       case Screen.SETTINGS: return <Settings />;
       case Screen.ANALYTICS: return <Analytics />;
-      case Screen.USER_SECTION: return <UserSection setScreen={setCurrentScreen} />;
+      case Screen.USER_SECTION: return <UserSection setScreen={selectScreen} />;
       default: return (
         <div className="flex flex-col items-center justify-center h-[60vh] text-gray-400">
           <BarChart3 size={64} className="mb-4 opacity-20" />
           <h2 className="text-xl font-bold">Screen Under Development</h2>
           <p className="text-sm">This module is coming soon in the next update.</p>
           <button
-            onClick={() => setCurrentScreen(Screen.DASHBOARD)}
+            onClick={goHome}
             className="mt-6 px-6 py-2 bg-yellow-400 text-gray-900 font-bold rounded-xl"
           >
-            Back to Dashboard
+            Back to Home
           </button>
         </div>
       );
@@ -188,21 +221,15 @@ export default function App() {
   const displayName = admin?.full_name || admin?.email || 'Admin';
   const displayRole = admin ? roleLabel(admin.role) : '';
 
-  // On mobile the sidebar is an overlay drawer — pick a screen and close it so
-  // the content is visible again.
-  const selectScreen = (s: Screen) => {
-    setCurrentScreen(s);
-    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
-      setSidebarOpen(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
       <Sidebar
         currentScreen={currentScreen}
-        setCurrentScreen={selectScreen}
+        activeSection={activeSection}
+        onSelectScreen={selectScreen}
+        onEnterSection={enterSection}
+        onHome={goHome}
         sidebarOpen={sidebarOpen}
         setIsLoggedIn={(v) => { if (!v) logout(); }}
       />
@@ -246,7 +273,7 @@ export default function App() {
                     <p className="text-xs text-gray-500">You're all caught up — no new notifications.</p>
                   </div>
                   <button
-                    onClick={() => { setNotifOpen(false); setCurrentScreen(Screen.BROADCASTS); }}
+                    onClick={() => { setNotifOpen(false); selectScreen(Screen.BROADCASTS); }}
                     className="w-full flex items-center gap-2 px-4 py-3 border-t border-gray-50 text-xs font-bold text-gray-700 hover:bg-gray-50 transition-colors"
                   >
                     <Megaphone size={14} className="text-yellow-500" /> Send a broadcast
@@ -278,7 +305,7 @@ export default function App() {
                     <span className="inline-block mt-1.5 px-2 py-0.5 bg-yellow-50 text-yellow-700 text-[10px] font-bold rounded-full uppercase tracking-wider">{displayRole}</span>
                   </div>
                   <button
-                    onClick={() => { setProfileOpen(false); setCurrentScreen(Screen.SETTINGS); }}
+                    onClick={() => { setProfileOpen(false); selectScreen(Screen.SETTINGS); }}
                     className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                   >
                     <SettingsIcon size={16} className="text-gray-400" /> Settings

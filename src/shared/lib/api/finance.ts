@@ -169,6 +169,77 @@ export async function downloadTransactionExport(jobId: string): Promise<Blob> {
   return res.blob();
 }
 
+// --- Finance dashboard & summary ---
+
+export interface FinanceParams {
+  /** today | yesterday | this_week | last_week | this_month | custom */
+  period?: string;
+  date_from?: string;
+  date_to?: string;
+}
+
+/** GET /finance/summary/ — headline revenue KPIs (all amounts are strings). */
+export interface FinanceSummary {
+  gross: string;
+  refunds: string;
+  net_revenue: string;
+  commission_earned: string;
+  payout_liability: string;
+  transaction_count: number;
+  refund_count: number;
+  avg_transaction_value: string;
+  currency: string;
+}
+
+export function getFinanceSummary(params?: FinanceParams): Promise<FinanceSummary> {
+  return api.get<FinanceSummary>(adminPath('finance/summary/'), { params: params as Record<string, string | undefined> });
+}
+
+/** A daily point on the dashboard trend (gross / refunds / net). */
+export interface FinanceTrendPoint {
+  date?: string;
+  gross?: string;
+  refunds?: string;
+  net?: string;
+  [k: string]: unknown;
+}
+
+/**
+ * GET /finance/dashboard/ — one call for the whole dashboard (KPIs + breakdowns
+ * by source/payment_mode/booking_type/payment_method + a daily trend). The
+ * response schema is not pinned in the docs, so it's typed loosely and parsed
+ * defensively by the screen.
+ */
+export interface FinanceDashboardData {
+  trend?: FinanceTrendPoint[];
+  by_source?: unknown;
+  by_payment_mode?: unknown;
+  by_booking_type?: unknown;
+  by_payment_method?: unknown;
+  [k: string]: unknown;
+}
+
+export function getFinanceDashboard(params?: FinanceParams): Promise<FinanceDashboardData> {
+  return api.get<FinanceDashboardData>(adminPath('finance/dashboard/'), { params: params as Record<string, string | undefined> });
+}
+
+// --- Revenue summary CSV export (queue → poll → download) ---
+
+export function queueSummaryExport(params?: FinanceParams): Promise<FinanceExportJob> {
+  return api.post<FinanceExportJob>(adminPath('finance/summary/export/'), params ?? {});
+}
+export function getSummaryExportJob(jobId: string): Promise<FinanceExportJob> {
+  return api.get<FinanceExportJob>(adminPath(`finance/summary/export/${jobId}/`));
+}
+export async function downloadSummaryExport(jobId: string): Promise<Blob> {
+  const token = getAccessToken();
+  const res = await fetch(`${API_BASE_URL}${adminPath(`finance/summary/export/${jobId}/download/`)}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
+  if (!res.ok) throw new Error(`Download failed (${res.status})`);
+  return res.blob();
+}
+
 // --- Display helpers ---
 
 /** Label for a payment source. */

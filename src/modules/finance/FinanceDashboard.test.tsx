@@ -11,47 +11,66 @@ vi.mock('recharts', () => ({
     YAxis: () => null,
     CartesianGrid: () => null,
     Tooltip: () => null,
+    Legend: () => null,
+}));
+
+const { authState } = vi.hoisted(() => ({ authState: { view: true, exportPerm: true } }));
+vi.mock('../../shared/auth/AuthContext', () => ({
+    useAuth: () => ({ hasPermission: (p: string) => (p === 'VIEW_TRANSACTIONS' || p === 'VIEW_REVENUE' ? authState.view : p === 'EXPORT_REPORTS' ? authState.exportPerm : false) }),
 }));
 
 vi.mock('../../shared/lib/api', () => ({
-    getOverviewStats: vi.fn(),
+    getFinanceSummary: vi.fn(),
+    getFinanceDashboard: vi.fn(),
+    queueSummaryExport: vi.fn(),
+    getSummaryExportJob: vi.fn(),
+    downloadSummaryExport: vi.fn(),
     parseAmount: (v: any) => (v == null || v === '' || v === '-' ? null : Number(v)),
     safeCurrency: () => 'INR',
     formatMoney: (n: any) => `₹${Number(n).toLocaleString()}`,
-    STATS_PERIODS: ['today', 'this_week', 'this_month', 'custom'],
-    STATS_PERIOD_LABELS: { today: 'Today', this_week: 'This Week', this_month: 'This Month', custom: 'Custom' },
+    FINANCE_PERIODS: ['today', 'this_week', 'this_month', 'custom'],
+    FINANCE_PERIOD_LABELS: { today: 'Today', this_week: 'This Week', this_month: 'This Month', custom: 'Custom' },
     ApiError: class ApiError extends Error { code: string | null = null; },
 }));
-import { getOverviewStats } from '../../shared/lib/api';
+import { getFinanceSummary, getFinanceDashboard } from '../../shared/lib/api';
 
-const OVERVIEW = {
-    period: { type: 'this_month', date_from: '2026-06-01', date_to: '2026-06-30', label: 'This Month' },
-    users: { total_customers: 0, total_partners: 0, new_customers: 0, new_partners: 0 },
-    listings: { total: 0, published: 0, pending_moderation: 0, rejected: 0, draft: 0, by_type: {} },
-    bookings: { total: 540, confirmed: 500, cancelled: 0, refunded: 10, pending: 0, attended: 0 },
-    revenue: { gross: '500000', refunds: '8000', net: '460000', platform_fees: '32000', avg_order_value: '925', currency: 'INR' },
-    support: { open: 0, in_progress: 0, resolved_in_period: 0, total_open: 0 },
-    trend: [{ date: '2026-06-01', bookings: 10, revenue: '9000', signups: 5 }],
-    recent_activity: { bookings: [], signups: [], tickets: [] },
+const SUMMARY = {
+    gross: '500000', refunds: '8000', net_revenue: '460000', commission_earned: '32000',
+    payout_liability: '120000', transaction_count: 540, refund_count: 10, avg_transaction_value: '925', currency: 'INR',
+};
+const DASH = {
+    trend: [{ date: '2026-06-01', gross: '9000', net: '8000', refunds: '500' }],
+    by_source: { online: '400000', manual: '100000' },
 };
 
 describe('FinanceDashboard', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        (getOverviewStats as any).mockResolvedValue(OVERVIEW);
+        authState.view = true; authState.exportPerm = true;
+        (getFinanceSummary as any).mockResolvedValue(SUMMARY);
+        (getFinanceDashboard as any).mockResolvedValue(DASH);
     });
 
-    it('renders the heading and loads overview stats', async () => {
+    it('blocks access without finance permissions', async () => {
+        authState.view = false;
+        render(<FinanceDashboard />);
+        expect(await screen.findByText('No access')).toBeInTheDocument();
+        expect(getFinanceSummary).not.toHaveBeenCalled();
+    });
+
+    it('renders the heading and loads the summary', async () => {
         render(<FinanceDashboard />);
         expect(screen.getByText('Finance Dashboard')).toBeInTheDocument();
-        await waitFor(() => expect(getOverviewStats).toHaveBeenCalledWith({ period: 'this_month' }));
+        await waitFor(() => expect(getFinanceSummary).toHaveBeenCalledWith({ period: 'this_month' }));
+        expect(getFinanceDashboard).toHaveBeenCalledWith({ period: 'this_month' });
     });
 
-    it('shows real revenue KPIs from the stats API', async () => {
+    it('shows real revenue KPIs from the summary API', async () => {
         render(<FinanceDashboard />);
         expect(await screen.findByText('Gross Revenue')).toBeInTheDocument();
         expect(screen.getByText('Net Revenue')).toBeInTheDocument();
-        expect(screen.getByText((t) => t.replace(/,/g, '').includes('460000'))).toBeInTheDocument(); // net revenue
+        expect(screen.getByText('Commission Earned')).toBeInTheDocument();
+        expect(screen.getByText((t) => t.replace(/,/g, '').includes('460000'))).toBeInTheDocument();
         expect(screen.getByTestId('area-chart')).toBeInTheDocument();
     });
 
@@ -59,11 +78,18 @@ describe('FinanceDashboard', () => {
         render(<FinanceDashboard />);
         await screen.findByText('Gross Revenue');
         await userEvent.click(screen.getByRole('button', { name: 'Today' }));
-        await waitFor(() => expect(getOverviewStats).toHaveBeenCalledWith({ period: 'today' }));
+        await waitFor(() => expect(getFinanceSummary).toHaveBeenCalledWith({ period: 'today' }));
     });
 
-    it('shows an error state when the API fails', async () => {
-        (getOverviewStats as any).mockRejectedValue(new Error('boom'));
+    it('still shows KPIs when the dashboard (trend) call fails', async () => {
+        (getFinanceDashboard as any).mockRejectedValue(new Error('boom'));
+        render(<FinanceDashboard />);
+        expect(await screen.findByText('Gross Revenue')).toBeInTheDocument();
+        expect(screen.getByText('No trend data for this period')).toBeInTheDocument();
+    });
+
+    it('shows an error state when the summary API fails', async () => {
+        (getFinanceSummary as any).mockRejectedValue(new Error('boom'));
         render(<FinanceDashboard />);
         expect(await screen.findByText("Couldn't load finance data")).toBeInTheDocument();
     });

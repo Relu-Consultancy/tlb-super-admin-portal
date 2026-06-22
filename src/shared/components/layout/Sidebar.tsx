@@ -1,68 +1,88 @@
-import {
-    LayoutDashboard,
-    Users,
-    CheckCircle,
-    UserCog,
-    CreditCard,
-    PieChart,
-    Ticket,
-    TicketPlus,
-    MessageSquare,
-    Megaphone,
-    BarChart3,
-    Smartphone,
-    Sparkles,
-    LogOut,
-    ShieldCheck,
-    Settings as SettingsIcon,
-} from 'lucide-react';
+import { Home, LogOut, ShieldCheck, ChevronRight, ChevronLeft } from 'lucide-react';
 import { motion } from 'motion/react';
+import { cn } from '../../lib/utils';
 import SidebarItem from '../ui/SidebarItem';
 import { Screen } from '../../../types';
+import { SECTIONS, getSection, type SectionId } from '../../nav/sections';
 
 interface SidebarProps {
     currentScreen: Screen;
-    setCurrentScreen: (s: Screen) => void;
+    /** The section the user is currently working in; null = the Home hub. */
+    activeSection: SectionId | null;
+    onSelectScreen: (s: Screen) => void;
+    onEnterSection: (id: SectionId) => void;
+    onHome: () => void;
     sidebarOpen: boolean;
     setIsLoggedIn: (v: boolean) => void;
 }
 
-const Sidebar = ({ currentScreen, setCurrentScreen, sidebarOpen, setIsLoggedIn }: SidebarProps) => (
-    <motion.aside
-        initial={false}
-        animate={{ width: sidebarOpen ? 280 : 0, opacity: sidebarOpen ? 1 : 0 }}
-        className="fixed inset-y-0 left-0 bg-white border-r border-gray-100 z-50 overflow-hidden flex flex-col"
-    >
-        <div className="p-6 flex items-center gap-3">
-            <div className="w-10 h-10 bg-yellow-400 rounded-xl flex items-center justify-center shadow-lg shadow-yellow-400/20">
-                <ShieldCheck className="text-gray-900" size={24} />
+const Sidebar = ({ currentScreen, activeSection, onSelectScreen, onEnterSection, onHome, sidebarOpen, setIsLoggedIn }: SidebarProps) => {
+    const section = activeSection ? getSection(activeSection) : null;
+
+    return (
+        <motion.aside
+            initial={false}
+            animate={{ width: sidebarOpen ? 280 : 0, opacity: sidebarOpen ? 1 : 0 }}
+            className="fixed inset-y-0 left-0 bg-white border-r border-gray-100 z-50 overflow-hidden flex flex-col"
+        >
+            <button onClick={onHome} className="p-6 flex items-center gap-3 text-left">
+                <div className="w-10 h-10 bg-yellow-400 rounded-xl flex items-center justify-center shadow-lg shadow-yellow-400/20">
+                    <ShieldCheck className="text-gray-900" size={24} />
+                </div>
+                <span className="text-xl font-black text-gray-900 tracking-tight">TLB ADMIN</span>
+            </button>
+
+            <nav className="flex-1 px-4 py-2 space-y-1 overflow-y-auto">
+                <SidebarItem icon={Home} label="Home" active={currentScreen === Screen.HOME} onClick={onHome} />
+
+                {section ? (
+                    <>
+                        {/* Active section header + back to all sections */}
+                        <button
+                            onClick={onHome}
+                            className="w-full flex items-center gap-2 px-4 pt-5 pb-2 text-[11px] font-bold text-gray-400 uppercase tracking-wider hover:text-gray-600"
+                        >
+                            <ChevronLeft size={13} /> {section.label}
+                        </button>
+                        {section.items.map((item) => (
+                            <SidebarItem
+                                key={item.screen}
+                                icon={item.icon}
+                                label={item.label}
+                                active={currentScreen === item.screen || !!item.match?.includes(currentScreen)}
+                                onClick={() => onSelectScreen(item.screen)}
+                            />
+                        ))}
+                    </>
+                ) : (
+                    <>
+                        {/* Home hub — the three workspaces */}
+                        <p className="px-4 pt-5 pb-2 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Workspaces</p>
+                        {SECTIONS.map((s) => {
+                            const Icon = s.icon;
+                            return (
+                                <button
+                                    key={s.id}
+                                    onClick={() => onEnterSection(s.id)}
+                                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all group"
+                                >
+                                    <span className={cn('w-8 h-8 rounded-lg flex items-center justify-center', s.accent.icon)}>
+                                        <Icon size={16} />
+                                    </span>
+                                    <span className="text-sm font-medium flex-1">{s.label}</span>
+                                    <ChevronRight size={15} className="text-gray-300 group-hover:text-gray-500" />
+                                </button>
+                            );
+                        })}
+                    </>
+                )}
+            </nav>
+
+            <div className="p-4 border-t border-gray-100">
+                <SidebarItem icon={LogOut} label="Logout" onClick={() => setIsLoggedIn(false)} />
             </div>
-            <span className="text-xl font-black text-gray-900 tracking-tight">TLB ADMIN</span>
-        </div>
-
-        <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
-            <SidebarItem icon={LayoutDashboard} label="Dashboard" active={currentScreen === Screen.DASHBOARD} onClick={() => setCurrentScreen(Screen.DASHBOARD)} />
-            <SidebarItem icon={PieChart} label="Partner Management" active={currentScreen === Screen.PARTNER_MANAGEMENT} onClick={() => setCurrentScreen(Screen.PARTNER_MANAGEMENT)} />
-            <SidebarItem icon={CheckCircle} label="Listings Approval" active={currentScreen === Screen.EVENT_APPROVAL} onClick={() => setCurrentScreen(Screen.EVENT_APPROVAL)} />
-            <SidebarItem icon={Smartphone} label="UserApp Alignment" active={currentScreen === Screen.USERAPP_ALIGNMENT} onClick={() => setCurrentScreen(Screen.USERAPP_ALIGNMENT)} />
-            <SidebarItem icon={Sparkles} label="TLB Signature" active={currentScreen === Screen.TLB_SIGNATURE || currentScreen === Screen.CREATE_TLB_SIGNATURE} onClick={() => setCurrentScreen(Screen.TLB_SIGNATURE)} />
-            <SidebarItem icon={Users} label="User Management" active={currentScreen === Screen.USER_MANAGEMENT} onClick={() => setCurrentScreen(Screen.USER_MANAGEMENT)} />
-            <SidebarItem icon={Users} label="User Section (New)" active={currentScreen === Screen.USER_SECTION} onClick={() => setCurrentScreen(Screen.USER_SECTION)} />
-            <SidebarItem icon={UserCog} label="Employee Admin Management" active={currentScreen === Screen.ADMIN_MANAGEMENT} onClick={() => setCurrentScreen(Screen.ADMIN_MANAGEMENT)} />
-            <SidebarItem icon={BarChart3} label="Finance Dashboard" active={currentScreen === Screen.FINANCE_DASHBOARD} onClick={() => setCurrentScreen(Screen.FINANCE_DASHBOARD)} />
-            <SidebarItem icon={CreditCard} label="Payments and Transactions" active={currentScreen === Screen.PAYMENTS_FINANCE} onClick={() => setCurrentScreen(Screen.PAYMENTS_FINANCE)} />
-            <SidebarItem icon={Ticket} label="Marketing Coupons" active={currentScreen === Screen.COUPONS_MARKETING} onClick={() => setCurrentScreen(Screen.COUPONS_MARKETING)} />
-            <SidebarItem icon={TicketPlus} label="Create Coupon" active={currentScreen === Screen.CREATE_COUPON} onClick={() => setCurrentScreen(Screen.CREATE_COUPON)} />
-            <SidebarItem icon={Megaphone} label="Broadcasts" active={currentScreen === Screen.BROADCASTS} onClick={() => setCurrentScreen(Screen.BROADCASTS)} />
-            <SidebarItem icon={MessageSquare} label="Support System" active={currentScreen === Screen.SUPPORT_SYSTEM} onClick={() => setCurrentScreen(Screen.SUPPORT_SYSTEM)} />
-            <SidebarItem icon={BarChart3} label="Analytics" active={currentScreen === Screen.ANALYTICS} onClick={() => setCurrentScreen(Screen.ANALYTICS)} />
-        </nav>
-
-        <div className="p-4 border-t border-gray-100 space-y-1">
-            <SidebarItem icon={SettingsIcon} label="Settings" active={currentScreen === Screen.SETTINGS} onClick={() => setCurrentScreen(Screen.SETTINGS)} />
-            <SidebarItem icon={LogOut} label="Logout" onClick={() => setIsLoggedIn(false)} />
-        </div>
-    </motion.aside>
-);
+        </motion.aside>
+    );
+};
 
 export default Sidebar;

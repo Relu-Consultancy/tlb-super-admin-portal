@@ -11,6 +11,10 @@ import {
     registerPayment,
     queueTransactionExport,
     getTransactionExportJob,
+    getFinanceSummary,
+    getFinanceDashboard,
+    queueSummaryExport,
+    getSummaryExportJob,
     sourceLabel,
     sourceTone,
     paymentModeLabel,
@@ -45,6 +49,20 @@ describe('finance service', () => {
         expect(api.post).toHaveBeenCalledWith('/api/v1/admin/finance/transactions/export/', { source: 'online' });
         await getTransactionExportJob('job1');
         expect(api.get).toHaveBeenCalledWith('/api/v1/admin/finance/transactions/export/job1/');
+    });
+
+    it('fetches the finance summary + dashboard with the period', async () => {
+        await getFinanceSummary({ period: 'this_month' });
+        expect(api.get).toHaveBeenCalledWith('/api/v1/admin/finance/summary/', { params: { period: 'this_month' } });
+        await getFinanceDashboard({ period: 'today' });
+        expect(api.get).toHaveBeenCalledWith('/api/v1/admin/finance/dashboard/', { params: { period: 'today' } });
+    });
+
+    it('queues + polls the revenue summary export', async () => {
+        await queueSummaryExport({ period: 'this_week' });
+        expect(api.post).toHaveBeenCalledWith('/api/v1/admin/finance/summary/export/', { period: 'this_week' });
+        await getSummaryExportJob('job-1');
+        expect(api.get).toHaveBeenCalledWith('/api/v1/admin/finance/summary/export/job-1/');
     });
 
     it('formats sources, modes, and booking types', () => {

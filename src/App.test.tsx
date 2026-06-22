@@ -118,10 +118,10 @@ describe('App', () => {
         expect(await screen.findByText(/command center for/i)).toBeInTheDocument();
     });
 
-    it('logs in and shows the main app layout', async () => {
+    it('logs in and lands on the Home hub', async () => {
         renderApp();
         await loginThroughFlow();
-        expect(await screen.findByText('Dashboard')).toBeInTheDocument();
+        expect(await screen.findByText(/Welcome back/i)).toBeInTheDocument();
         expect(apiMock.login).toHaveBeenCalledWith('admin@tlb-events.com', 'secret123');
     });
 
@@ -139,11 +139,29 @@ describe('App', () => {
         });
     });
 
-    it('shows the sidebar with nav items after login', async () => {
+    it('shows the workspaces and their features on the hub after login', async () => {
         renderApp();
         await loginThroughFlow();
-        expect(await screen.findByText('Analytics')).toBeInTheDocument();
+        await screen.findByText(/Welcome back/i);
+        // Workspace label appears in both the sidebar and the hub card.
+        expect(screen.getAllByText('User / Customer').length).toBeGreaterThan(0);
+        // Features are listed inside their section cards (unique to the hub).
+        expect(screen.getByText('User Management')).toBeInTheDocument();
         expect(screen.getByText('Partner Management')).toBeInTheDocument();
+        expect(screen.getByText('Finance Dashboard')).toBeInTheDocument();
+    });
+
+    it('drills into a section and back to the hub', async () => {
+        renderApp();
+        await loginThroughFlow();
+        await screen.findByText(/Welcome back/i);
+        // Enter the Admin workspace from the hub (its first screen, Overview, is mocked).
+        await userEvent.click(screen.getByText('Open Admin'));
+        // Section sidebar now lists Admin items (hub has unmounted).
+        expect(await screen.findByText('Employee Admins')).toBeInTheDocument();
+        // Back to the hub via Home.
+        await userEvent.click(screen.getByText('Home'));
+        expect(await screen.findByText(/Welcome back/i)).toBeInTheDocument();
     });
 
     it('opens the profile menu and logs out from it', async () => {
