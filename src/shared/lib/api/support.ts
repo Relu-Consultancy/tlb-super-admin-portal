@@ -37,6 +37,31 @@ export interface TicketMessage {
   created_at: string;
 }
 
+/** The messages endpoint returns the thread wrapped with the live ticket status. */
+export interface TicketThread {
+  ticket_status: string;
+  messages: TicketMessage[];
+}
+
+/**
+ * Recommended poll cadence (ms) per ticket status, per the integration guide.
+ * `null` means stop polling (a closed ticket accepts no further messages).
+ */
+export function ticketPollInterval(status: string): number | null {
+  switch (status) {
+    case 'in_progress':
+      return 5_000;
+    case 'open':
+      return 30_000;
+    case 'resolved':
+      return 60_000;
+    case 'closed':
+      return null;
+    default:
+      return 15_000;
+  }
+}
+
 export interface ListTicketsParams {
   category?: string;
   status?: string;
@@ -74,11 +99,38 @@ export function ticketCategoryLabel(category: string): string {
     .join(' ');
 }
 
-/** GET tickets/ — all tickets, optionally filtered by category and/or status. */
-export function listTickets(params?: ListTicketsParams): Promise<SupportTicket[]> {
-  return api.get<SupportTicket[]>(helpPath('tickets/'), {
-    params: params as Record<string, string | undefined>,
-  });
+/** Normalize an array-or-paginated response into a plain array. */
+function asArray<T>(res: unknown): T[] {
+  if (Array.isArray(res)) return res as T[];
+  if (res && typeof res === 'object' && Array.isArray((res as { results?: T[] }).results)) {
+    return (res as { results: T[] }).results;
+  }
+  return [];
+}
+
+/**
+ * GET tickets/ — all tickets, optionally filtered by category and/or status.
+ *
+ * The docs show a bare array, but (as the events endpoint proved) the backend
+ * may actually paginate. Normalize either shape and follow every page so the
+ * list can never silently truncate.
+ */
+export async function listTickets(params?: ListTicketsParams): Promise<SupportTicket[]> {
+  const base = (params ?? {}) as Record<string, string | number | undefined>;
+  const first = await api.get<unknown>(helpPath('tickets/'), { params: { ...base, page_size: 100 } });
+  if (Array.isArray(first)) return first as SupportTicket[];
+
+  const all = asArray<SupportTicket>(first);
+  const count = (first as { count?: unknown })?.count;
+  if (typeof count !== 'number') return all;
+
+  for (let page = 2; all.length < count && page < 100; page++) {
+    const res = await api.get<unknown>(helpPath('tickets/'), { params: { ...base, page_size: 100, page } });
+    const rows = asArray<SupportTicket>(res);
+    if (rows.length === 0) break;
+    all.push(...rows);
+  }
+  return all;
 }
 
 /** GET tickets/{id}/ — single ticket detail. */
@@ -86,11 +138,23 @@ export function getTicket(ticketId: string): Promise<SupportTicket> {
   return api.get<SupportTicket>(helpPath(`tickets/${ticketId}/`));
 }
 
-/** GET tickets/{id}/messages/ — chat thread; pass `since` (ISO 8601) to poll incrementally. */
-export function getTicketMessages(ticketId: string, since?: string): Promise<TicketMessage[]> {
-  return api.get<TicketMessage[]>(helpPath(`tickets/${ticketId}/messages/`), {
+/**
+ * GET tickets/{id}/messages/ — chat thread, wrapped as `{ ticket_status, messages }`.
+ *
+ * Pass `since` (the previous last message's `created_at`, verbatim UTC) to fetch
+ * only newer messages; omit it for a full load. Older API builds returned a bare
+ * array — both shapes are normalized here. Note: fetching marks unread as read.
+ */
+export async function getTicketMessages(ticketId: string, since?: string): Promise<TicketThread> {
+  const res = await api.get<unknown>(helpPath(`tickets/${ticketId}/messages/`), {
     params: since ? { since } : undefined,
   });
+  if (Array.isArray(res)) return { ticket_status: '', messages: res as TicketMessage[] };
+  const obj = (res ?? {}) as { ticket_status?: string; messages?: unknown };
+  return {
+    ticket_status: obj.ticket_status ?? '',
+    messages: asArray<TicketMessage>(obj.messages ?? res),
+  };
 }
 
 /** POST tickets/{id}/messages/send/ — admin reply to a ticket. */

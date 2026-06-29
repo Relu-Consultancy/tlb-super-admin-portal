@@ -22,8 +22,18 @@ describe('GlobalHealthMetrics', () => {
         expect(screen.getByText('Inactive Accounts')).toBeInTheDocument();
     });
 
-    it('renders the Broadcast Message button', () => {
+    it('renders a disabled broadcast button without a navigation callback', () => {
         render(<GlobalHealthMetrics />);
-        expect(screen.getByText('Broadcast Message to Cohort')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /New Broadcast/i })).toBeDisabled();
+    });
+
+    it('navigates to Broadcasts when the button is clicked', async () => {
+        const onBroadcast = vi.fn();
+        const { default: userEvent } = await import('@testing-library/user-event');
+        render(<GlobalHealthMetrics onBroadcast={onBroadcast} />);
+        const btn = screen.getByRole('button', { name: /New Broadcast/i });
+        expect(btn).not.toBeDisabled();
+        await userEvent.click(btn);
+        expect(onBroadcast).toHaveBeenCalled();
     });
 });

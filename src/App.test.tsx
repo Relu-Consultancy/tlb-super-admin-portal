@@ -52,14 +52,16 @@ const { apiMock } = vi.hoisted(() => ({
             }),
         ),
         hasSession: vi.fn(() => false),
-        // Dashboard (default authenticated screen) pulls these on mount.
-        getPartnerMetrics: vi.fn(() => Promise.resolve({
-            total_partners: 0, approved: 0, under_review: 0, rejected: 0,
-            activated_limited: 0, profile_created: 0, is_active_count: 0, is_verified_count: 0, new_this_month: 0,
-        })),
-        getUserMetrics: vi.fn(() => Promise.resolve({
-            total_users: 0, active_users: 0, inactive_users: 0, deleted_users: 0,
-            new_today: 0, new_this_week: 0, new_this_month: 0, by_auth_provider: { otp: 0, google: 0 },
+        // Dashboard (default authenticated screen) pulls overview stats on mount.
+        getOverviewStats: vi.fn(() => Promise.resolve({
+            period: { type: 'this_month', date_from: '', date_to: '', label: 'This Month' },
+            users: { total_customers: 0, total_partners: 0, new_customers: 0, new_partners: 0 },
+            listings: { total: 0, published: 0, pending_moderation: 0, rejected: 0, draft: 0, by_type: {} },
+            bookings: { total: 0, confirmed: 0, cancelled: 0, refunded: 0, pending: 0, attended: 0 },
+            revenue: { gross: '0', refunds: '0', net: '0', platform_fees: '0', avg_order_value: '0', currency: 'INR' },
+            support: { open: 0, in_progress: 0, resolved_in_period: 0, total_open: 0 },
+            trend: [],
+            recent_activity: { bookings: [], signups: [], tickets: [] },
         })),
     },
 }));
@@ -67,6 +69,12 @@ vi.mock('./shared/lib/api', () => ({
     ...apiMock,
     SESSION_EXPIRED_EVENT: 'auth:expired',
     roleLabel: (r: string) => (r === 'SUPER_ADMIN' ? 'Super Admin' : r),
+    // Stats helpers/constants the Dashboard imports.
+    parseAmount: (v: any) => (v == null || v === '' || v === '-' ? null : Number(v)),
+    safeCurrency: () => 'INR',
+    formatMoney: (n: any) => `₹${Number(n).toLocaleString()}`,
+    STATS_PERIODS: ['today', 'yesterday', 'this_week', 'last_week', 'this_month', 'custom'],
+    STATS_PERIOD_LABELS: { today: 'Today', yesterday: 'Yesterday', this_week: 'This Week', last_week: 'Last Week', this_month: 'This Month', custom: 'Custom Range' },
     ApiError: class ApiError extends Error {},
 }));
 
@@ -110,10 +118,10 @@ describe('App', () => {
         expect(await screen.findByText(/command center for/i)).toBeInTheDocument();
     });
 
-    it('logs in and shows the main app layout', async () => {
+    it('logs in and lands on the Home hub', async () => {
         renderApp();
         await loginThroughFlow();
-        expect(await screen.findByText('Dashboard')).toBeInTheDocument();
+        expect(await screen.findByText(/Welcome back/i)).toBeInTheDocument();
         expect(apiMock.login).toHaveBeenCalledWith('admin@tlb-events.com', 'secret123');
     });
 
@@ -131,10 +139,48 @@ describe('App', () => {
         });
     });
 
-    it('shows the sidebar with nav items after login', async () => {
+    it('shows the workspaces and their features on the hub after login', async () => {
         renderApp();
         await loginThroughFlow();
-        expect(await screen.findByText('Analytics')).toBeInTheDocument();
+        await screen.findByText(/Welcome back/i);
+        // Workspace label appears in both the sidebar and the hub card.
+        expect(screen.getAllByText('User / Customer').length).toBeGreaterThan(0);
+        // Features are listed inside their section cards (unique to the hub).
+        expect(screen.getByText('User Management')).toBeInTheDocument();
         expect(screen.getByText('Partner Management')).toBeInTheDocument();
+        expect(screen.getByText('Finance Dashboard')).toBeInTheDocument();
+    });
+
+    it('drills into a section and back to the hub', async () => {
+        renderApp();
+        await loginThroughFlow();
+        await screen.findByText(/Welcome back/i);
+        // Enter the Admin workspace from the hub (its first screen, Overview, is mocked).
+        await userEvent.click(screen.getByText('Open Admin'));
+        // Section sidebar now lists Admin items (hub has unmounted).
+        expect(await screen.findByText('Employee Admins')).toBeInTheDocument();
+        // Back to the hub via Home.
+        await userEvent.click(screen.getByText('Home'));
+        expect(await screen.findByText(/Welcome back/i)).toBeInTheDocument();
+    });
+
+    it('opens the profile menu and logs out from it', async () => {
+        renderApp();
+        await loginThroughFlow();
+        await screen.findByText('Vishesh S.');
+        // Profile menu closed initially.
+        expect(screen.queryByRole('button', { name: /log out/i })).not.toBeInTheDocument();
+        await userEvent.click(screen.getByText('Vishesh S.'));
+        const logoutBtn = await screen.findByRole('button', { name: /log out/i });
+        await userEvent.click(logoutBtn);
+        expect(apiMock.logout).toHaveBeenCalled();
+    });
+
+    it('opens the notifications dropdown from the bell', async () => {
+        renderApp();
+        await loginThroughFlow();
+        await screen.findByText('Vishesh S.');
+        await userEvent.click(screen.getByRole('button', { name: /notifications/i }));
+        expect(await screen.findByText(/all caught up/i)).toBeInTheDocument();
     });
 });

@@ -1,109 +1,75 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import CreateCoupon from './CreateCoupon';
 
-// Stub motion so animated wrappers render as plain elements.
-vi.mock('motion/react', async () => {
-    const React = await import('react');
-    const cache: Record<string, any> = {};
-    return {
-        motion: new Proxy({}, {
-            get(_: any, tag: string) {
-                if (!cache[tag]) {
-                    cache[tag] = ({ children, ...props }: any) => {
-                        const { initial, animate, exit, transition, layoutId, ...rest } = props;
-                        return React.createElement(tag as any, rest, children);
-                    };
-                }
-                return cache[tag];
-            },
-        }),
-        AnimatePresence: ({ children }: any) => children,
-    };
-});
+vi.mock('motion/react', () => ({
+    motion: { div: ({ children, ...p }: any) => <div {...p}>{children}</div> },
+}));
 
 vi.mock('../../shared/lib/api', () => ({
     createCoupon: vi.fn(() => Promise.resolve({ id: 'c1', code: 'SAVE20' })),
-    ApiError: class ApiError extends Error {
-        status = 0;
-        code: string | null = null;
-        get isNetworkError() { return this.status === 0; }
-    },
+    listPartners: vi.fn(() => Promise.resolve([{ id: 'p1', business_name: 'Alpha Co', email: 'a@x.com' }])),
+    LISTING_TYPES: ['event', 'venue', 'program', 'class'],
+    ApiError: class ApiError extends Error { code: string | null = null; },
 }));
-
-import { createCoupon, ApiError } from '../../shared/lib/api';
+import { createCoupon, listPartners } from '../../shared/lib/api';
 
 describe('CreateCoupon', () => {
     beforeEach(() => {
-        (createCoupon as any).mockClear();
+        vi.clearAllMocks();
         (createCoupon as any).mockResolvedValue({ id: 'c1', code: 'SAVE20' });
+        (listPartners as any).mockResolvedValue([{ id: 'p1', business_name: 'Alpha Co', email: 'a@x.com' }]);
     });
 
-    it('renders the screen heading and submit button', () => {
-        render(<CreateCoupon />);
-        expect(screen.getByRole('heading', { name: 'Create Coupon' })).toBeInTheDocument();
-        expect(screen.getByText('Generate Coupon')).toBeInTheDocument();
+    it('renders the form with a Generate Coupon button', () => {
+        render(<CreateCoupon onBack={vi.fn()} onCreated={vi.fn()} />);
+        expect(screen.getByText('Create Coupon')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Generate Coupon/i })).toBeInTheDocument();
     });
 
-    it('calls onBack when the cancel button is clicked', () => {
+    it('calls onBack from the back button', async () => {
         const onBack = vi.fn();
-        render(<CreateCoupon onBack={onBack} />);
-        fireEvent.click(screen.getByText('Cancel'));
-        expect(onBack).toHaveBeenCalledTimes(1);
+        render(<CreateCoupon onBack={onBack} onCreated={vi.fn()} />);
+        await userEvent.click(screen.getByRole('button', { name: /Back to Coupons/i }));
+        expect(onBack).toHaveBeenCalled();
     });
 
-    it('validates required fields before submitting', async () => {
-        render(<CreateCoupon />);
-        fireEvent.click(screen.getByText('Generate Coupon'));
-        await waitFor(() => {
-            expect(screen.getByText('Coupon code is required.')).toBeInTheDocument();
-        });
+    it('requires a coupon code', async () => {
+        render(<CreateCoupon onBack={vi.fn()} onCreated={vi.fn()} />);
+        await userEvent.click(screen.getByRole('button', { name: /Generate Coupon/i }));
+        expect(await screen.findByText('Coupon code is required.')).toBeInTheDocument();
         expect(createCoupon).not.toHaveBeenCalled();
     });
 
-    it('rejects a percentage discount above 100', async () => {
-        render(<CreateCoupon />);
-        fireEvent.change(screen.getByPlaceholderText('e.g. SAVE20'), { target: { value: 'SAVE20' } });
-        fireEvent.change(screen.getByPlaceholderText('20'), { target: { value: '150' } });
-        fireEvent.click(screen.getByText('Generate Coupon'));
-        await waitFor(() => {
-            expect(screen.getByText('Percentage cannot exceed 100.')).toBeInTheDocument();
-        });
+    it('rejects a percentage above 100', async () => {
+        render(<CreateCoupon onBack={vi.fn()} onCreated={vi.fn()} />);
+        await userEvent.type(screen.getByPlaceholderText('SAVE20'), 'BIG');
+        await userEvent.type(screen.getByPlaceholderText('20'), '150');
+        await userEvent.click(screen.getByRole('button', { name: /Generate Coupon/i }));
+        expect(await screen.findByText('Percentage cannot exceed 100.')).toBeInTheDocument();
         expect(createCoupon).not.toHaveBeenCalled();
     });
 
-    it('submits a valid coupon and shows a success banner', async () => {
+    it('requires a partner for a partner coupon', async () => {
+        render(<CreateCoupon onBack={vi.fn()} onCreated={vi.fn()} />);
+        await userEvent.type(screen.getByPlaceholderText('SAVE20'), 'PART');
+        await userEvent.type(screen.getByPlaceholderText('20'), '10');
+        await userEvent.click(screen.getByRole('button', { name: /Partner/i }));
+        await userEvent.click(screen.getByRole('button', { name: /Generate Coupon/i }));
+        expect(await screen.findByText('Select a partner for a partner coupon.')).toBeInTheDocument();
+    });
+
+    it('creates a platform coupon with the right payload', async () => {
         const onCreated = vi.fn();
-        render(<CreateCoupon onCreated={onCreated} />);
-        fireEvent.change(screen.getByPlaceholderText('e.g. SAVE20'), { target: { value: 'SAVE20' } });
-        fireEvent.change(screen.getByPlaceholderText('20'), { target: { value: '20' } });
-        fireEvent.click(screen.getByText('Generate Coupon'));
+        render(<CreateCoupon onBack={vi.fn()} onCreated={onCreated} />);
+        await userEvent.type(screen.getByPlaceholderText('SAVE20'), 'save20');
+        await userEvent.type(screen.getByPlaceholderText('20'), '20');
+        await userEvent.click(screen.getByRole('button', { name: /Generate Coupon/i }));
         await waitFor(() => expect(createCoupon).toHaveBeenCalledTimes(1));
-        expect(createCoupon).toHaveBeenCalledWith(
-            expect.objectContaining({ code: 'SAVE20', discount_type: 'percentage', discount_value: 20 }),
-        );
-        await waitFor(() =>
-            expect(screen.getByText(/created successfully/i)).toBeInTheDocument(),
-        );
-        expect(onCreated).toHaveBeenCalled();
-    });
-
-    it('updates the live preview as the code is typed', () => {
-        render(<CreateCoupon />);
-        fireEvent.change(screen.getByPlaceholderText('e.g. SAVE20'), { target: { value: 'diwali' } });
-        // Code is upper-cased in the preview card.
-        expect(screen.getByText('DIWALI')).toBeInTheDocument();
-    });
-
-    it('shows an "API not connected" message on a network error', async () => {
-        const netErr = new ApiError('Network request failed', 0, null);
-        (createCoupon as any).mockRejectedValueOnce(netErr);
-        render(<CreateCoupon />);
-        fireEvent.change(screen.getByPlaceholderText('e.g. SAVE20'), { target: { value: 'SAVE20' } });
-        fireEvent.change(screen.getByPlaceholderText('20'), { target: { value: '20' } });
-        fireEvent.click(screen.getByText('Generate Coupon'));
-        await waitFor(() =>
-            expect(screen.getByText(/marketing api is not connected/i)).toBeInTheDocument(),
-        );
+        const payload = (createCoupon as any).mock.calls[0][0];
+        expect(payload).toMatchObject({ code: 'SAVE20', discount_type: 'percent', discount_value: '20', is_active: true });
+        expect(payload.partner_id).toBeUndefined();
+        expect(await screen.findByText('Coupon created')).toBeInTheDocument();
     });
 });

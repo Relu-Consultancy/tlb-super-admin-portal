@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Users, TrendingUp, UserMinus, Info } from 'lucide-react';
+import { Users, TrendingUp, UserMinus, Megaphone } from 'lucide-react';
 import Card from '../../../shared/components/ui/Card';
 import { getUserMetrics, type UserMetrics } from '../../../shared/lib/api';
 
-const GlobalHealthMetrics = () => {
+const GlobalHealthMetrics = ({ onBroadcast }: { onBroadcast?: () => void }) => {
     const [metrics, setMetrics] = useState<UserMetrics | null>(null);
 
     useEffect(() => {
@@ -65,15 +65,15 @@ const GlobalHealthMetrics = () => {
 
             <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 text-blue-700 text-xs rounded-xl px-4 py-3">
-                    <Info size={16} className="shrink-0 mt-0.5" />
-                    <span>Mass broadcast isn't available yet — it needs a dedicated messaging endpoint the API doesn't expose.</span>
+                    <Megaphone size={16} className="shrink-0 mt-0.5" />
+                    <span>Send mass email / in-app notifications to users and partners from the Broadcasts screen.</span>
                 </div>
                 <button
-                    disabled
-                    title="Not available yet"
-                    className="px-6 py-2.5 bg-gray-100 text-gray-400 font-bold rounded-xl shadow-sm cursor-not-allowed"
+                    onClick={onBroadcast}
+                    disabled={!onBroadcast}
+                    className="flex items-center gap-2 px-6 py-2.5 bg-yellow-400 text-gray-900 font-bold rounded-xl shadow-md shadow-yellow-400/20 hover:bg-yellow-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    Broadcast Message to Cohort
+                    <Megaphone size={16} /> New Broadcast
                 </button>
             </div>
         </section>
