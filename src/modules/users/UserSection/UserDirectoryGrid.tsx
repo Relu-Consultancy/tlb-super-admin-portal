@@ -172,7 +172,7 @@ const UserDirectoryGrid = ({ onOpenHistory, refreshSignal }: UserDirectoryGridPr
                 <div className="overflow-x-auto">
                     <table className="w-full text-left whitespace-nowrap">
                         <thead>
-                            <tr className="bg-gray-50 border-b border-gray-100">
+                            <tr className="bg-gray-50 border-b border-gray-200">
                                 <th className="px-5 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Customer</th>
                                 <th className="px-5 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Provider &amp; Verified</th>
                                 <th className="px-5 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Last Login</th>
@@ -180,7 +180,7 @@ const UserDirectoryGrid = ({ onOpenHistory, refreshSignal }: UserDirectoryGridPr
                                 <th className="px-5 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Action</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-50">
+                        <tbody className="divide-y divide-gray-100">
                             {loading ? (
                                 <tr><td colSpan={5}><div className="flex items-center justify-center py-16 text-gray-400"><Loader2 className="animate-spin" size={24} /></div></td></tr>
                             ) : error ? (
@@ -192,7 +192,7 @@ const UserDirectoryGrid = ({ onOpenHistory, refreshSignal }: UserDirectoryGridPr
                                     <tr key={c.id} className="hover:bg-yellow-50/30 transition-colors">
                                         <td className="px-5 py-4">
                                             <div className="flex items-center gap-3">
-                                                <img src={`https://picsum.photos/seed/${c.email}/100/100`} className="w-10 h-10 rounded-xl object-cover border border-gray-100" alt="" />
+                                                <img src={`https://picsum.photos/seed/${c.email}/100/100`} className="w-10 h-10 rounded-xl object-cover border border-gray-200" alt="" />
                                                 <div>
                                                     <p className="text-sm font-bold text-gray-900">{userDisplayName(c)}</p>
                                                     <p className="text-xs text-gray-500">{c.email}</p>
@@ -203,7 +203,7 @@ const UserDirectoryGrid = ({ onOpenHistory, refreshSignal }: UserDirectoryGridPr
                                         <td className="px-5 py-4">
                                             <div className="flex flex-col gap-1.5">
                                                 <span className="w-fit px-2 py-1 bg-gray-100 text-gray-600 text-[10px] font-bold rounded-md uppercase tracking-wider">{c.auth_provider || '—'}</span>
-                                                <span className={cn('w-fit px-2 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider', c.is_verified ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500')}>
+                                                <span className={cn('w-fit px-2 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider', c.is_verified ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400')}>
                                                     {c.is_verified ? 'Verified' : 'Unverified'}
                                                 </span>
                                             </div>
@@ -220,7 +220,7 @@ const UserDirectoryGrid = ({ onOpenHistory, refreshSignal }: UserDirectoryGridPr
                                             <div className="flex items-center gap-2">
                                                 <button
                                                     onClick={() => onOpenHistory(c)}
-                                                    className="flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white text-xs font-bold rounded-xl hover:bg-yellow-400 hover:text-gray-900 transition-all"
+                                                    className="flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-gray-900 text-xs font-bold rounded-xl hover:bg-yellow-400 hover:text-gray-900 transition-all"
                                                 >
                                                     <History size={14} /> View History
                                                 </button>
@@ -244,7 +244,7 @@ const UserDirectoryGrid = ({ onOpenHistory, refreshSignal }: UserDirectoryGridPr
                     </table>
                 </div>
                 {!loading && !error && customers.length > 0 && (
-                    <div className="p-3 bg-gray-50 border-t border-gray-100 text-xs text-gray-500">{customers.length} users</div>
+                    <div className="p-3 bg-gray-50 border-t border-gray-200 text-xs text-gray-500">{customers.length} users</div>
                 )}
             </Card>
 
@@ -254,9 +254,9 @@ const UserDirectoryGrid = ({ onOpenHistory, refreshSignal }: UserDirectoryGridPr
                     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => !disableSubmitting && setDisableTarget(null)} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
                         <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden">
-                            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
                                 <h2 className="text-xl font-bold text-gray-900">Disable Customer</h2>
-                                <button onClick={() => setDisableTarget(null)} disabled={disableSubmitting} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X size={20} className="text-gray-400" /></button>
+                                <button onClick={() => setDisableTarget(null)} disabled={disableSubmitting} className="p-2 hover:bg-gray-50 rounded-full transition-colors"><X size={20} className="text-gray-400" /></button>
                             </div>
                             <div className="p-6 space-y-4">
                                 <p className="text-sm text-gray-500">Disabling <span className="font-bold text-gray-900">{disableTarget.email}</span> immediately revokes their access. Provide a reason for the audit log.</p>
@@ -264,7 +264,7 @@ const UserDirectoryGrid = ({ onOpenHistory, refreshSignal }: UserDirectoryGridPr
                             </div>
                             <div className="p-6 bg-gray-50 flex justify-end gap-3">
                                 <button onClick={() => setDisableTarget(null)} disabled={disableSubmitting} className="px-6 py-3 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-all disabled:opacity-60">Cancel</button>
-                                <button onClick={submitDisable} disabled={disableSubmitting || !disableReason.trim()} className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
+                                <button onClick={submitDisable} disabled={disableSubmitting || !disableReason.trim()} className="flex items-center gap-2 px-6 py-3 bg-red-600 text-gray-900 font-bold rounded-xl hover:bg-red-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
                                     {disableSubmitting && <Loader2 size={16} className="animate-spin" />}
                                     {disableSubmitting ? 'Disabling…' : 'Disable Account'}
                                 </button>

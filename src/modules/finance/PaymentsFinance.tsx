@@ -194,7 +194,7 @@ const PaymentsFinance = () => {
         <div className="space-y-6">
             <header className="flex flex-col gap-4">
                 <h1 className="text-2xl font-bold text-gray-900">Payments & Finance</h1>
-                <div className="flex border-b border-gray-100">
+                <div className="flex border-b border-gray-200">
                     {TABS.map((tab) => (
                         <button key={tab} onClick={() => setActiveTab(tab)} className={cn('px-6 py-3 text-sm font-medium transition-all relative', activeTab === tab ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600')}>
                             {tab}
@@ -259,7 +259,7 @@ const PaymentsFinance = () => {
                         <div className="overflow-x-auto">
                             <table className="w-full text-left whitespace-nowrap">
                                 <thead>
-                                    <tr className="bg-gray-50 border-b border-gray-100">
+                                    <tr className="bg-gray-50 border-b border-gray-200">
                                         <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Transaction ID</th>
                                         <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">User / Partner</th>
                                         <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Amount</th>
@@ -269,7 +269,7 @@ const PaymentsFinance = () => {
                                         <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Action</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-50">
+                                <tbody className="divide-y divide-gray-100">
                                     {loading ? (
                                         <tr><td colSpan={7}><div className="flex items-center justify-center py-16 text-gray-400"><Loader2 className="animate-spin" size={24} /></div></td></tr>
                                     ) : error ? (
@@ -303,7 +303,7 @@ const PaymentsFinance = () => {
                                 </tbody>
                             </table>
                         </div>
-                        <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
+                        <div className="p-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
                             <span className="text-xs text-gray-500">{count.toLocaleString()} transaction{count === 1 ? '' : 's'} · page {page} of {totalPages}</span>
                             <div className="flex gap-2">
                                 <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1 || loading} className="flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-600 disabled:opacity-50"><ChevronLeft size={14} /> Prev</button>
@@ -346,9 +346,9 @@ function TransactionDetailPanel({ loading, detail, money, onClose }: {
         <div className="fixed inset-0 z-50 flex justify-end">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
             <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'tween', duration: 0.25 }} className="relative w-full max-w-md bg-white h-full overflow-y-auto shadow-2xl">
-                <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between z-10">
+                <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
                     <h2 className="text-lg font-bold text-gray-900">Transaction</h2>
-                    <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full"><X size={20} className="text-gray-400" /></button>
+                    <button onClick={onClose} className="p-2 hover:bg-gray-50 rounded-full"><X size={20} className="text-gray-400" /></button>
                 </div>
                 {loading && !detail ? (
                     <div className="flex items-center justify-center py-24 text-gray-400"><Loader2 className="animate-spin" size={26} /></div>
@@ -370,7 +370,7 @@ function TransactionDetailPanel({ loading, detail, money, onClose }: {
                                 <Field label="Listing" value={detail.booking.listing_title} />
                                 <Field label="Reference" value={detail.booking.booking_reference} />
                                 <Field label="Type / Status" value={`${bookingTypeLabel(detail.booking.booking_type)} · ${detail.booking.status}`} />
-                                <div className="col-span-2 mt-1 pt-2 border-t border-gray-50 grid grid-cols-2 gap-2">
+                                <div className="col-span-2 mt-1 pt-2 border-t border-gray-100 grid grid-cols-2 gap-2">
                                     <Field label="Original" value={money(detail.booking.original_amount)} />
                                     <Field label="Discount" value={money(detail.booking.discount_amount)} />
                                     <Field label="Platform Fee" value={money(detail.booking.platform_fee)} />
@@ -458,12 +458,12 @@ function RegisterModal({ onClose, onRegistered }: { onClose: () => void; onRegis
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => !submitting && onClose()} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden">
-                <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                <div className="p-6 border-b border-gray-200 flex justify-between items-center">
                     <div>
                         <h2 className="text-xl font-bold text-gray-900">Register Manual Payment</h2>
                         <p className="text-xs text-gray-500 mt-0.5">Confirms the booking, generates the invoice, and emails the customer.</p>
                     </div>
-                    <button onClick={onClose} disabled={submitting} className="p-2 hover:bg-gray-100 rounded-full"><X size={20} className="text-gray-400" /></button>
+                    <button onClick={onClose} disabled={submitting} className="p-2 hover:bg-gray-50 rounded-full"><X size={20} className="text-gray-400" /></button>
                 </div>
                 <div className="p-6 space-y-4">
                     {err && <div role="alert" className="flex items-start gap-2 text-sm rounded-xl px-4 py-3 border bg-red-50 border-red-200 text-red-700"><AlertCircle size={18} className="shrink-0 mt-0.5" /> <span>{err}</span></div>}

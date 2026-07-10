@@ -178,9 +178,28 @@ export function approveListing(listingId: string): Promise<ListingDetail> {
   return api.post<ListingDetail>(adminPath(`listings/${listingId}/approve/`));
 }
 
-/** POST /listings/{id}/reject/ — pending → rejected. Comment stored + emailed. */
-export function rejectListing(listingId: string, comment: string): Promise<ListingDetail> {
-  return api.post<ListingDetail>(adminPath(`listings/${listingId}/reject/`), { comment });
+/** A preset rejection reason returned by the API. */
+export interface RejectionReason {
+  code: string;
+  label: string;
+  description: string;
+}
+
+/** GET /listings/rejection-reasons/ — preset reasons the admin can select when rejecting. */
+export async function getListingRejectionReasons(): Promise<RejectionReason[]> {
+  const res = await api.get<unknown>(adminPath('listings/rejection-reasons/'));
+  return asArray<RejectionReason>(res);
+}
+
+/** POST /listings/{id}/reject/ — pending → rejected. Reason codes + comment stored & emailed. */
+export function rejectListing(
+  listingId: string,
+  comment: string,
+  reasonCodes?: string[],
+): Promise<ListingDetail> {
+  const body: Record<string, unknown> = { comment };
+  if (reasonCodes?.length) body.reason_codes = reasonCodes;
+  return api.post<ListingDetail>(adminPath(`listings/${listingId}/reject/`), body);
 }
 
 /**

@@ -1,4 +1,4 @@
-import { ArrowRight, ChevronRight } from 'lucide-react';
+import { ArrowRight, ChevronRight, Zap } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../../shared/lib/utils';
 import { useAuth } from '../../shared/auth/AuthContext';
@@ -10,10 +10,6 @@ interface HubProps {
   onSelectScreen: (screen: Screen) => void;
 }
 
-/**
- * The post-login landing. Presents the portal as three workspaces —
- * Customer, Partner, Admin — each listing the features it contains.
- */
 const Hub = ({ onEnterSection, onSelectScreen }: HubProps) => {
   const { admin } = useAuth();
   const firstName = (admin?.full_name || admin?.email || 'Admin').split(/[ @]/)[0];
@@ -21,66 +17,81 @@ const Hub = ({ onEnterSection, onSelectScreen }: HubProps) => {
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   return (
-    <div className="space-y-8">
-      <header>
-        <p className="text-sm font-bold text-yellow-600 uppercase tracking-wider">{greeting}</p>
-        <h1 className="text-3xl font-black text-gray-900 mt-1">Welcome back, {firstName}</h1>
-        <p className="text-gray-500 mt-1.5">Pick a workspace to get started — Customer, Partner or Admin.</p>
+    <div className="space-y-10">
+      <header className="relative">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
+          <p className="text-sm font-bold text-yellow-600 uppercase tracking-widest">{greeting}</p>
+        </div>
+        <h1 className="text-4xl font-black text-gray-900 mt-2">
+          Welcome back, <span className="text-yellow-600">{firstName}</span>
+        </h1>
+        <p className="text-gray-500 mt-2 text-base">Pick a workspace to get started — Customer, Partner, Admin or Support.</p>
       </header>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
         {SECTIONS.map((section, idx) => {
           const Icon = section.icon;
           return (
             <motion.div
               key={section.id}
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, delay: idx * 0.06 }}
+              transition={{ duration: 0.3, delay: idx * 0.08 }}
               className={cn(
-                'group flex flex-col rounded-3xl border border-gray-100 bg-white shadow-sm transition-all',
+                'group relative flex flex-col rounded-2xl border border-gray-200 bg-white transition-all duration-300',
+                'hover:border-gray-300 hover:bg-gray-50',
                 section.accent.hover,
               )}
             >
-              {/* Card header — enters the section */}
-              <button onClick={() => onEnterSection(section.id)} className="text-left p-6 pb-4">
+              {/* Glow effect on hover */}
+              <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-gradient-to-b from-yellow-400/[0.03] to-transparent" />
+
+              <button onClick={() => onEnterSection(section.id)} className="relative text-left p-6 pb-4">
                 <div className="flex items-start justify-between">
-                  <div className={cn('w-14 h-14 rounded-2xl flex items-center justify-center', section.accent.icon)}>
-                    <Icon size={28} />
+                  <div className={cn('w-12 h-12 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110', section.accent.icon)}>
+                    <Icon size={24} />
                   </div>
-                  <span className="text-[11px] font-bold text-gray-300">{section.items.length} tools</span>
+                  <span className="flex items-center gap-1.5 text-[11px] font-bold text-gray-600">
+                    <Zap size={10} className="text-yellow-500" />
+                    {section.items.length} tools
+                  </span>
                 </div>
-                <h2 className="text-xl font-bold text-gray-900 mt-4">{section.label}</h2>
-                <p className="text-sm text-gray-500 mt-1">{section.tagline}</p>
+                <h2 className="text-lg font-bold text-gray-900 mt-4 group-hover:text-yellow-600 transition-colors">{section.label}</h2>
+                <p className="text-sm text-gray-500 mt-1 leading-relaxed">{section.tagline}</p>
               </button>
 
-              {/* Feature list */}
-              <div className="px-3 pb-3 flex-1">
-                <div className={cn('rounded-2xl p-1.5', section.accent.soft)}>
-                  {section.items.map((item) => {
+              <div className="px-3 pb-3 flex-1 relative">
+                <div className="rounded-xl overflow-hidden border border-gray-100">
+                  {section.items.map((item, i) => {
                     const ItemIcon = item.icon;
                     return (
                       <button
                         key={item.screen}
                         onClick={() => onSelectScreen(item.screen)}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-white transition-colors group/item"
+                        className={cn(
+                          'w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-all group/item',
+                          i < section.items.length - 1 && 'border-b border-gray-100',
+                        )}
                       >
-                        <ItemIcon size={16} className="text-gray-500 shrink-0" />
-                        <span className="text-sm font-medium text-gray-700 flex-1 truncate">{item.label}</span>
-                        <ChevronRight size={14} className="text-gray-300 group-hover/item:text-gray-500 transition-colors" />
+                        <ItemIcon size={15} className="text-gray-400 group-hover/item:text-yellow-600 shrink-0 transition-colors" />
+                        <span className="text-sm font-medium text-gray-400 flex-1 truncate group-hover/item:text-gray-800 transition-colors">{item.label}</span>
+                        <ChevronRight size={13} className="text-gray-700 group-hover/item:text-gray-400 group-hover/item:translate-x-0.5 transition-all" />
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Footer — enter section */}
               <button
                 onClick={() => onEnterSection(section.id)}
-                className={cn('flex items-center justify-between px-6 py-4 border-t border-gray-50 text-sm font-bold', section.accent.text)}
+                className={cn(
+                  'relative flex items-center justify-between px-6 py-4 border-t border-gray-100 text-sm font-bold transition-all',
+                  'text-gray-500 hover:text-yellow-600',
+                )}
               >
                 Open {section.label}
-                <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
+                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
               </button>
             </motion.div>
           );

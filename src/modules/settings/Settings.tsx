@@ -107,14 +107,14 @@ const Settings = () => {
 
             <div className="space-y-6">
                 <Card className="p-0 overflow-hidden">
-                    <div className="p-6 border-b border-gray-100">
+                    <div className="p-6 border-b border-gray-200">
                         <h3 className="font-bold text-gray-900">Profile Information</h3>
                     </div>
                     <div className="p-6 space-y-6">
                         <div className="flex items-center gap-6">
                             <div className="relative group">
                                 <img src={avatarSrc} className="w-24 h-24 rounded-3xl object-cover border-4 border-white shadow-xl" alt="" />
-                                <button className="absolute inset-0 bg-black/40 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                                <button className="absolute inset-0 bg-black/40 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-gray-900">
                                     <ImageIcon size={24} />
                                 </button>
                             </div>
@@ -144,7 +144,7 @@ const Settings = () => {
                 </Card>
 
                 <Card className="p-0 overflow-hidden">
-                    <div className="p-6 border-b border-gray-100">
+                    <div className="p-6 border-b border-gray-200">
                         <h3 className="font-bold text-gray-900">Security</h3>
                     </div>
                     <div className="p-6 space-y-6">
@@ -247,7 +247,7 @@ const Settings = () => {
                                         <button
                                             onClick={handleLogoutAll}
                                             disabled={loggingOutAll}
-                                            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 transition-all disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap"
+                                            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-gray-900 text-xs font-bold rounded-lg hover:bg-red-700 transition-all disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap"
                                         >
                                             {loggingOutAll && <Loader2 size={14} className="animate-spin" />}
                                             {loggingOutAll ? 'Revoking…' : 'Confirm log out'}
@@ -263,7 +263,7 @@ const Settings = () => {
                 </Card>
 
                 <Card className="p-0 overflow-hidden">
-                    <div className="p-6 border-b border-gray-100">
+                    <div className="p-6 border-b border-gray-200">
                         <h3 className="font-bold text-gray-900">Platform Notifications</h3>
                     </div>
                     <div className="p-6 space-y-4">

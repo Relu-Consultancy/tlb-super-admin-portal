@@ -24,6 +24,9 @@ export interface SupportTicket {
   subject: string;
   status: string;
   booking_reference: string | null;
+  shared_with_partner_id: string | null;
+  shared_with_partner_name: string | null;
+  shared_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -165,4 +168,21 @@ export function sendTicketMessage(ticketId: string, body: string): Promise<Ticke
 /** PATCH tickets/{id}/update/ — update ticket status (resolve / close). */
 export function updateTicketStatus(ticketId: string, status: string): Promise<SupportTicket> {
   return api.patch<SupportTicket>(helpPath(`tickets/${ticketId}/update/`), { status });
+}
+
+/**
+ * POST tickets/{id}/share/ — share a customer query with a partner.
+ *
+ * Loops the partner into the ticket thread. The optional note is posted as an
+ * admin message so the partner has context. Only customer-raised tickets can
+ * be shared (partner-raised tickets return SHARE_NOT_ALLOWED).
+ */
+export function shareTicketWithPartner(
+  ticketId: string,
+  partnerId: string,
+  note?: string,
+): Promise<SupportTicket> {
+  const body: Record<string, unknown> = { partner_id: partnerId };
+  if (note?.trim()) body.note = note.trim();
+  return api.post<SupportTicket>(helpPath(`tickets/${ticketId}/share/`), body);
 }

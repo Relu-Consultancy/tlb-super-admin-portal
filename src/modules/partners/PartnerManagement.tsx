@@ -393,7 +393,7 @@ const PartnerManagement = () => {
                             <Card>
                                 <div className="flex items-start gap-4">
                                     {detail.extended_profile?.logo ? (
-                                        <img src={mediaUrl(detail.extended_profile.logo)} alt="" className="w-16 h-16 rounded-2xl object-cover border border-gray-100" />
+                                        <img src={mediaUrl(detail.extended_profile.logo)} alt="" className="w-16 h-16 rounded-2xl object-cover border border-gray-200" />
                                     ) : (
                                         <div className="w-16 h-16 rounded-2xl bg-yellow-50 flex items-center justify-center">
                                             <Building2 className="text-yellow-500" size={28} />
@@ -431,7 +431,7 @@ const PartnerManagement = () => {
                                 </div>
 
                                 {detail.extended_profile?.bio && (
-                                    <p className="text-sm text-gray-600 leading-relaxed mt-4 pt-4 border-t border-gray-50">{detail.extended_profile.bio}</p>
+                                    <p className="text-sm text-gray-600 leading-relaxed mt-4 pt-4 border-t border-gray-100">{detail.extended_profile.bio}</p>
                                 )}
 
                                 <div className="flex items-center gap-2 mt-4">
@@ -445,7 +445,7 @@ const PartnerManagement = () => {
                                     </p>
                                 )}
 
-                                <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-50">
+                                <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-100">
                                     {detail.profile?.instagram_url && <SocialLink href={detail.profile.instagram_url} icon={Instagram} label="Instagram" />}
                                     {detail.profile?.facebook_url && <SocialLink href={detail.profile.facebook_url} icon={Facebook} label="Facebook" />}
                                     {detail.profile?.website_url && <SocialLink href={detail.profile.website_url} icon={Globe} label="Website" />}
@@ -464,7 +464,7 @@ const PartnerManagement = () => {
                                     <Field label="PAN Verified" value={detail.verification?.is_pan_verified ? 'Yes' : 'No'} />
                                 </div>
                                 {canManage && (
-                                    <div className="flex gap-2 mt-4 pt-4 border-t border-gray-50">
+                                    <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
                                         {!identityVerified ? (
                                             <button
                                                 onClick={() => runDirect('verify', () => verifyPartner(detail.id), 'Partner marked as verified.', detail.id)}
@@ -499,7 +499,7 @@ const PartnerManagement = () => {
                                             <Field label="IFSC Code" value={detail.bank_detail.ifsc_code} />
                                         </div>
                                         {canManage && !bankVerified && (
-                                            <div className="mt-4 pt-4 border-t border-gray-50">
+                                            <div className="mt-4 pt-4 border-t border-gray-100">
                                                 <button
                                                     onClick={() => runDirect('verify-bank', () => verifyPartnerBank(detail.id), 'Bank details verified.', detail.id)}
                                                     disabled={directBusy === 'verify-bank'}
@@ -521,7 +521,7 @@ const PartnerManagement = () => {
                                 {detail.media?.length ? (
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                         {detail.media.map((m) => (
-                                            <a key={m.id} href={mediaUrl(m.file)} target="_blank" rel="noreferrer" className="group block rounded-xl overflow-hidden border border-gray-100 hover:border-yellow-300 transition-all">
+                                            <a key={m.id} href={mediaUrl(m.file)} target="_blank" rel="noreferrer" className="group block rounded-xl overflow-hidden border border-gray-200 hover:border-yellow-300 transition-all">
                                                 {m.media_type === 'image' ? (
                                                     <img src={mediaUrl(m.file)} alt="" className="w-full h-24 object-cover" />
                                                 ) : (
@@ -544,7 +544,7 @@ const PartnerManagement = () => {
                                 {logs.length ? (
                                     <div className="space-y-3">
                                         {logs.map((log) => (
-                                            <div key={log.id} className="flex gap-3 pb-3 border-b border-gray-50 last:border-0">
+                                            <div key={log.id} className="flex gap-3 pb-3 border-b border-gray-100 last:border-0">
                                                 <div className="w-2 h-2 rounded-full bg-yellow-400 mt-1.5 flex-shrink-0" />
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center justify-between gap-2">
@@ -583,7 +583,7 @@ const PartnerManagement = () => {
                                 {!canApprove && !canManage ? (
                                     <p className="text-xs text-gray-400 flex items-center gap-1.5"><AlertCircle size={14} /> You have read-only access to partners.</p>
                                 ) : (
-                                    <div className="space-y-2 pt-4 border-t border-gray-100">
+                                    <div className="space-y-2 pt-4 border-t border-gray-200">
                                         {/* Stage 2 — decisions */}
                                         {canApprove && canDecide && (
                                             <>
@@ -592,7 +592,7 @@ const PartnerManagement = () => {
                                                         onClick={() => openAction('approve')}
                                                         disabled={!identityVerified || !bankVerified}
                                                         title={!identityVerified || !bankVerified ? 'Verify identity and bank details first' : undefined}
-                                                        className="w-full flex items-center justify-center gap-2 py-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        className="w-full flex items-center justify-center gap-2 py-3 bg-green-500 text-gray-900 font-bold rounded-xl hover:bg-green-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                                     >
                                                         <CheckCircle size={16} /> Approve Partner
                                                     </button>
@@ -757,7 +757,7 @@ const PartnerManagement = () => {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left whitespace-nowrap">
                         <thead>
-                            <tr className="bg-gray-50 border-b border-gray-100">
+                            <tr className="bg-gray-50 border-b border-gray-200">
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Partner</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Category</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">City</th>
@@ -767,7 +767,7 @@ const PartnerManagement = () => {
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Action</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-50">
+                        <tbody className="divide-y divide-gray-100">
                             {loading ? (
                                 <tr><td colSpan={7}><div className="flex items-center justify-center py-16 text-gray-400"><Loader2 className="animate-spin" size={24} /></div></td></tr>
                             ) : error ? (
@@ -799,7 +799,7 @@ const PartnerManagement = () => {
                                             <div className="flex gap-1 flex-wrap max-w-[180px]">
                                                 {p.categories?.length ? p.categories.map((c) => (
                                                     <span key={c} className="px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] font-bold rounded-md">{c}</span>
-                                                )) : <span className="text-gray-300">—</span>}
+                                                )) : <span className="text-gray-700">—</span>}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-xs text-gray-500">{p.base_city || '—'}</td>
@@ -819,7 +819,7 @@ const PartnerManagement = () => {
                                         <td className="px-6 py-4">
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); openReview(p); }}
-                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-white text-xs font-bold rounded-lg hover:bg-gray-800 transition-all"
+                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-gray-900 text-xs font-bold rounded-lg hover:bg-gray-800 transition-all"
                                             >
                                                 <Eye size={14} /> Review
                                             </button>
@@ -869,7 +869,7 @@ function Step({ n, title, done, active }: { n: number; title: string; done: bool
         <div className="flex items-center gap-3">
             <div className={cn(
                 'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0',
-                done ? 'bg-green-500 text-white' : active ? 'bg-yellow-400 text-gray-900' : 'bg-gray-100 text-gray-400',
+                done ? 'bg-green-500 text-gray-900' : active ? 'bg-yellow-400 text-gray-900' : 'bg-gray-100 text-gray-400',
             )}>
                 {done ? <CheckCircle size={15} /> : n}
             </div>
@@ -882,14 +882,14 @@ function SummaryRow({ label, ok }: { label: string; ok: boolean }) {
     return (
         <div className="flex items-center justify-between text-xs">
             <span className="text-gray-500">{label}</span>
-            {ok ? <CheckCircle size={14} className="text-green-500" /> : <XCircle size={14} className="text-gray-300" />}
+            {ok ? <CheckCircle size={14} className="text-green-500" /> : <XCircle size={14} className="text-gray-700" />}
         </div>
     );
 }
 
 function MiniMetric({ label, value }: { label: string; value: number }) {
     return (
-        <div className="bg-white border border-gray-100 rounded-xl px-4 py-3">
+        <div className="bg-white border border-gray-200 rounded-xl px-4 py-3">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</p>
             <p className="text-lg font-bold text-gray-900">{value}</p>
         </div>
@@ -945,9 +945,9 @@ function ActionModal({
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden"
             >
-                <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                <div className="p-6 border-b border-gray-200 flex justify-between items-center">
                     <h2 className="text-xl font-bold text-gray-900">{cfg.title}</h2>
-                    <button onClick={onClose} disabled={submitting} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X size={20} className="text-gray-400" /></button>
+                    <button onClick={onClose} disabled={submitting} className="p-2 hover:bg-gray-50 rounded-full transition-colors"><X size={20} className="text-gray-400" /></button>
                 </div>
                 <div className="p-6 space-y-4">
                     <p className="text-sm text-gray-500">{cfg.blurb}</p>
@@ -968,7 +968,7 @@ function ActionModal({
                         onClick={onConfirm}
                         disabled={disabled}
                         className={cn(
-                            'flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-all disabled:opacity-60 disabled:cursor-not-allowed',
+                            'flex items-center gap-2 px-6 py-3 text-gray-900 font-bold rounded-xl transition-all disabled:opacity-60 disabled:cursor-not-allowed',
                             cfg.danger ? 'bg-red-600 hover:bg-red-700' : 'bg-green-500 hover:bg-green-600',
                         )}
                     >

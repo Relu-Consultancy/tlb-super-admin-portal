@@ -342,7 +342,7 @@ const UserManagement = () => {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left whitespace-nowrap">
                         <thead>
-                            <tr className="bg-gray-50 border-b border-gray-100">
+                            <tr className="bg-gray-50 border-b border-gray-200">
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Customer</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Provider</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Bookings</th>
@@ -351,7 +351,7 @@ const UserManagement = () => {
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Action</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-50">
+                        <tbody className="divide-y divide-gray-100">
                             {loading ? (
                                 <tr><td colSpan={6}><div className="flex items-center justify-center py-16 text-gray-400"><Loader2 className="animate-spin" size={24} /></div></td></tr>
                             ) : error ? (
@@ -412,9 +412,9 @@ const UserManagement = () => {
                     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => !disableSubmitting && setDisableTarget(null)} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
                         <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden">
-                            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
                                 <h2 className="text-xl font-bold text-gray-900">Disable Customer</h2>
-                                <button onClick={() => setDisableTarget(null)} disabled={disableSubmitting} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X size={20} className="text-gray-400" /></button>
+                                <button onClick={() => setDisableTarget(null)} disabled={disableSubmitting} className="p-2 hover:bg-gray-50 rounded-full transition-colors"><X size={20} className="text-gray-400" /></button>
                             </div>
                             <div className="p-6 space-y-4">
                                 <p className="text-sm text-gray-500">Disabling <span className="font-bold text-gray-900">{disableTarget.email}</span> immediately revokes their access. Provide a reason for the audit log.</p>
@@ -422,7 +422,7 @@ const UserManagement = () => {
                             </div>
                             <div className="p-6 bg-gray-50 flex justify-end gap-3">
                                 <button onClick={() => setDisableTarget(null)} disabled={disableSubmitting} className="px-6 py-3 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-all disabled:opacity-60">Cancel</button>
-                                <button onClick={submitDisable} disabled={disableSubmitting || !disableReason.trim()} className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
+                                <button onClick={submitDisable} disabled={disableSubmitting || !disableReason.trim()} className="flex items-center gap-2 px-6 py-3 bg-red-600 text-gray-900 font-bold rounded-xl hover:bg-red-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
                                     {disableSubmitting && <Loader2 size={16} className="animate-spin" />}
                                     {disableSubmitting ? 'Disabling…' : 'Disable Account'}
                                 </button>
@@ -442,7 +442,7 @@ const UserManagement = () => {
                             transition={{ type: 'spring', damping: 26, stiffness: 220 }}
                             className="fixed inset-y-0 right-0 w-full max-w-lg bg-gray-50 shadow-2xl z-50 flex flex-col border-l border-gray-200"
                         >
-                            <div className="px-6 py-4 border-b border-gray-100 bg-white flex items-center justify-between">
+                            <div className="px-6 py-4 border-b border-gray-200 bg-white flex items-center justify-between">
                                 <h2 className="text-lg font-bold text-gray-900 truncate">{detail ? userDisplayName(detail) : 'Customer'}</h2>
                                 <button onClick={closeDetail} className="p-2 hover:bg-gray-50 rounded-full transition-colors"><X size={20} className="text-gray-400" /></button>
                             </div>
@@ -503,7 +503,7 @@ const UserManagement = () => {
                                             {loginHistory.length ? (
                                                 <div className="space-y-2">
                                                     {loginHistory.map((e) => (
-                                                        <div key={e.id} className="flex items-center justify-between text-xs bg-white rounded-lg px-3 py-2 border border-gray-100">
+                                                        <div key={e.id} className="flex items-center justify-between text-xs bg-white rounded-lg px-3 py-2 border border-gray-200">
                                                             <div className="min-w-0">
                                                                 <p className="font-bold text-gray-800 truncate">{e.ip_address || '—'} · <span className="font-normal text-gray-500">{e.auth_provider}</span></p>
                                                                 <p className="text-[10px] text-gray-400 truncate">{e.device_info || '—'}</p>
@@ -520,7 +520,7 @@ const UserManagement = () => {
                                             {securityLog.length ? (
                                                 <div className="space-y-2">
                                                     {securityLog.map((s) => (
-                                                        <div key={s.id} className="text-xs bg-white rounded-lg px-3 py-2 border border-gray-100">
+                                                        <div key={s.id} className="text-xs bg-white rounded-lg px-3 py-2 border border-gray-200">
                                                             <div className="flex items-center justify-between">
                                                                 <span className="font-bold text-gray-800 capitalize">{humanizeKey(s.action)}</span>
                                                                 <span className="text-[10px] text-gray-400">{formatDateTime(s.created_at)}</span>
@@ -548,7 +548,7 @@ const UserManagement = () => {
 
 function MiniMetric({ label, value }: { label: string; value: number }) {
     return (
-        <div className="bg-white border border-gray-100 rounded-xl px-4 py-3">
+        <div className="bg-white border border-gray-200 rounded-xl px-4 py-3">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</p>
             <p className="text-lg font-bold text-gray-900">{value}</p>
         </div>
@@ -557,7 +557,7 @@ function MiniMetric({ label, value }: { label: string; value: number }) {
 
 function SlideSection({ title, icon: Icon, children }: { title: string; icon?: typeof Mail; children: ReactNode }) {
     return (
-        <div className="bg-white rounded-2xl border border-gray-100 p-4">
+        <div className="bg-white rounded-2xl border border-gray-200 p-4">
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
                 {Icon && <Icon size={13} />} {title}
             </h3>

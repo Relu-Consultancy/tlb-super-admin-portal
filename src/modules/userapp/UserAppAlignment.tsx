@@ -276,7 +276,7 @@ const UserAppAlignment = () => {
               className={cn(
                 'inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold border transition-all',
                 active
-                  ? 'bg-gray-900 text-white border-gray-900 shadow-sm'
+                  ? 'bg-gray-900 text-gray-900 border-gray-900 shadow-sm'
                   : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300',
               )}
             >
@@ -319,7 +319,7 @@ const UserAppAlignment = () => {
                   onClick={() => setActiveSlug(s.section)}
                   className={cn(
                     'w-full text-left rounded-2xl border p-4 transition-all',
-                    active ? 'border-yellow-400 bg-yellow-50/60 shadow-sm' : 'border-gray-100 bg-white hover:border-gray-200',
+                    active ? 'border-yellow-400 bg-yellow-50/60 shadow-sm' : 'border-gray-200 bg-white hover:border-gray-200',
                   )}
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -404,7 +404,7 @@ const UserAppAlignment = () => {
                     return (
                       <div
                         key={l.id}
-                        className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-white hover:border-gray-200 transition-colors"
+                        className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 bg-white hover:border-gray-200 transition-colors"
                       >
                         <div className="flex flex-col">
                           <button
@@ -424,7 +424,7 @@ const UserAppAlignment = () => {
                             <ArrowDown size={14} />
                           </button>
                         </div>
-                        <span className="w-6 text-center text-sm font-bold text-gray-300">{idx + 1}</span>
+                        <span className="w-6 text-center text-sm font-bold text-gray-700">{idx + 1}</span>
                         <div className="flex-1 min-w-0">
                           <p className="font-bold text-gray-900 truncate flex items-center gap-1.5">
                             {l.is_tlb_signature && <Star size={12} className="text-yellow-500 fill-yellow-500 shrink-0" />}
@@ -539,7 +539,7 @@ function PhonePreview({ page, sections, activeSlug, itemsFor, onSelect }: PhoneP
         {/* Scrollable screen */}
         <div className="bg-gray-50 h-[440px] overflow-y-auto pb-6">
           {sections.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-[11px] text-gray-300">No sections</div>
+            <div className="flex items-center justify-center h-full text-[11px] text-gray-700">No sections</div>
           ) : (
             sections.map((s) => {
               const list = itemsFor(s.section);
@@ -558,7 +558,7 @@ function PhonePreview({ page, sections, activeSlug, itemsFor, onSelect }: PhoneP
                   </button>
                   <div className="flex gap-2.5 overflow-x-auto px-4 pb-2">
                     {list.length === 0 ? (
-                      <div className="shrink-0 w-full h-20 rounded-xl border border-dashed border-gray-200 flex items-center justify-center text-[10px] text-gray-300">
+                      <div className="shrink-0 w-full h-20 rounded-xl border border-dashed border-gray-200 flex items-center justify-center text-[10px] text-gray-700">
                         Empty section
                       </div>
                     ) : (
@@ -568,12 +568,12 @@ function PhonePreview({ page, sections, activeSlug, itemsFor, onSelect }: PhoneP
                         return (
                           <div key={l.id} className="shrink-0 w-28">
                             <div className={cn('h-20 rounded-xl bg-gradient-to-br flex items-center justify-center relative overflow-hidden', grad, l.is_paused && 'opacity-40 grayscale')}>
-                              <Icon size={24} className="text-white/90" />
+                              <Icon size={24} className="text-gray-900/90" />
                               {l.is_tlb_signature && (
                                 <span className="absolute top-1 left-1 bg-white/90 rounded-full p-0.5"><Sparkles size={9} className="text-yellow-500" /></span>
                               )}
                               {l.is_paused && (
-                                <span className="absolute bottom-1 left-1 bg-gray-900/70 text-white text-[7px] font-bold px-1 py-0.5 rounded">Paused</span>
+                                <span className="absolute bottom-1 left-1 bg-gray-900/70 text-gray-900 text-[7px] font-bold px-1 py-0.5 rounded">Paused</span>
                               )}
                             </div>
                             <p className="mt-1 text-[10px] font-bold text-gray-900 leading-tight line-clamp-2">{l.title}</p>
@@ -683,14 +683,14 @@ function AddListingPicker({ listingType, signatureOnly, existingIds, busyId, onA
         role="dialog"
         aria-label="Add a listing to the section"
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
           <h3 className="font-bold text-gray-900">Add a Published Listing</h3>
           <button onClick={onClose} aria-label="Close" className="p-2 rounded-lg text-gray-400 hover:bg-gray-50">
             <X size={18} />
           </button>
         </div>
 
-        <div className="p-4 border-b border-gray-100 space-y-3">
+        <div className="p-4 border-b border-gray-200 space-y-3">
           <div className="relative">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
@@ -698,7 +698,7 @@ function AddListingPicker({ listingType, signatureOnly, existingIds, busyId, onA
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search listings by title…"
-              className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40"
+              className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40"
             />
           </div>
 
@@ -757,7 +757,7 @@ function TypeChip({ label, active, onClick }: { label: string; active: boolean; 
       onClick={onClick}
       className={cn(
         'px-3 py-1 rounded-lg text-xs font-bold transition-colors',
-        active ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
+        active ? 'bg-gray-900 text-gray-900' : 'bg-gray-100 text-gray-600 hover:bg-gray-100',
       )}
     >
       {label}

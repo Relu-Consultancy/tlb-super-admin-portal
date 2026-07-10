@@ -1,5 +1,19 @@
 @import "tailwindcss";
 
+:root {
+  --gold: #d4a012;
+  --gold-light: #f5c518;
+  --surface: #fafaf7;
+  --surface-card: #ffffff;
+  --sidebar: #0e0e12;
+  --header: #111116;
+}
+
+body {
+  background: var(--surface);
+  color: #1a1a1a;
+}
+
 .loader {
   width: 40px;
   aspect-ratio: 1;
@@ -9,7 +23,7 @@
 .loader::after {
   content: "";
   grid-area: 1/1;
-  background: #facc15;
+  background: var(--gold);
   clip-path: polygon(0 0, 101% 0, 0 100%);
   animation: l13 2s infinite;
 }

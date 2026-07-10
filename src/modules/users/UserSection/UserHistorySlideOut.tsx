@@ -182,7 +182,7 @@ const UserHistorySlideOut = ({ user, onClose, onChanged }: UserHistorySlideOutPr
                         className="fixed inset-y-0 right-0 w-full max-w-2xl bg-gray-50 shadow-2xl z-50 flex flex-col border-l border-gray-200"
                     >
                         {/* Header */}
-                        <div className="bg-white px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                        <div className="bg-white px-6 py-4 border-b border-gray-200 flex items-center justify-between">
                             <div className="min-w-0">
                                 <h2 className="text-xl font-bold text-gray-900 truncate">Activity Ledger: {userDisplayName(user)}</h2>
                                 <p className="text-xs font-bold text-yellow-600 uppercase tracking-widest truncate">{user.email}</p>
@@ -193,7 +193,7 @@ const UserHistorySlideOut = ({ user, onClose, onChanged }: UserHistorySlideOutPr
                         </div>
 
                         {/* Tabs */}
-                        <div className="bg-white px-6 border-b border-gray-100 flex gap-6 overflow-x-auto">
+                        <div className="bg-white px-6 border-b border-gray-200 flex gap-6 overflow-x-auto">
                             {TABS.map((tab) => (
                                 <button
                                     key={tab.id}
@@ -228,7 +228,7 @@ const UserHistorySlideOut = ({ user, onClose, onChanged }: UserHistorySlideOutPr
                                         </div>
                                     )}
 
-                                    <div className="bg-white rounded-2xl border border-gray-100 p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="bg-white rounded-2xl border border-gray-200 p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         {[
                                             { label: 'Name', value: userDisplayName(user) },
                                             { label: 'Email', value: user.email },
@@ -243,7 +243,7 @@ const UserHistorySlideOut = ({ user, onClose, onChanged }: UserHistorySlideOutPr
                                             { label: 'Last Login', value: formatDateTime(user.last_login) },
                                             { label: 'Created', value: formatDateTime(user.created_at) },
                                         ].map((row) => (
-                                            <div key={row.label} className="flex flex-col gap-0.5 pb-3 border-b border-gray-50">
+                                            <div key={row.label} className="flex flex-col gap-0.5 pb-3 border-b border-gray-100">
                                                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{row.label}</span>
                                                 <span className="text-sm text-gray-800 break-all">{row.value}</span>
                                             </div>
@@ -252,7 +252,7 @@ const UserHistorySlideOut = ({ user, onClose, onChanged }: UserHistorySlideOutPr
 
                                     {/* Security actions */}
                                     {canManage && (
-                                        <div className="bg-white rounded-2xl border border-gray-100 p-5">
+                                        <div className="bg-white rounded-2xl border border-gray-200 p-5">
                                             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Security Actions</h3>
                                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                                 {isActive ? (
@@ -266,12 +266,12 @@ const UserHistorySlideOut = ({ user, onClose, onChanged }: UserHistorySlideOutPr
                                         </div>
                                     )}
 
-                                    <div className="bg-white rounded-2xl border border-gray-100 p-5">
+                                    <div className="bg-white rounded-2xl border border-gray-200 p-5">
                                         <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Recent Logins</h3>
                                         {logins.length ? (
                                             <div className="space-y-2">
                                                 {logins.map((e) => (
-                                                    <div key={e.id} className="flex items-center justify-between text-xs border-b border-gray-50 pb-2 last:border-0">
+                                                    <div key={e.id} className="flex items-center justify-between text-xs border-b border-gray-100 pb-2 last:border-0">
                                                         <div className="min-w-0">
                                                             <p className="font-bold text-gray-800 truncate">{e.ip_address || '—'} · <span className="font-normal text-gray-500">{e.auth_provider}</span></p>
                                                             <p className="text-[10px] text-gray-400 truncate">{e.device_info || '—'}</p>
@@ -284,12 +284,12 @@ const UserHistorySlideOut = ({ user, onClose, onChanged }: UserHistorySlideOutPr
                                     </div>
 
                                     {/* Admin security log */}
-                                    <div className="bg-white rounded-2xl border border-gray-100 p-5">
+                                    <div className="bg-white rounded-2xl border border-gray-200 p-5">
                                         <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><ShieldAlert size={13} /> Admin Security Log</h3>
                                         {securityLog.length ? (
                                             <div className="space-y-2">
                                                 {securityLog.map((s) => (
-                                                    <div key={s.id} className="text-xs border-b border-gray-50 pb-2 last:border-0">
+                                                    <div key={s.id} className="text-xs border-b border-gray-100 pb-2 last:border-0">
                                                         <div className="flex items-center justify-between">
                                                             <span className="font-bold text-gray-800 capitalize">{humanizeKey(s.action)}</span>
                                                             <span className="text-[10px] text-gray-400">{formatDateTime(s.created_at)}</span>
@@ -308,7 +308,7 @@ const UserHistorySlideOut = ({ user, onClose, onChanged }: UserHistorySlideOutPr
                                 tabLoading ? <TabLoader /> : bookings && bookings.length ? (
                                     <div className="space-y-3">
                                         {bookings.map((b) => (
-                                            <div key={b.id} className="bg-white rounded-2xl border border-gray-100 p-4">
+                                            <div key={b.id} className="bg-white rounded-2xl border border-gray-200 p-4">
                                                 <div className="flex items-start justify-between gap-3">
                                                     <div className="min-w-0">
                                                         <p className="font-bold text-gray-900 truncate">{b.listing?.title || b.booking_type || 'Booking'}</p>
@@ -332,12 +332,12 @@ const UserHistorySlideOut = ({ user, onClose, onChanged }: UserHistorySlideOutPr
                                 tabLoading ? <TabLoader /> : reviews && reviews.length ? (
                                     <div className="space-y-3">
                                         {reviews.map((r) => (
-                                            <div key={r.id} className="bg-white rounded-2xl border border-gray-100 p-4">
+                                            <div key={r.id} className="bg-white rounded-2xl border border-gray-200 p-4">
                                                 <div className="flex items-center justify-between">
                                                     <p className="font-bold text-gray-900 truncate">{r.listing?.title || 'Listing'}</p>
                                                     <div className="flex items-center gap-0.5 shrink-0">
                                                         {Array.from({ length: 5 }).map((_, i) => (
-                                                            <Star key={i} size={13} className={i < r.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200'} />
+                                                            <Star key={i} size={13} className={i < r.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-800'} />
                                                         ))}
                                                     </div>
                                                 </div>
@@ -354,7 +354,7 @@ const UserHistorySlideOut = ({ user, onClose, onChanged }: UserHistorySlideOutPr
                                 tabLoading ? <TabLoader /> : wishlist && wishlist.length ? (
                                     <div className="space-y-2">
                                         {wishlist.map((w) => (
-                                            <div key={w.id} className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center justify-between gap-3">
+                                            <div key={w.id} className="bg-white rounded-2xl border border-gray-200 p-4 flex items-center justify-between gap-3">
                                                 <div className="min-w-0">
                                                     <p className="font-bold text-gray-900 truncate">{w.listing?.title || 'Listing'}</p>
                                                     <p className="text-[10px] text-gray-400 uppercase tracking-wider">{w.listing?.listing_type || '—'}</p>
@@ -373,9 +373,9 @@ const UserHistorySlideOut = ({ user, onClose, onChanged }: UserHistorySlideOutPr
                         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => !disableSubmitting && setDisableOpen(false)} className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
                             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden">
-                                <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                                <div className="p-6 border-b border-gray-200 flex justify-between items-center">
                                     <h2 className="text-xl font-bold text-gray-900">Disable Customer</h2>
-                                    <button onClick={() => setDisableOpen(false)} disabled={disableSubmitting} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X size={20} className="text-gray-400" /></button>
+                                    <button onClick={() => setDisableOpen(false)} disabled={disableSubmitting} className="p-2 hover:bg-gray-50 rounded-full transition-colors"><X size={20} className="text-gray-400" /></button>
                                 </div>
                                 <div className="p-6 space-y-4">
                                     <p className="text-sm text-gray-500">Disabling <span className="font-bold text-gray-900">{user.email}</span> immediately revokes their access. Provide a reason for the audit log.</p>
@@ -383,7 +383,7 @@ const UserHistorySlideOut = ({ user, onClose, onChanged }: UserHistorySlideOutPr
                                 </div>
                                 <div className="p-6 bg-gray-50 flex justify-end gap-3">
                                     <button onClick={() => setDisableOpen(false)} disabled={disableSubmitting} className="px-6 py-3 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-all disabled:opacity-60">Cancel</button>
-                                    <button onClick={submitDisable} disabled={disableSubmitting || !disableReason.trim()} className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
+                                    <button onClick={submitDisable} disabled={disableSubmitting || !disableReason.trim()} className="flex items-center gap-2 px-6 py-3 bg-red-600 text-gray-900 font-bold rounded-xl hover:bg-red-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
                                         {disableSubmitting && <Loader2 size={16} className="animate-spin" />}
                                         {disableSubmitting ? 'Disabling…' : 'Disable Account'}
                                     </button>
@@ -403,7 +403,7 @@ function TabLoader() {
 
 function Empty({ icon, label }: { icon: typeof Receipt; label: string }) {
     return (
-        <div className="bg-white rounded-2xl border border-gray-100">
+        <div className="bg-white rounded-2xl border border-gray-200">
             <EmptyState icon={icon} title={label} />
         </div>
     );

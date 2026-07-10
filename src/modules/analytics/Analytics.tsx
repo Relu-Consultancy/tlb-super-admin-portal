@@ -230,7 +230,7 @@ const Analytics = () => {
                             ) : (
                                 <div className="space-y-2.5">
                                     {data.recent_activity.bookings.slice(0, 6).map((b) => (
-                                        <div key={b.id} className="flex items-center justify-between gap-3 p-3 rounded-2xl border border-gray-100">
+                                        <div key={b.id} className="flex items-center justify-between gap-3 p-3 rounded-2xl border border-gray-200">
                                             <div className="min-w-0">
                                                 <p className="text-sm font-bold text-gray-900 truncate">{b.booking_reference || b.customer_email}</p>
                                                 <p className="text-xs text-gray-400 truncate capitalize">{b.customer_email} · {b.status}</p>

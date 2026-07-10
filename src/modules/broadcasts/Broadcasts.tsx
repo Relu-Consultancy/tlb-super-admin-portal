@@ -247,7 +247,7 @@ const Broadcasts = () => {
                                         {detail.send_in_app && <ChannelPill icon={Bell} label="In-app" />}
                                     </div>
                                 </div>
-                                <div className="mt-4 pt-4 border-t border-gray-50">
+                                <div className="mt-4 pt-4 border-t border-gray-100">
                                     <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{detail.body}</p>
                                     {detail.action_url && (
                                         <a href={detail.action_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 mt-3 text-sm font-bold text-yellow-600 hover:text-yellow-700">
@@ -267,14 +267,14 @@ const Broadcasts = () => {
                                     <MiniMetric label="Failed" value={num(detail.total_failed)} tone="text-red-600" />
                                 </div>
                                 {stats.length > 0 && (
-                                    <div className="mt-3 pt-3 border-t border-gray-50 space-y-3">
+                                    <div className="mt-3 pt-3 border-t border-gray-100 space-y-3">
                                         {stats.map(([channel, v]) => (
                                             <div key={channel}>
                                                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">{channel.replace(/_/g, ' ')}</p>
                                                 {v && typeof v === 'object' && !Array.isArray(v) ? (
                                                     <div className="flex flex-wrap gap-1.5">
                                                         {Object.entries(v as Record<string, unknown>).map(([sk, sv]) => (
-                                                            <span key={sk} className="px-2 py-1 bg-gray-50 border border-gray-100 text-gray-600 text-[11px] font-medium rounded-md">
+                                                            <span key={sk} className="px-2 py-1 bg-gray-50 border border-gray-200 text-gray-600 text-[11px] font-medium rounded-md">
                                                                 {sk.replace(/_/g, ' ')}: <span className="font-bold text-gray-800">{typeof sv === 'number' ? sv.toLocaleString() : String(sv)}</span>
                                                             </span>
                                                         ))}
@@ -304,14 +304,14 @@ const Broadcasts = () => {
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left whitespace-nowrap">
                                         <thead>
-                                            <tr className="bg-gray-50 border-y border-gray-100">
+                                            <tr className="bg-gray-50 border-y border-gray-200">
                                                 <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Recipient</th>
                                                 <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Channel</th>
                                                 <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</th>
                                                 <th className="px-5 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Sent</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-gray-50">
+                                        <tbody className="divide-y divide-gray-100">
                                             {deliveriesLoading ? (
                                                 <tr><td colSpan={4}><div className="flex items-center justify-center py-10 text-gray-400"><Loader2 className="animate-spin" size={20} /></div></td></tr>
                                             ) : deliveries.length === 0 ? (
@@ -351,7 +351,7 @@ const Broadcasts = () => {
                                 </div>
 
                                 {canSend && (
-                                    <div className="space-y-2 pt-4 border-t border-gray-100">
+                                    <div className="space-y-2 pt-4 border-t border-gray-200">
                                         <button
                                             onClick={handleSendTest}
                                             disabled={actionBusy === 'test'}
@@ -404,7 +404,7 @@ const Broadcasts = () => {
                 {canSend && (
                     <button
                         onClick={() => setView('compose')}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-yellow-400 text-gray-900 font-bold rounded-xl hover:bg-yellow-500 shadow-md shadow-yellow-400/20 transition-all"
+                        className="flex items-center gap-2 px-5 py-2.5 bg-yellow-400 text-gray-900 font-bold rounded-xl hover:bg-yellow-500 shadow-lg shadow-yellow-400/20 transition-all"
                     >
                         <Plus size={16} /> New Broadcast
                     </button>
@@ -426,7 +426,7 @@ const Broadcasts = () => {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left whitespace-nowrap">
                         <thead>
-                            <tr className="bg-gray-50 border-b border-gray-100">
+                            <tr className="bg-gray-50 border-b border-gray-200">
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Broadcast</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Channels</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Recipients</th>
@@ -434,7 +434,7 @@ const Broadcasts = () => {
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">When</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-50">
+                        <tbody className="divide-y divide-gray-100">
                             {loading ? (
                                 <tr><td colSpan={5}><div className="flex items-center justify-center py-16 text-gray-400"><Loader2 className="animate-spin" size={24} /></div></td></tr>
                             ) : error ? (
@@ -452,7 +452,7 @@ const Broadcasts = () => {
                                             <div className="flex gap-1.5">
                                                 {b.send_email && <Mail size={15} className="text-gray-400" />}
                                                 {b.send_in_app && <Bell size={15} className="text-gray-400" />}
-                                                {!b.send_email && !b.send_in_app && <span className="text-gray-300">—</span>}
+                                                {!b.send_email && !b.send_in_app && <span className="text-gray-700">—</span>}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-xs text-gray-600">
@@ -609,7 +609,7 @@ function Composer({
                             {!channelOk && <p className="text-[11px] text-red-500 mt-1.5">Pick at least one channel.</p>}
                         </div>
 
-                        <div className="pt-4 border-t border-gray-50">
+                        <div className="pt-4 border-t border-gray-100">
                             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Audience</p>
                             <select value={audience} onChange={(e) => setAudience(e.target.value as BroadcastAudience)} className={cn(inputCls, 'cursor-pointer')}>
                                 {BROADCAST_AUDIENCES.map((a) => <option key={a.value} value={a.value}>{a.label}</option>)}
@@ -623,7 +623,7 @@ function Composer({
                             </div>
                         </div>
 
-                        <div className="pt-4 border-t border-gray-50">
+                        <div className="pt-4 border-t border-gray-100">
                             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Delivery</p>
                             <div className="grid grid-cols-2 gap-2">
                                 <ModeButton active={scheduleMode === 'now'} onClick={() => setScheduleMode('now')} icon={Send} label="Send now" />
@@ -640,7 +640,7 @@ function Composer({
                         <button
                             onClick={onSubmitClick}
                             disabled={!formValid || submitting}
-                            className="w-full flex items-center justify-center gap-2 py-3 bg-yellow-400 text-gray-900 font-bold rounded-xl hover:bg-yellow-500 shadow-md shadow-yellow-400/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full flex items-center justify-center gap-2 py-3 bg-yellow-400 text-gray-900 font-bold rounded-xl hover:bg-yellow-500 shadow-lg shadow-yellow-400/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {submitting ? <Loader2 size={16} className="animate-spin" /> : scheduleMode === 'now' ? <Send size={16} /> : <CalendarClock size={16} />}
                             {scheduleMode === 'now' ? 'Review & Send' : 'Schedule Broadcast'}
@@ -731,7 +731,7 @@ function ModeButton({ active, onClick, icon: Icon, label }: { active: boolean; o
         <button
             type="button"
             onClick={onClick}
-            className={cn('flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-bold transition-all', active ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50')}
+            className={cn('flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-bold transition-all', active ? 'bg-gray-900 text-gray-900 border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50')}
         >
             <Icon size={15} /> {label}
         </button>
@@ -798,7 +798,7 @@ function ConfirmModal({ title, blurb, confirmLabel, danger, busy, onClose, onCon
                 </div>
                 <div className="p-6 pt-0 flex justify-end gap-3">
                     <button onClick={onClose} disabled={busy} className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-all disabled:opacity-60">Back</button>
-                    <button onClick={onConfirm} disabled={busy} className={cn('flex items-center gap-2 px-5 py-2.5 text-white font-bold rounded-xl transition-all disabled:opacity-60', danger ? 'bg-red-600 hover:bg-red-700' : 'bg-green-500 hover:bg-green-600')}>
+                    <button onClick={onConfirm} disabled={busy} className={cn('flex items-center gap-2 px-5 py-2.5 text-gray-900 font-bold rounded-xl transition-all disabled:opacity-60', danger ? 'bg-red-600 hover:bg-red-700' : 'bg-green-500 hover:bg-green-600')}>
                         {busy && <Loader2 size={16} className="animate-spin" />} {busy ? 'Working…' : confirmLabel}
                     </button>
                 </div>

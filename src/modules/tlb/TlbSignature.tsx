@@ -160,7 +160,7 @@ const TlbSignature = ({ onCreate }: Props) => {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
+                <tr className="border-b border-gray-200 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
                   <th className="px-5 py-3">Title</th>
                   <th className="px-5 py-3">Type</th>
                   <th className="px-5 py-3">Status</th>
@@ -172,7 +172,7 @@ const TlbSignature = ({ onCreate }: Props) => {
               </thead>
               <tbody>
                 {rows.map((r) => (
-                  <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50/60">
+                  <tr key={r.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="px-5 py-3 font-bold text-gray-900">
                       <span className="flex items-center gap-1.5">
                         <Sparkles size={12} className="text-yellow-500 shrink-0" />
@@ -190,7 +190,7 @@ const TlbSignature = ({ onCreate }: Props) => {
                     <td className="px-5 py-3 text-gray-500">{r.created_by_admin_email || '—'}</td>
                     <td className="px-5 py-3 text-gray-500">{formatDate(r.created_at)}</td>
                     <td className="px-5 py-3 text-right">
-                      <button onClick={() => setDetailId(r.id)} aria-label="View details" className="p-2 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100">
+                      <button onClick={() => setDetailId(r.id)} aria-label="View details" className="p-2 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-50">
                         <Eye size={16} />
                       </button>
                     </td>
@@ -312,7 +312,7 @@ function DetailDrawer({ id, onClose, onChanged, onError }: DrawerProps) {
         role="dialog"
         aria-label="TLB Signature listing detail"
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
           <h3 className="font-bold text-gray-900 flex items-center gap-1.5"><Sparkles size={16} className="text-yellow-500" /> Listing Detail</h3>
           <button onClick={onClose} aria-label="Close" className="p-2 rounded-lg text-gray-400 hover:bg-gray-50"><X size={18} /></button>
         </div>
@@ -365,9 +365,9 @@ function DetailDrawer({ id, onClose, onChanged, onError }: DrawerProps) {
         </div>
 
         {data && !loading && (
-          <div className="border-t border-gray-100 p-4 flex flex-wrap gap-2">
+          <div className="border-t border-gray-200 p-4 flex flex-wrap gap-2">
             {!editing && !isArchived && (
-              <button onClick={() => setEditing(true)} className="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 text-sm">
+              <button onClick={() => setEditing(true)} className="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-gray-900 font-bold rounded-xl hover:bg-gray-800 text-sm">
                 <PencilLine size={15} /> Edit
               </button>
             )}
@@ -390,7 +390,7 @@ function DetailDrawer({ id, onClose, onChanged, onError }: DrawerProps) {
   );
 }
 
-const editCls = 'w-full px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40';
+const editCls = 'w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40';
 function EditField({ label, children }: { label: string; children: React.ReactNode }) {
   return <label className="block"><span className="text-xs font-bold text-gray-500">{label}</span><div className="mt-1">{children}</div></label>;
 }

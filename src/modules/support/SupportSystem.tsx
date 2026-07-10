@@ -19,6 +19,9 @@ import {
     XCircle,
     RotateCcw,
     ShieldCheck,
+    Share2,
+    Building2,
+    X,
 } from 'lucide-react';
 import Card from '../../shared/components/ui/Card';
 import { cn } from '../../shared/lib/utils';
@@ -29,6 +32,8 @@ import {
     getTicketMessages,
     sendTicketMessage,
     updateTicketStatus,
+    shareTicketWithPartner,
+    listPartners,
     ticketStatusLabel,
     ticketStatusTone,
     ticketCategoryLabel,
@@ -36,6 +41,7 @@ import {
     ApiError,
     type SupportTicket,
     type TicketMessage,
+    type PartnerListItem,
 } from '../../shared/lib/api';
 
 type TabFilter = 'all' | 'open' | 'in_progress' | 'resolved' | 'closed';
@@ -98,6 +104,10 @@ const SupportSystem = () => {
     const [statusBusy, setStatusBusy] = useState(false);
     const [showDetails, setShowDetails] = useState(true);
     const [toast, setToast] = useState<Toast>(null);
+
+    // Share with partner
+    const [shareOpen, setShareOpen] = useState(false);
+    const [shareBusy, setShareBusy] = useState(false);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const lastStampRef = useRef<string | null>(null);
@@ -260,6 +270,34 @@ const SupportSystem = () => {
         }
     };
 
+    const handleShare = async (partnerId: string, note: string) => {
+        if (!selectedId || shareBusy) return;
+        setShareBusy(true);
+        setToast(null);
+        try {
+            const updated = await shareTicketWithPartner(selectedId, partnerId, note || undefined);
+            setSelectedTicket(updated);
+            setTickets((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+            flash('success', `Ticket shared with ${updated.shared_with_partner_name || 'partner'}.`);
+            setShareOpen(false);
+            loadMessages(selectedId);
+        } catch (err) {
+            const text =
+                err instanceof ApiError
+                    ? err.code === 'SHARE_NOT_ALLOWED'
+                        ? 'Only customer-raised tickets can be shared with a partner.'
+                        : err.code === 'TICKET_CLOSED'
+                            ? 'This ticket is closed and cannot be shared.'
+                            : err.code === 'PARTNER_NOT_FOUND'
+                                ? 'The selected partner was not found.'
+                                : err.message
+                    : 'Could not share the ticket.';
+            flash('error', text);
+        } finally {
+            setShareBusy(false);
+        }
+    };
+
     // --- Derived data ---
     const counts = {
         all: tickets.length,
@@ -288,7 +326,10 @@ const SupportSystem = () => {
         selectedTicket?.status === 'resolved' || selectedTicket?.status === 'closed';
 
     const isAdminMessage = (m: TicketMessage) =>
-        (admin && m.sender_email === admin.email) || !NON_ADMIN_ROLES.has(m.sender_role?.toLowerCase());
+        (admin && m.sender_email === admin.email) || (!NON_ADMIN_ROLES.has(m.sender_role?.toLowerCase()));
+
+    const isPartnerMessage = (m: TicketMessage) =>
+        m.sender_role?.toLowerCase() === 'partner';
 
     return (
         <div className="space-y-5">
@@ -401,7 +442,7 @@ const SupportSystem = () => {
                                     <AlertCircle size={32} className="mb-2 text-red-300" />
                                     <p className="text-xs font-bold text-gray-600">Couldn't load tickets</p>
                                     <p className="text-[11px] mt-1">{error}</p>
-                                    <button onClick={loadTickets} className="mt-3 px-3 py-1.5 bg-gray-900 text-white text-xs font-bold rounded-lg">Retry</button>
+                                    <button onClick={loadTickets} className="mt-3 px-3 py-1.5 bg-gray-900 text-gray-900 text-xs font-bold rounded-lg">Retry</button>
                                 </div>
                             ) : filteredTickets.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center h-full text-gray-400 p-6">
@@ -416,13 +457,13 @@ const SupportSystem = () => {
                                             key={ticket.id}
                                             onClick={() => selectTicket(ticket)}
                                             className={cn(
-                                                'w-full p-3.5 text-left transition-all flex gap-3 border-b border-gray-50',
+                                                'w-full p-3.5 text-left transition-all flex gap-3 border-b border-gray-100',
                                                 selectedId === ticket.id
                                                     ? 'bg-yellow-50/70 border-l-[3px] border-l-yellow-400'
-                                                    : 'hover:bg-gray-50/70 border-l-[3px] border-l-transparent',
+                                                    : 'hover:bg-gray-50 border-l-[3px] border-l-transparent',
                                             )}
                                         >
-                                            <div className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
+                                            <div className="w-10 h-10 rounded-full bg-gray-900 text-gray-900 flex items-center justify-center text-xs font-bold flex-shrink-0">
                                                 {initials(ticket.raised_by_email)}
                                             </div>
                                             <div className="flex-1 min-w-0">
@@ -435,9 +476,14 @@ const SupportSystem = () => {
                                                     <span className={cn('px-1.5 py-0.5 text-[9px] font-bold rounded uppercase tracking-wider', tone.bg, tone.color)}>
                                                         {ticketStatusLabel(ticket.status)}
                                                     </span>
-                                                    <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-gray-100 text-gray-500 uppercase tracking-wider">
+                                                    <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-gray-100 text-gray-400 uppercase tracking-wider">
                                                         {ticketCategoryLabel(ticket.category)}
                                                     </span>
+                                                    {ticket.shared_with_partner_name && (
+                                                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-bold rounded bg-purple-50 text-purple-600 uppercase tracking-wider">
+                                                            <Share2 size={9} /> Shared
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </button>
@@ -453,9 +499,9 @@ const SupportSystem = () => {
                     {selectedTicket ? (
                         <>
                             {/* Chat Header */}
-                            <div className="px-5 py-3 border-b border-gray-100 flex justify-between items-center bg-white">
+                            <div className="px-5 py-3 border-b border-gray-200 flex justify-between items-center bg-white">
                                 <div className="flex items-center gap-3 min-w-0">
-                                    <div className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
+                                    <div className="w-10 h-10 rounded-full bg-gray-900 text-gray-900 flex items-center justify-center text-xs font-bold flex-shrink-0">
                                         {initials(selectedTicket.raised_by_email)}
                                     </div>
                                     <div className="min-w-0">
@@ -472,8 +518,16 @@ const SupportSystem = () => {
                                                     </span>
                                                 );
                                             })()}
-                                            <span className="text-gray-300">|</span>
+                                            <span className="text-gray-700">|</span>
                                             <span className="text-[10px] text-gray-400">{selectedTicket.subject || ticketCategoryLabel(selectedTicket.category)}</span>
+                                            {selectedTicket.shared_with_partner_name && (
+                                                <>
+                                                    <span className="text-gray-700">|</span>
+                                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold rounded bg-purple-50 text-purple-600">
+                                                        <Share2 size={10} /> {selectedTicket.shared_with_partner_name}
+                                                    </span>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -491,7 +545,7 @@ const SupportSystem = () => {
                             <div className="flex-1 flex overflow-hidden">
                                 {/* Messages Area */}
                                 <div className="flex-1 flex flex-col">
-                                    <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-gray-50/30">
+                                    <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-gray-50/50">
                                         {messagesLoading ? (
                                             <div className="flex items-center justify-center h-full text-gray-400">
                                                 <Loader2 size={24} className="animate-spin" />
@@ -504,23 +558,36 @@ const SupportSystem = () => {
                                         ) : (
                                             messages.map((msg) => {
                                                 const mine = isAdminMessage(msg);
+                                                const partner = isPartnerMessage(msg);
+                                                const alignRight = mine;
                                                 return (
-                                                    <div key={msg.id} className={cn('flex gap-2.5', mine ? 'flex-row-reverse ml-12' : 'mr-12')}>
-                                                        {!mine && (
-                                                            <div className="w-7 h-7 rounded-full bg-gray-300 text-gray-700 flex items-center justify-center text-[10px] font-bold mt-1 flex-shrink-0">
-                                                                {initials(msg.sender_email)}
+                                                    <div key={msg.id} className={cn('flex gap-2.5', alignRight ? 'flex-row-reverse ml-12' : 'mr-12')}>
+                                                        {!alignRight && (
+                                                            <div className={cn(
+                                                                'w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold mt-1 flex-shrink-0',
+                                                                partner ? 'bg-purple-100 text-purple-700' : 'bg-gray-300 text-gray-700',
+                                                            )}>
+                                                                {partner ? <Building2 size={13} /> : initials(msg.sender_email)}
                                                             </div>
                                                         )}
                                                         <div className={cn(
                                                             'p-3.5 rounded-2xl shadow-sm max-w-full',
                                                             mine
-                                                                ? 'bg-slate-900 text-white rounded-tr-none'
-                                                                : 'bg-white border border-gray-100 text-gray-700 rounded-tl-none',
+                                                                ? 'bg-slate-900 text-gray-900 rounded-tr-none'
+                                                                : partner
+                                                                    ? 'bg-purple-50 border border-purple-100 text-gray-700 rounded-tl-none'
+                                                                    : 'bg-white border border-gray-200 text-gray-700 rounded-tl-none',
                                                         )}>
                                                             {mine && (
                                                                 <div className="flex items-center gap-1 mb-1.5">
                                                                     <ShieldCheck size={12} className="text-yellow-400" />
                                                                     <span className="text-[10px] font-bold text-yellow-400 uppercase tracking-wider">{msg.sender_role || 'Admin'}</span>
+                                                                </div>
+                                                            )}
+                                                            {partner && (
+                                                                <div className="flex items-center gap-1 mb-1.5">
+                                                                    <Building2 size={12} className="text-purple-500" />
+                                                                    <span className="text-[10px] font-bold text-purple-500 uppercase tracking-wider">Partner</span>
                                                                 </div>
                                                             )}
                                                             <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.body}</p>
@@ -536,7 +603,7 @@ const SupportSystem = () => {
                                     </div>
 
                                     {/* Message Input */}
-                                    <div className="p-3 bg-white border-t border-gray-100">
+                                    <div className="p-3 bg-white border-t border-gray-200">
                                         {isResolvedOrClosed ? (
                                             <div className="flex items-center justify-center gap-2 py-2 text-xs text-gray-400">
                                                 <CheckCircle size={14} /> This ticket is {ticketStatusLabel(selectedTicket.status).toLowerCase()}.
@@ -569,7 +636,7 @@ const SupportSystem = () => {
                                                     className={cn(
                                                         'px-5 py-2.5 font-bold rounded-xl transition-all flex items-center gap-2 text-sm',
                                                         messageInput.trim() && !sending
-                                                            ? 'bg-yellow-400 text-gray-900 hover:bg-yellow-500 shadow-md shadow-yellow-400/20'
+                                                            ? 'bg-yellow-400 text-gray-900 hover:bg-yellow-500 shadow-lg shadow-yellow-400/20'
                                                             : 'bg-gray-100 text-gray-400 cursor-not-allowed',
                                                     )}
                                                 >
@@ -582,8 +649,8 @@ const SupportSystem = () => {
 
                                 {/* Details Sidebar */}
                                 {showDetails && (
-                                    <div className="w-64 border-l border-gray-100 bg-white overflow-y-auto flex-shrink-0">
-                                        <div className="p-4 border-b border-gray-100">
+                                    <div className="w-64 border-l border-gray-200 bg-white overflow-y-auto flex-shrink-0">
+                                        <div className="p-4 border-b border-gray-200">
                                             <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Ticket Details</h4>
                                             <div className="space-y-3">
                                                 <div className="flex items-center gap-2.5">
@@ -624,7 +691,24 @@ const SupportSystem = () => {
                                             </div>
                                         </div>
 
-                                        <div className="p-4 border-b border-gray-100">
+                                        {selectedTicket.shared_with_partner_name && (
+                                            <div className="p-4 border-b border-gray-200">
+                                                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Shared With Partner</h4>
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+                                                        <Building2 size={14} className="text-purple-600" />
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="text-xs font-bold text-gray-900 truncate">{selectedTicket.shared_with_partner_name}</p>
+                                                        {selectedTicket.shared_at && (
+                                                            <p className="text-[10px] text-gray-400">Shared {formatDateTime(selectedTicket.shared_at)}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="p-4 border-b border-gray-200">
                                             <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Raised By</h4>
                                             <div className="space-y-3">
                                                 <div className="flex items-center gap-2.5">
@@ -661,7 +745,7 @@ const SupportSystem = () => {
                                                         <button
                                                             onClick={() => changeStatus('closed')}
                                                             disabled={statusBusy}
-                                                            className="w-full flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 text-xs font-bold rounded-xl hover:bg-gray-200 transition-all disabled:opacity-60"
+                                                            className="w-full flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 text-xs font-bold rounded-xl hover:bg-gray-100 transition-all disabled:opacity-60"
                                                         >
                                                             {statusBusy ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} />} Close Ticket
                                                         </button>
@@ -673,6 +757,16 @@ const SupportSystem = () => {
                                                             className="w-full flex items-center gap-2 px-3 py-2 bg-yellow-50 text-yellow-700 text-xs font-bold rounded-xl hover:bg-yellow-100 transition-all disabled:opacity-60"
                                                         >
                                                             {statusBusy ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />} Reopen Ticket
+                                                        </button>
+                                                    )}
+                                                    {selectedTicket.raised_by_role === 'customer' && selectedTicket.status !== 'closed' && (
+                                                        <button
+                                                            onClick={() => setShareOpen(true)}
+                                                            disabled={shareBusy}
+                                                            className="w-full flex items-center gap-2 px-3 py-2 bg-purple-50 text-purple-700 text-xs font-bold rounded-xl hover:bg-purple-100 transition-all disabled:opacity-60"
+                                                        >
+                                                            {shareBusy ? <Loader2 size={14} className="animate-spin" /> : <Share2 size={14} />}
+                                                            {selectedTicket.shared_with_partner_name ? 'Reassign to Partner' : 'Share with Partner'}
                                                         </button>
                                                     )}
                                                 </div>
@@ -691,8 +785,190 @@ const SupportSystem = () => {
                     )}
                 </Card>
             </div>
+
+            {/* Share with Partner modal */}
+            {shareOpen && selectedTicket && (
+                <ShareWithPartnerModal
+                    currentPartnerId={selectedTicket.shared_with_partner_id}
+                    submitting={shareBusy}
+                    onClose={() => !shareBusy && setShareOpen(false)}
+                    onConfirm={handleShare}
+                />
+            )}
         </div>
     );
 };
+
+// ---------------------------------------------------------------------------
+// Share With Partner Modal
+// ---------------------------------------------------------------------------
+
+function ShareWithPartnerModal({
+    currentPartnerId,
+    submitting,
+    onClose,
+    onConfirm,
+}: {
+    currentPartnerId: string | null;
+    submitting: boolean;
+    onClose: () => void;
+    onConfirm: (partnerId: string, note: string) => void;
+}) {
+    const [partners, setPartners] = useState<PartnerListItem[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
+    const [search, setSearch] = useState('');
+    const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
+    const [note, setNote] = useState('');
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const data = await listPartners({ status: 'approved' });
+                if (!cancelled) setPartners(data);
+            } catch {
+                if (!cancelled) setLoadError(true);
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, []);
+
+    const filtered = partners.filter((p) => {
+        const q = search.trim().toLowerCase();
+        if (!q) return true;
+        return (
+            p.business_name.toLowerCase().includes(q) ||
+            p.email.toLowerCase().includes(q) ||
+            (p.contact_person_name || '').toLowerCase().includes(q) ||
+            (p.base_city || '').toLowerCase().includes(q)
+        );
+    });
+
+    const canSubmit = !!selectedPartnerId && !submitting;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div onClick={onClose} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+            <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+                <div className="p-6 border-b border-gray-200 flex justify-between items-center flex-shrink-0">
+                    <div>
+                        <h2 className="text-xl font-bold text-gray-900">Share with Partner</h2>
+                        <p className="text-xs text-gray-500 mt-1">The partner will join this ticket thread and can reply directly.</p>
+                    </div>
+                    <button onClick={onClose} disabled={submitting} className="p-2 hover:bg-gray-50 rounded-full transition-colors">
+                        <X size={20} className="text-gray-400" />
+                    </button>
+                </div>
+
+                <div className="p-6 space-y-4 overflow-y-auto flex-1">
+                    {/* Partner search */}
+                    <div>
+                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">
+                            Select Partner <span className="text-red-400">*</span>
+                        </label>
+                        <div className="relative mb-3">
+                            <input
+                                type="text"
+                                placeholder="Search by name, email, city..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                            />
+                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                        </div>
+
+                        {loading ? (
+                            <div className="flex items-center gap-2 text-gray-400 text-sm py-6 justify-center">
+                                <Loader2 size={16} className="animate-spin" /> Loading partners...
+                            </div>
+                        ) : loadError ? (
+                            <p className="text-xs text-red-500 py-4 text-center">Could not load partners. Please try again.</p>
+                        ) : filtered.length === 0 ? (
+                            <p className="text-xs text-gray-400 py-4 text-center">No partners found.</p>
+                        ) : (
+                            <div className="space-y-1.5 max-h-48 overflow-y-auto rounded-xl border border-gray-200 p-1.5">
+                                {filtered.map((p) => {
+                                    const selected = selectedPartnerId === p.id;
+                                    const isCurrent = currentPartnerId === p.id;
+                                    return (
+                                        <button
+                                            key={p.id}
+                                            onClick={() => setSelectedPartnerId(selected ? null : p.id)}
+                                            className={cn(
+                                                'w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all',
+                                                selected
+                                                    ? 'bg-purple-50 border border-purple-200'
+                                                    : 'hover:bg-gray-50 border border-transparent',
+                                            )}
+                                        >
+                                            <div className={cn(
+                                                'w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0',
+                                                selected ? 'bg-purple-500 text-gray-900' : 'bg-gray-100 text-gray-600',
+                                            )}>
+                                                <Building2 size={16} />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <p className="text-sm font-bold text-gray-900 truncate">{p.business_name}</p>
+                                                    {isCurrent && (
+                                                        <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-purple-100 text-purple-600 uppercase tracking-wider flex-shrink-0">
+                                                            Current
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className="text-[11px] text-gray-500 truncate">
+                                                    {p.contact_person_name || p.email}
+                                                    {p.base_city ? ` · ${p.base_city}` : ''}
+                                                </p>
+                                            </div>
+                                            <div className={cn(
+                                                'w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all',
+                                                selected ? 'border-purple-500 bg-purple-500' : 'border-gray-300',
+                                            )}>
+                                                {selected && <CheckCircle size={12} className="text-gray-900" />}
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Note */}
+                    <div>
+                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">
+                            Note for Partner <span className="text-gray-700">(optional)</span>
+                        </label>
+                        <textarea
+                            value={note}
+                            onChange={(e) => setNote(e.target.value)}
+                            placeholder="e.g. Customer says the venue AC wasn't working — can you check?"
+                            disabled={submitting}
+                            className="w-full h-20 bg-gray-50 border border-gray-200 rounded-2xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all resize-none disabled:opacity-60"
+                        />
+                        <p className="text-[11px] text-gray-400 mt-1">This note is posted into the thread so the partner has context.</p>
+                    </div>
+                </div>
+
+                <div className="p-6 bg-gray-50 flex justify-end gap-3 border-t border-gray-200 flex-shrink-0">
+                    <button onClick={onClose} disabled={submitting} className="px-6 py-3 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-all disabled:opacity-60">
+                        Cancel
+                    </button>
+                    <button
+                        onClick={() => selectedPartnerId && onConfirm(selectedPartnerId, note)}
+                        disabled={!canSubmit}
+                        className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-gray-900 font-bold rounded-xl hover:bg-purple-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                        {submitting && <Loader2 size={16} className="animate-spin" />}
+                        {submitting ? 'Sharing...' : 'Share Ticket'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
 
 export default SupportSystem;

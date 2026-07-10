@@ -190,7 +190,7 @@ const Dashboard = ({ setScreen }: { setScreen: (s: Screen) => void }) => {
                                 <Line label="Refunds" value={money(data.revenue.refunds)} tone="text-red-600" />
                                 <Line label="Platform Fees" value={money(data.revenue.platform_fees)} />
                                 <Line label="Avg Order Value" value={money(data.revenue.avg_order_value)} />
-                                <div className="pt-3 border-t border-gray-100">
+                                <div className="pt-3 border-t border-gray-200">
                                     <Line label="Net" value={money(data.revenue.net)} bold tone="text-green-600" />
                                 </div>
                             </div>
@@ -247,7 +247,7 @@ const Dashboard = ({ setScreen }: { setScreen: (s: Screen) => void }) => {
                             <h3 className="font-bold text-gray-900 mb-4">Quick Actions</h3>
                             <div className="space-y-2.5 flex-1">
                                 {QUICK_ACTIONS.map((a) => (
-                                    <button key={a.label} onClick={() => setScreen(a.screen)} className="w-full flex items-center justify-between p-3 rounded-2xl border border-gray-100 hover:bg-gray-50 transition-all group">
+                                    <button key={a.label} onClick={() => setScreen(a.screen)} className="w-full flex items-center justify-between p-3 rounded-2xl border border-gray-200 hover:bg-gray-50 transition-all group">
                                         <div className="flex items-center gap-3">
                                             <div className={cn('p-2 rounded-xl', a.bg, a.color)}><a.icon size={18} /></div>
                                             <div className="text-left">
@@ -255,7 +255,7 @@ const Dashboard = ({ setScreen }: { setScreen: (s: Screen) => void }) => {
                                                 <p className="text-xs text-gray-500">{a.sub}</p>
                                             </div>
                                         </div>
-                                        <ChevronRight size={18} className="text-gray-300 group-hover:text-gray-900 transition-colors" />
+                                        <ChevronRight size={18} className="text-gray-700 group-hover:text-gray-900 transition-colors" />
                                     </button>
                                 ))}
                             </div>
@@ -307,7 +307,7 @@ function Breakdown({ title, rows, extra }: { title: string; rows: [string, numbe
                 ))}
             </div>
             {extraEntries.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-gray-50 flex flex-wrap gap-1.5">
+                <div className="mt-3 pt-3 border-t border-gray-100 flex flex-wrap gap-1.5">
                     {extraEntries.map(([k, v]) => (
                         <span key={k} className="px-2 py-1 bg-gray-100 text-gray-600 text-[10px] font-bold rounded-md">{humanize(k)}: {v}</span>
                     ))}

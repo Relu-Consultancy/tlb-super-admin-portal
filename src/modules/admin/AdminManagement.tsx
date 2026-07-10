@@ -349,7 +349,7 @@ const AdminManagement = () => {
         <div className="space-y-6">
             <header className="flex flex-col gap-4">
                 <h1 className="text-2xl font-bold text-gray-900">Admin Management</h1>
-                <div className="flex border-b border-gray-100">
+                <div className="flex border-b border-gray-200">
                     {['Admins', 'Activity Log', 'Roles & Permissions'].map((tab) => (
                         <button
                             key={tab}
@@ -418,12 +418,12 @@ const AdminManagement = () => {
                                                 <div>
                                                     <div className="flex items-center gap-2">
                                                         <h4 className="font-bold text-gray-900">{a.full_name || a.email}</h4>
-                                                        {isSelf && <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-bold rounded-md uppercase tracking-wider">You</span>}
+                                                        {isSelf && <span className="px-2 py-0.5 bg-gray-100 text-gray-400 text-[10px] font-bold rounded-md uppercase tracking-wider">You</span>}
                                                     </div>
                                                     <div className="flex items-center gap-2 flex-wrap mt-0.5">
                                                         <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-md uppercase tracking-wider">{roleLabel(a.role)}</span>
                                                         {a.is_locked && <span className="px-2 py-0.5 bg-red-50 text-red-600 text-[10px] font-bold rounded-md uppercase tracking-wider flex items-center gap-1"><Lock size={10} /> Locked</span>}
-                                                        {!a.is_active && <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-bold rounded-md uppercase tracking-wider">Disabled</span>}
+                                                        {!a.is_active && <span className="px-2 py-0.5 bg-gray-100 text-gray-400 text-[10px] font-bold rounded-md uppercase tracking-wider">Disabled</span>}
                                                         <span className="text-[10px] text-gray-400">Last login: {formatDateTime(a.last_login_at)}</span>
                                                     </div>
                                                 </div>
@@ -442,7 +442,7 @@ const AdminManagement = () => {
                                                     pendingForceId === a.id ? (
                                                         <div className="flex items-center gap-2">
                                                             <button onClick={() => setPendingForceId(null)} disabled={rowBusy} className="px-3 py-2 bg-white border border-gray-200 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-50 disabled:opacity-60">Cancel</button>
-                                                            <button onClick={() => handleForceLogout(a)} disabled={rowBusy} className="flex items-center gap-1.5 px-3 py-2 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 transition-all disabled:opacity-70">
+                                                            <button onClick={() => handleForceLogout(a)} disabled={rowBusy} className="flex items-center gap-1.5 px-3 py-2 bg-red-600 text-gray-900 text-xs font-bold rounded-lg hover:bg-red-700 transition-all disabled:opacity-70">
                                                                 {rowBusy && busy?.type === 'force' ? <Loader2 size={14} className="animate-spin" /> : <LogOut size={14} />} Confirm
                                                             </button>
                                                         </div>
@@ -471,7 +471,7 @@ const AdminManagement = () => {
                                     <EmptyState title="No recent activity" />
                                 ) : (
                                     audits.slice(0, 4).map((log) => (
-                                        <div key={log.id} className="p-4 flex items-center gap-3 border-b border-gray-50 last:border-0">
+                                        <div key={log.id} className="p-4 flex items-center gap-3 border-b border-gray-100 last:border-0">
                                             <span className={cn('px-2 py-1 text-[10px] font-bold rounded-md uppercase tracking-wider shrink-0', auditActionTone(log.action))}>{auditActionLabel(log.action)}</span>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-sm text-gray-700 truncate">
@@ -492,7 +492,7 @@ const AdminManagement = () => {
                     <motion.div key="activity" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }} className="space-y-6">
                         <div className="flex justify-between items-center gap-4 flex-wrap">
                             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                                Full Activity Log {auditCount > 0 && <span className="text-gray-300">· {auditCount} entries</span>}
+                                Full Activity Log {auditCount > 0 && <span className="text-gray-700">· {auditCount} entries</span>}
                             </h3>
                             <select value={actionFilter} onChange={(e) => setActionFilter(e.target.value)} className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 appearance-none cursor-pointer">
                                 <option value="">All actions</option>
@@ -513,7 +513,7 @@ const AdminManagement = () => {
                                         <EmptyState title="No activity logged yet" />
                                     ) : (
                                         audits.map((log) => (
-                                            <div key={log.id} className="p-4 flex gap-3 border-b border-gray-50 last:border-0">
+                                            <div key={log.id} className="p-4 flex gap-3 border-b border-gray-100 last:border-0">
                                                 <span className={cn('px-2 py-1 text-[10px] font-bold rounded-md uppercase tracking-wider h-fit shrink-0', auditActionTone(log.action))}>{auditActionLabel(log.action)}</span>
                                                 <div className="flex-1 min-w-0">
                                                     <p className="text-sm text-gray-700">
@@ -523,7 +523,7 @@ const AdminManagement = () => {
                                                     {typeof log.metadata?.reason === 'string' && <p className="text-xs text-gray-500 mt-0.5">Reason: {log.metadata.reason}</p>}
                                                     <div className="flex items-center gap-2 mt-1 flex-wrap">
                                                         <span className="text-[10px] text-gray-400">{formatDateTime(log.created_at)}</span>
-                                                        <span className="text-[10px] text-gray-300">•</span>
+                                                        <span className="text-[10px] text-gray-700">•</span>
                                                         <span className="text-[10px] text-gray-400">{log.ip_address}</span>
                                                     </div>
                                                 </div>
@@ -574,9 +574,9 @@ const AdminManagement = () => {
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => !createSubmitting && setShowAddModal(false)} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
                         <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-                            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
                                 <h2 className="text-xl font-bold text-gray-900">Add New Admin</h2>
-                                <button onClick={() => setShowAddModal(false)} disabled={createSubmitting} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X size={20} className="text-gray-400" /></button>
+                                <button onClick={() => setShowAddModal(false)} disabled={createSubmitting} className="p-2 hover:bg-gray-50 rounded-full transition-colors"><X size={20} className="text-gray-400" /></button>
                             </div>
                             <div className="p-6 space-y-4 overflow-y-auto">
                                 {createError && (
@@ -631,9 +631,9 @@ const AdminManagement = () => {
                     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => !disableSubmitting && setDisableTarget(null)} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
                         <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden">
-                            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
                                 <h2 className="text-xl font-bold text-gray-900">Disable Admin</h2>
-                                <button onClick={() => setDisableTarget(null)} disabled={disableSubmitting} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X size={20} className="text-gray-400" /></button>
+                                <button onClick={() => setDisableTarget(null)} disabled={disableSubmitting} className="p-2 hover:bg-gray-50 rounded-full transition-colors"><X size={20} className="text-gray-400" /></button>
                             </div>
                             <div className="p-6 space-y-4">
                                 <p className="text-sm text-gray-500">Disabling <span className="font-bold text-gray-900">{disableTarget.full_name || disableTarget.email}</span> revokes all their active sessions immediately. Provide a reason for the audit log.</p>
@@ -641,7 +641,7 @@ const AdminManagement = () => {
                             </div>
                             <div className="p-6 bg-gray-50 flex justify-end gap-3">
                                 <button onClick={() => setDisableTarget(null)} disabled={disableSubmitting} className="px-6 py-3 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-all disabled:opacity-60">Cancel</button>
-                                <button onClick={submitDisable} disabled={disableSubmitting || !disableReason.trim()} className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
+                                <button onClick={submitDisable} disabled={disableSubmitting || !disableReason.trim()} className="flex items-center gap-2 px-6 py-3 bg-red-600 text-gray-900 font-bold rounded-xl hover:bg-red-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
                                     {disableSubmitting && <Loader2 size={16} className="animate-spin" />}
                                     {disableSubmitting ? 'Disabling…' : 'Disable Admin'}
                                 </button>
@@ -657,7 +657,7 @@ const AdminManagement = () => {
                     <>
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setDetail(null)} className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" />
                         <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 26, stiffness: 220 }} className="fixed inset-y-0 right-0 w-full max-w-md bg-gray-50 shadow-2xl z-50 flex flex-col border-l border-gray-200">
-                            <div className="px-6 py-4 border-b border-gray-100 bg-white flex items-center justify-between">
+                            <div className="px-6 py-4 border-b border-gray-200 bg-white flex items-center justify-between">
                                 <div className="min-w-0">
                                     <h2 className="text-lg font-bold text-gray-900 truncate">{detail.full_name || detail.email}</h2>
                                     <p className="text-xs text-gray-400 truncate">{detail.email}</p>
@@ -668,7 +668,7 @@ const AdminManagement = () => {
                                 {detailLoading && <div className="flex items-center gap-2 text-xs text-gray-400"><Loader2 size={14} className="animate-spin" /> Refreshing…</div>}
 
                                 {/* Info */}
-                                <div className="bg-white rounded-2xl border border-gray-100 p-4 grid grid-cols-2 gap-3">
+                                <div className="bg-white rounded-2xl border border-gray-200 p-4 grid grid-cols-2 gap-3">
                                     {[
                                         { label: 'Role', value: roleLabel(detail.role) },
                                         { label: 'Status', value: detail.is_active ? 'Active' : 'Disabled' },
@@ -689,7 +689,7 @@ const AdminManagement = () => {
                                 {canManage && (
                                     <>
                                         {/* Change role */}
-                                        <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
+                                        <div className="bg-white rounded-2xl border border-gray-200 p-4 space-y-3">
                                             <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Role</h4>
                                             {detailIsSuper ? (
                                                 <p className="text-sm text-gray-500">Super Admin role cannot be changed via API.</p>
@@ -701,7 +701,7 @@ const AdminManagement = () => {
                                                         {ASSIGNABLE_ROLES.map((r) => <option key={r} value={r}>{roleLabel(r)}</option>)}
                                                     </select>
                                                     <p className="text-[10px] text-gray-400">Changing the role force-logs the admin out; they must re-login.</p>
-                                                    <button onClick={saveRole} disabled={roleSaving || roleDraft === detail.role} className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-xs font-bold rounded-lg hover:bg-gray-800 transition-all disabled:opacity-50">
+                                                    <button onClick={saveRole} disabled={roleSaving || roleDraft === detail.role} className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-gray-900 text-xs font-bold rounded-lg hover:bg-gray-800 transition-all disabled:opacity-50">
                                                         {roleSaving && <Loader2 size={14} className="animate-spin" />} Save Role
                                                     </button>
                                                 </>
@@ -709,7 +709,7 @@ const AdminManagement = () => {
                                         </div>
 
                                         {/* Extra permissions */}
-                                        <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
+                                        <div className="bg-white rounded-2xl border border-gray-200 p-4 space-y-3">
                                             <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Extra Permissions</h4>
                                             {detailIsSuper ? (
                                                 <p className="text-sm text-gray-500">Super Admin has all permissions implicitly.</p>
@@ -730,7 +730,7 @@ const AdminManagement = () => {
                                                             );
                                                         })}
                                                     </div>
-                                                    <button onClick={savePerms} disabled={permsSaving} className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-xs font-bold rounded-lg hover:bg-gray-800 transition-all disabled:opacity-50">
+                                                    <button onClick={savePerms} disabled={permsSaving} className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-gray-900 text-xs font-bold rounded-lg hover:bg-gray-800 transition-all disabled:opacity-50">
                                                         {permsSaving && <Loader2 size={14} className="animate-spin" />} Save Permissions
                                                     </button>
                                                 </>
@@ -741,7 +741,7 @@ const AdminManagement = () => {
                             </div>
 
                             {canManage && !detailIsSuper && !detailIsSelf && (
-                                <div className="p-6 border-t border-gray-100 bg-white">
+                                <div className="p-6 border-t border-gray-200 bg-white">
                                     {detail.is_active ? (
                                         <button onClick={() => { setDisableReason(''); setDisableTarget(detail); }} className="w-full flex items-center justify-center gap-2 py-3 bg-red-50 text-red-600 font-bold rounded-xl hover:bg-red-100 transition-all">
                                             <Ban size={16} /> Disable Admin

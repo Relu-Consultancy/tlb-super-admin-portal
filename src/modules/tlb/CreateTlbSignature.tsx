@@ -245,7 +245,7 @@ const CreateTlbSignature = ({ onBack, onCreated }: Props) => {
         <p className="text-gray-500 text-sm mt-1">“{created.title}” was created as a draft.</p>
         <div className="flex items-center justify-center gap-3 mt-6">
           <button onClick={reset} className="px-5 py-2.5 bg-yellow-400 text-gray-900 font-bold rounded-xl hover:bg-yellow-300">Create another</button>
-          <button onClick={() => onCreated?.()} className="px-5 py-2.5 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800">Back to TLB Signature</button>
+          <button onClick={() => onCreated?.()} className="px-5 py-2.5 bg-gray-900 text-gray-900 font-bold rounded-xl hover:bg-gray-800">Back to TLB Signature</button>
         </div>
       </div>
     );
@@ -273,10 +273,10 @@ const CreateTlbSignature = ({ onBack, onCreated }: Props) => {
               <button
                 key={t}
                 onClick={() => pickType(t)}
-                className="text-left rounded-2xl border border-gray-100 bg-white p-5 hover:border-yellow-300 hover:shadow-sm transition-all"
+                className="text-left rounded-2xl border border-gray-200 bg-white p-5 hover:border-yellow-300 hover:shadow-sm transition-all"
               >
                 <div className={cn('w-11 h-11 rounded-xl bg-gradient-to-br flex items-center justify-center mb-3', m.grad)}>
-                  <m.Icon size={22} className="text-white" />
+                  <m.Icon size={22} className="text-gray-900" />
                 </div>
                 <p className="font-bold text-gray-900">{m.label}</p>
                 <p className="text-xs text-gray-400 mt-0.5">{m.blurb}</p>
@@ -289,7 +289,7 @@ const CreateTlbSignature = ({ onBack, onCreated }: Props) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className={cn('w-9 h-9 rounded-xl bg-gradient-to-br flex items-center justify-center', TYPE_META[type].grad)}>
-                {(() => { const I = TYPE_META[type].Icon; return <I size={18} className="text-white" />; })()}
+                {(() => { const I = TYPE_META[type].Icon; return <I size={18} className="text-gray-900" />; })()}
               </span>
               <span className="font-bold text-gray-900">New {TYPE_META[type].label}</span>
             </div>
@@ -337,7 +337,7 @@ const CreateTlbSignature = ({ onBack, onCreated }: Props) => {
           <Card className="space-y-4">
             <div className="flex items-center justify-between">
               <SectionTitle>{NESTED_LABEL[type]}</SectionTitle>
-              <button onClick={addRow} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-900 text-white hover:bg-gray-800">
+              <button onClick={addRow} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-900 text-gray-900 hover:bg-gray-800">
                 <Plus size={14} /> Add
               </button>
             </div>
@@ -346,8 +346,8 @@ const CreateTlbSignature = ({ onBack, onCreated }: Props) => {
             ) : (
               <div className="space-y-3">
                 {rows.map((r, i) => (
-                  <div key={i} className="rounded-xl border border-gray-100 p-3 relative">
-                    <button onClick={() => removeRow(i)} aria-label="Remove row" className="absolute top-2 right-2 p-1 text-gray-300 hover:text-red-500">
+                  <div key={i} className="rounded-xl border border-gray-200 p-3 relative">
+                    <button onClick={() => removeRow(i)} aria-label="Remove row" className="absolute top-2 right-2 p-1 text-gray-700 hover:text-red-500">
                       <Trash2 size={14} />
                     </button>
                     {type === 'event' && <TicketRow r={r} on={(k, v) => setRow(i, k, v)} />}
@@ -396,7 +396,7 @@ function Field({ label, required, children }: { label: string; required?: boolea
     </label>
   );
 }
-const inputCls = 'w-full px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40';
+const inputCls = 'w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40';
 function Text({ value, onChange, placeholder, type = 'text' }: { value?: string; onChange: (v: string) => void; placeholder?: string; type?: string }) {
   return <input type={type} value={value ?? ''} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className={inputCls} />;
 }

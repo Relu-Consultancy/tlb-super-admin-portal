@@ -150,6 +150,7 @@ export {
   getListingHistory,
   approveListing,
   rejectListing,
+  getListingRejectionReasons,
   setListingVisibility,
   listingStatusLabel,
   listingStatusTone,
@@ -170,6 +171,7 @@ export type {
   ListingCategory,
   CategoryRef,
   ListListingsParams,
+  RejectionReason,
 } from './listings';
 
 // Listing sections (UserApp Alignment — homepage + discovery-screen curation)
@@ -340,6 +342,7 @@ export {
   getTicketMessages,
   sendTicketMessage,
   updateTicketStatus,
+  shareTicketWithPartner,
   ticketStatusLabel,
   ticketStatusTone,
   ticketCategoryLabel,

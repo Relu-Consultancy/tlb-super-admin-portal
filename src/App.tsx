@@ -42,7 +42,7 @@ const LoadingFallback = () => (
 );
 
 const FullScreenLoader = () => (
-  <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+  <div className="min-h-screen bg-[#fafaf7] flex items-center justify-center">
     <div className="loader" />
   </div>
 );
@@ -203,13 +203,13 @@ export default function App() {
       case Screen.ANALYTICS: return <Analytics />;
       case Screen.USER_SECTION: return <UserSection setScreen={selectScreen} />;
       default: return (
-        <div className="flex flex-col items-center justify-center h-[60vh] text-gray-400">
+        <div className="flex flex-col items-center justify-center h-[60vh] text-gray-500">
           <BarChart3 size={64} className="mb-4 opacity-20" />
-          <h2 className="text-xl font-bold">Screen Under Development</h2>
+          <h2 className="text-xl font-bold text-gray-900">Screen Under Development</h2>
           <p className="text-sm">This module is coming soon in the next update.</p>
           <button
             onClick={goHome}
-            className="mt-6 px-6 py-2 bg-yellow-400 text-gray-900 font-bold rounded-xl"
+            className="mt-6 px-6 py-2 bg-yellow-400 text-gray-900 font-bold rounded-xl hover:bg-yellow-300 transition-colors"
           >
             Back to Home
           </button>
@@ -222,7 +222,7 @@ export default function App() {
   const displayRole = admin ? roleLabel(admin.role) : '';
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-[#fafaf7] flex">
       {/* Sidebar */}
       <Sidebar
         currentScreen={currentScreen}
@@ -238,17 +238,17 @@ export default function App() {
       {sidebarOpen && (
         <div
           onClick={() => setSidebarOpen(false)}
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
           aria-hidden="true"
         />
       )}
 
       {/* Main Content */}
       <main className={cn("flex-1 min-w-0 transition-all duration-300", sidebarOpen ? "lg:ml-[280px]" : "ml-0")}>
-        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 hover:bg-gray-50 rounded-xl text-gray-500 transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-xl text-gray-500 transition-colors"
           >
             <Menu size={20} />
           </button>
@@ -259,13 +259,13 @@ export default function App() {
               <button
                 onClick={() => { setNotifOpen((o) => !o); setProfileOpen(false); }}
                 aria-label="Notifications"
-                className={cn('p-2 rounded-xl transition-colors', notifOpen ? 'text-gray-900 bg-gray-100' : 'text-gray-400 hover:text-gray-900 hover:bg-gray-50')}
+                className={cn('p-2 rounded-xl transition-colors', notifOpen ? 'text-yellow-600 bg-yellow-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100')}
               >
                 <Bell size={20} />
               </button>
               {notifOpen && (
-                <div className="absolute right-0 mt-2 w-72 bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden z-50">
-                  <div className="px-4 py-3 border-b border-gray-50">
+                <div className="absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden z-50">
+                  <div className="px-4 py-3 border-b border-gray-100">
                     <p className="text-sm font-bold text-gray-900">Notifications</p>
                   </div>
                   <div className="px-4 py-8 text-center">
@@ -274,7 +274,7 @@ export default function App() {
                   </div>
                   <button
                     onClick={() => { setNotifOpen(false); selectScreen(Screen.BROADCASTS); }}
-                    className="w-full flex items-center gap-2 px-4 py-3 border-t border-gray-50 text-xs font-bold text-gray-700 hover:bg-gray-50 transition-colors"
+                    className="w-full flex items-center gap-2 px-4 py-3 border-t border-gray-100 text-xs font-bold text-gray-500 hover:bg-gray-50 hover:text-yellow-600 transition-colors"
                   >
                     <Megaphone size={14} className="text-yellow-500" /> Send a broadcast
                   </button>
@@ -283,36 +283,36 @@ export default function App() {
             </div>
 
             {/* Profile menu */}
-            <div className="relative pl-4 border-l border-gray-100" ref={profileRef}>
+            <div className="relative pl-4 border-l border-gray-200" ref={profileRef}>
               <button
                 onClick={() => { setProfileOpen((o) => !o); setNotifOpen(false); }}
                 className="flex items-center gap-2.5 group"
               >
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-bold text-gray-900">{displayName}</p>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{displayRole}</p>
+                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{displayRole}</p>
                 </div>
-                <div className="w-10 h-10 rounded-xl bg-yellow-400 flex items-center justify-center font-bold text-gray-900">
+                <div className="w-10 h-10 rounded-xl bg-yellow-400 flex items-center justify-center font-bold text-gray-900 shadow-lg shadow-yellow-400/20">
                   {(displayName || 'A').slice(0, 1).toUpperCase()}
                 </div>
-                <ChevronDown size={16} className={cn('text-gray-400 transition-transform', profileOpen && 'rotate-180')} />
+                <ChevronDown size={16} className={cn('text-gray-500 transition-transform', profileOpen && 'rotate-180')} />
               </button>
               {profileOpen && (
-                <div className="absolute right-0 mt-2 w-60 bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden z-50">
-                  <div className="px-4 py-3 border-b border-gray-50">
+                <div className="absolute right-0 mt-2 w-60 bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden z-50">
+                  <div className="px-4 py-3 border-b border-gray-100">
                     <p className="text-sm font-bold text-gray-900 truncate">{displayName}</p>
                     {admin?.email && <p className="text-xs text-gray-500 truncate">{admin.email}</p>}
                     <span className="inline-block mt-1.5 px-2 py-0.5 bg-yellow-50 text-yellow-700 text-[10px] font-bold rounded-full uppercase tracking-wider">{displayRole}</span>
                   </div>
                   <button
                     onClick={() => { setProfileOpen(false); selectScreen(Screen.SETTINGS); }}
-                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                   >
                     <SettingsIcon size={16} className="text-gray-400" /> Settings
                   </button>
                   <button
                     onClick={() => { setProfileOpen(false); logout(); }}
-                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors border-t border-gray-50"
+                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-red-500 hover:bg-red-50 transition-colors border-t border-gray-100"
                   >
                     <LogOut size={16} /> Log out
                   </button>
