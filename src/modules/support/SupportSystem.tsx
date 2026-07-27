@@ -442,7 +442,7 @@ const SupportSystem = () => {
                                     <AlertCircle size={32} className="mb-2 text-red-300" />
                                     <p className="text-xs font-bold text-gray-600">Couldn't load tickets</p>
                                     <p className="text-[11px] mt-1">{error}</p>
-                                    <button onClick={loadTickets} className="mt-3 px-3 py-1.5 bg-gray-900 text-gray-900 text-xs font-bold rounded-lg">Retry</button>
+                                    <button onClick={loadTickets} className="mt-3 px-3 py-1.5 bg-gray-900 text-white text-xs font-bold rounded-lg">Retry</button>
                                 </div>
                             ) : filteredTickets.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center h-full text-gray-400 p-6">
@@ -463,7 +463,7 @@ const SupportSystem = () => {
                                                     : 'hover:bg-gray-50 border-l-[3px] border-l-transparent',
                                             )}
                                         >
-                                            <div className="w-10 h-10 rounded-full bg-gray-900 text-gray-900 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                                            <div className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
                                                 {initials(ticket.raised_by_email)}
                                             </div>
                                             <div className="flex-1 min-w-0">
@@ -501,7 +501,7 @@ const SupportSystem = () => {
                             {/* Chat Header */}
                             <div className="px-5 py-3 border-b border-gray-200 flex justify-between items-center bg-white">
                                 <div className="flex items-center gap-3 min-w-0">
-                                    <div className="w-10 h-10 rounded-full bg-gray-900 text-gray-900 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                                    <div className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
                                         {initials(selectedTicket.raised_by_email)}
                                     </div>
                                     <div className="min-w-0">
@@ -573,7 +573,7 @@ const SupportSystem = () => {
                                                         <div className={cn(
                                                             'p-3.5 rounded-2xl shadow-sm max-w-full',
                                                             mine
-                                                                ? 'bg-slate-900 text-gray-900 rounded-tr-none'
+                                                                ? 'bg-slate-900 text-white rounded-tr-none'
                                                                 : partner
                                                                     ? 'bg-purple-50 border border-purple-100 text-gray-700 rounded-tl-none'
                                                                     : 'bg-white border border-gray-200 text-gray-700 rounded-tl-none',
@@ -960,7 +960,7 @@ function ShareWithPartnerModal({
                     <button
                         onClick={() => selectedPartnerId && onConfirm(selectedPartnerId, note)}
                         disabled={!canSubmit}
-                        className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-gray-900 font-bold rounded-xl hover:bg-purple-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                         {submitting && <Loader2 size={16} className="animate-spin" />}
                         {submitting ? 'Sharing...' : 'Share Ticket'}

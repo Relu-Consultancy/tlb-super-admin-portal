@@ -245,7 +245,7 @@ const CreateTlbSignature = ({ onBack, onCreated }: Props) => {
         <p className="text-gray-500 text-sm mt-1">“{created.title}” was created as a draft.</p>
         <div className="flex items-center justify-center gap-3 mt-6">
           <button onClick={reset} className="px-5 py-2.5 bg-yellow-400 text-gray-900 font-bold rounded-xl hover:bg-yellow-300">Create another</button>
-          <button onClick={() => onCreated?.()} className="px-5 py-2.5 bg-gray-900 text-gray-900 font-bold rounded-xl hover:bg-gray-800">Back to TLB Signature</button>
+          <button onClick={() => onCreated?.()} className="px-5 py-2.5 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800">Back to TLB Signature</button>
         </div>
       </div>
     );
@@ -337,7 +337,7 @@ const CreateTlbSignature = ({ onBack, onCreated }: Props) => {
           <Card className="space-y-4">
             <div className="flex items-center justify-between">
               <SectionTitle>{NESTED_LABEL[type]}</SectionTitle>
-              <button onClick={addRow} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-900 text-gray-900 hover:bg-gray-800">
+              <button onClick={addRow} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-900 text-white hover:bg-gray-800">
                 <Plus size={14} /> Add
               </button>
             </div>

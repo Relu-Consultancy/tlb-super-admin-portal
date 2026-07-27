@@ -247,7 +247,7 @@ const Settings = () => {
                                         <button
                                             onClick={handleLogoutAll}
                                             disabled={loggingOutAll}
-                                            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-gray-900 text-xs font-bold rounded-lg hover:bg-red-700 transition-all disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap"
+                                            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 transition-all disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap"
                                         >
                                             {loggingOutAll && <Loader2 size={14} className="animate-spin" />}
                                             {loggingOutAll ? 'Revoking…' : 'Confirm log out'}

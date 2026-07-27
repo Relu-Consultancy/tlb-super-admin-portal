@@ -383,7 +383,7 @@ const UserHistorySlideOut = ({ user, onClose, onChanged }: UserHistorySlideOutPr
                                 </div>
                                 <div className="p-6 bg-gray-50 flex justify-end gap-3">
                                     <button onClick={() => setDisableOpen(false)} disabled={disableSubmitting} className="px-6 py-3 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-all disabled:opacity-60">Cancel</button>
-                                    <button onClick={submitDisable} disabled={disableSubmitting || !disableReason.trim()} className="flex items-center gap-2 px-6 py-3 bg-red-600 text-gray-900 font-bold rounded-xl hover:bg-red-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
+                                    <button onClick={submitDisable} disabled={disableSubmitting || !disableReason.trim()} className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
                                         {disableSubmitting && <Loader2 size={16} className="animate-spin" />}
                                         {disableSubmitting ? 'Disabling…' : 'Disable Account'}
                                     </button>

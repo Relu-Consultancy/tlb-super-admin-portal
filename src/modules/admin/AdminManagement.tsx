@@ -442,7 +442,7 @@ const AdminManagement = () => {
                                                     pendingForceId === a.id ? (
                                                         <div className="flex items-center gap-2">
                                                             <button onClick={() => setPendingForceId(null)} disabled={rowBusy} className="px-3 py-2 bg-white border border-gray-200 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-50 disabled:opacity-60">Cancel</button>
-                                                            <button onClick={() => handleForceLogout(a)} disabled={rowBusy} className="flex items-center gap-1.5 px-3 py-2 bg-red-600 text-gray-900 text-xs font-bold rounded-lg hover:bg-red-700 transition-all disabled:opacity-70">
+                                                            <button onClick={() => handleForceLogout(a)} disabled={rowBusy} className="flex items-center gap-1.5 px-3 py-2 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 transition-all disabled:opacity-70">
                                                                 {rowBusy && busy?.type === 'force' ? <Loader2 size={14} className="animate-spin" /> : <LogOut size={14} />} Confirm
                                                             </button>
                                                         </div>
@@ -641,7 +641,7 @@ const AdminManagement = () => {
                             </div>
                             <div className="p-6 bg-gray-50 flex justify-end gap-3">
                                 <button onClick={() => setDisableTarget(null)} disabled={disableSubmitting} className="px-6 py-3 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-all disabled:opacity-60">Cancel</button>
-                                <button onClick={submitDisable} disabled={disableSubmitting || !disableReason.trim()} className="flex items-center gap-2 px-6 py-3 bg-red-600 text-gray-900 font-bold rounded-xl hover:bg-red-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
+                                <button onClick={submitDisable} disabled={disableSubmitting || !disableReason.trim()} className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
                                     {disableSubmitting && <Loader2 size={16} className="animate-spin" />}
                                     {disableSubmitting ? 'Disabling…' : 'Disable Admin'}
                                 </button>
@@ -701,7 +701,7 @@ const AdminManagement = () => {
                                                         {ASSIGNABLE_ROLES.map((r) => <option key={r} value={r}>{roleLabel(r)}</option>)}
                                                     </select>
                                                     <p className="text-[10px] text-gray-400">Changing the role force-logs the admin out; they must re-login.</p>
-                                                    <button onClick={saveRole} disabled={roleSaving || roleDraft === detail.role} className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-gray-900 text-xs font-bold rounded-lg hover:bg-gray-800 transition-all disabled:opacity-50">
+                                                    <button onClick={saveRole} disabled={roleSaving || roleDraft === detail.role} className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-xs font-bold rounded-lg hover:bg-gray-800 transition-all disabled:opacity-50">
                                                         {roleSaving && <Loader2 size={14} className="animate-spin" />} Save Role
                                                     </button>
                                                 </>
@@ -730,7 +730,7 @@ const AdminManagement = () => {
                                                             );
                                                         })}
                                                     </div>
-                                                    <button onClick={savePerms} disabled={permsSaving} className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-gray-900 text-xs font-bold rounded-lg hover:bg-gray-800 transition-all disabled:opacity-50">
+                                                    <button onClick={savePerms} disabled={permsSaving} className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-xs font-bold rounded-lg hover:bg-gray-800 transition-all disabled:opacity-50">
                                                         {permsSaving && <Loader2 size={14} className="animate-spin" />} Save Permissions
                                                     </button>
                                                 </>

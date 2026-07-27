@@ -87,7 +87,7 @@ describe('UserAppAlignment', () => {
 
   it('renders the page selector and loads the homepage page by default', async () => {
     render(<UserAppAlignment />);
-    expect(screen.getByText('UserApp Alignment')).toBeInTheDocument();
+    expect(screen.getByText('App Content')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /App Homepage/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Events/i })).toBeInTheDocument();
     await waitFor(() => expect(listSections).toHaveBeenCalledWith('listings/homepage-sections/'));

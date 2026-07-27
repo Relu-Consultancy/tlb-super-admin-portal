@@ -3,15 +3,21 @@
 :root {
   --gold: #d4a012;
   --gold-light: #f5c518;
-  --surface: #fafaf7;
+  --surface: #f5f3ee;
   --surface-card: #ffffff;
-  --sidebar: #0e0e12;
-  --header: #111116;
+  --sidebar: #faf8f4;
+  --header: #ffffff;
+  --text-primary: #1a1917;
+  --text-secondary: #6b6960;
+  --border: #e8e5de;
+  --active-bg: #fdf6e3;
+  --active-border: #d4a012;
 }
 
 body {
   background: var(--surface);
-  color: #1a1a1a;
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .loader {

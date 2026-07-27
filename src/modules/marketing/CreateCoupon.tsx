@@ -124,7 +124,7 @@ const CreateCoupon = ({ onBack, onCreated }: CreateCouponProps) => {
                     <span className="font-mono font-bold uppercase">{code}</span> is now {isActive ? 'active' : 'inactive'}.
                 </p>
                 <div className="flex items-center justify-center gap-3 mt-6">
-                    <button onClick={() => onCreated?.()} className="px-6 py-3 bg-gray-900 text-gray-900 font-bold rounded-xl hover:bg-gray-800 transition-all">Back to Coupons</button>
+                    <button onClick={() => onCreated?.()} className="px-6 py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-all">Back to Coupons</button>
                 </div>
             </div>
         );
@@ -269,7 +269,7 @@ function ScopeButton({ active, onClick, icon: Icon, title, sub, compact }: { act
 
 function ChipToggle({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
     return (
-        <button type="button" onClick={onClick} className={cn('px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-all border', active ? 'bg-gray-900 text-gray-900 border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50')}>
+        <button type="button" onClick={onClick} className={cn('px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-all border', active ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50')}>
             {label}
         </button>
     );

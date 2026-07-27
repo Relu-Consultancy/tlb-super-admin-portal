@@ -1,88 +1,142 @@
-import { Home, LogOut, ShieldCheck, ChevronRight, ChevronLeft } from 'lucide-react';
-import { motion } from 'motion/react';
+import { useState } from 'react';
+import { LogOut, ChevronDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../../lib/utils';
 import SidebarItem from '../ui/SidebarItem';
 import { Screen } from '../../../types';
-import { SECTIONS, getSection, type SectionId } from '../../nav/sections';
+import { SIDEBAR_ENTRIES, isActiveItem, type SidebarEntry, type ListingVertical } from '../../nav/sections';
 
 interface SidebarProps {
     currentScreen: Screen;
-    activeSection: SectionId | null;
-    onSelectScreen: (s: Screen) => void;
-    onEnterSection: (id: SectionId) => void;
-    onHome: () => void;
+    onSelectScreen: (s: Screen, listingType?: ListingVertical) => void;
+    /** Which listing vertical is active — distinguishes the Partners sub-items. */
+    activeListingType?: ListingVertical | '';
     sidebarOpen: boolean;
-    setIsLoggedIn: (v: boolean) => void;
+    onLogout: () => void;
 }
 
-const Sidebar = ({ currentScreen, activeSection, onSelectScreen, onEnterSection, onHome, sidebarOpen, setIsLoggedIn }: SidebarProps) => {
-    const section = activeSection ? getSection(activeSection) : null;
+const Sidebar = ({ currentScreen, onSelectScreen, activeListingType, sidebarOpen, onLogout }: SidebarProps) => {
+    const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['partners']));
+
+    const toggleGroup = (id: string) => {
+        setExpandedGroups((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    };
+
+    const renderEntry = (entry: SidebarEntry, idx: number) => {
+        if (entry.kind === 'item') {
+            const { item } = entry;
+            const active = isActiveItem(item, currentScreen, activeListingType);
+            return (
+                <SidebarItem
+                    key={`${item.screen}-${idx}`}
+                    icon={item.icon}
+                    label={item.label}
+                    active={active}
+                    onClick={() => onSelectScreen(item.screen, item.listingType)}
+                    badge={item.badge}
+                    badgeTone={item.badgeTone}
+                />
+            );
+        }
+
+        // Expandable group (Partners)
+        const { group } = entry;
+        const isExpanded = expandedGroups.has(group.id);
+        const isGroupActive = group.items.some((i) => i.screen === currentScreen || !!i.match?.includes(currentScreen));
+
+        return (
+            <div key={group.id}>
+                <button
+                    onClick={() => toggleGroup(group.id)}
+                    className={cn(
+                        'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-left group',
+                        isGroupActive
+                            ? 'text-gray-900 font-semibold'
+                            : 'text-gray-600 hover:bg-amber-50/50 hover:text-gray-900',
+                    )}
+                >
+                    <group.icon
+                        size={18}
+                        className={cn(isGroupActive ? 'text-amber-600' : 'text-gray-400 group-hover:text-gray-600')}
+                    />
+                    <div className="flex-1 min-w-0">
+                        <span className="text-sm block">{group.label}</span>
+                        {group.subtitle && (
+                            <span className="text-[10px] text-gray-400 block truncate">{group.subtitle}</span>
+                        )}
+                    </div>
+                    <ChevronDown
+                        size={14}
+                        className={cn(
+                            'text-gray-400 transition-transform duration-200',
+                            isExpanded && 'rotate-180',
+                        )}
+                    />
+                </button>
+                <AnimatePresence initial={false}>
+                    {isExpanded && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                        >
+                            <div className="space-y-0.5 mt-0.5">
+                                {group.items.map((item, i) => {
+                                    const active = isActiveItem(item, currentScreen, activeListingType);
+                                    return (
+                                        <SidebarItem
+                                            key={`${item.label}-${i}`}
+                                            icon={item.icon}
+                                            label={item.label}
+                                            active={active}
+                                            onClick={() => onSelectScreen(item.screen, item.listingType)}
+                                            badge={item.badge}
+                                            badgeTone={item.badgeTone}
+                                            indent
+                                        />
+                                    );
+                                })}
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+        );
+    };
 
     return (
         <motion.aside
             initial={false}
-            animate={{ width: sidebarOpen ? 280 : 0, opacity: sidebarOpen ? 1 : 0 }}
-            className="fixed inset-y-0 left-0 bg-[#0a0a0c] border-r border-[#1e1e24] z-50 overflow-hidden flex flex-col"
+            animate={{ width: sidebarOpen ? 260 : 0, opacity: sidebarOpen ? 1 : 0 }}
+            className="fixed inset-y-0 left-0 bg-[#faf8f4] border-r border-[#e8e5de] z-50 overflow-hidden flex flex-col"
         >
-            <button onClick={onHome} className="p-6 flex items-center gap-3 text-left">
-                <div className="w-10 h-10 bg-yellow-400 rounded-xl flex items-center justify-center shadow-lg shadow-yellow-400/20">
-                    <ShieldCheck className="text-gray-900" size={24} />
+            {/* Logo */}
+            <div className="px-5 py-5 flex items-center gap-3">
+                <div className="w-9 h-9 bg-amber-400 rounded-full flex items-center justify-center font-bold text-gray-900 text-sm shadow-sm">
+                    TLB
                 </div>
-                <span className="text-xl font-black text-white tracking-tight">TLB ADMIN</span>
-            </button>
+                <span className="text-base font-bold text-gray-900 tracking-tight">TLB admin</span>
+            </div>
 
-            <nav className="flex-1 px-3 pb-3 overflow-y-auto">
-                <div className="bg-white rounded-2xl p-2 space-y-1">
-                    <SidebarItem icon={Home} label="Home" active={currentScreen === Screen.HOME} onClick={onHome} />
-
-                    {section ? (
-                        <>
-                            <button
-                                onClick={onHome}
-                                className="w-full flex items-center gap-2 px-3 pt-4 pb-2 text-[11px] font-bold text-gray-400 uppercase tracking-wider hover:text-yellow-600 transition-colors"
-                            >
-                                <ChevronLeft size={13} /> {section.label}
-                            </button>
-                            {section.items.map((item) => (
-                                <SidebarItem
-                                    key={item.screen}
-                                    icon={item.icon}
-                                    label={item.label}
-                                    active={currentScreen === item.screen || !!item.match?.includes(currentScreen)}
-                                    onClick={() => onSelectScreen(item.screen)}
-                                />
-                            ))}
-                        </>
-                    ) : (
-                        <>
-                            <p className="px-3 pt-4 pb-2 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Workspaces</p>
-                            {SECTIONS.map((s) => {
-                                const Icon = s.icon;
-                                return (
-                                    <button
-                                        key={s.id}
-                                        onClick={() => onEnterSection(s.id)}
-                                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all group"
-                                    >
-                                        <span className={cn('w-8 h-8 rounded-lg flex items-center justify-center', s.accent.icon)}>
-                                            <Icon size={16} />
-                                        </span>
-                                        <span className="text-sm font-medium flex-1">{s.label}</span>
-                                        <ChevronRight size={15} className="text-gray-300 group-hover:text-gray-500" />
-                                    </button>
-                                );
-                            })}
-                        </>
-                    )}
-                </div>
+            {/* Navigation */}
+            <nav className="flex-1 px-3 pb-3 overflow-y-auto space-y-0.5">
+                {SIDEBAR_ENTRIES.map((entry, idx) => renderEntry(entry, idx))}
             </nav>
 
+            {/* Logout */}
             <div className="px-3 pb-4">
                 <button
-                    onClick={() => setIsLoggedIn(false)}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 hover:text-red-400 hover:bg-white/5 transition-all text-left"
+                    onClick={onLogout}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-500 hover:text-red-500 hover:bg-red-50/50 transition-all text-left"
                 >
-                    <LogOut size={20} />
+                    <LogOut size={18} />
                     <span className="text-sm">Logout</span>
                 </button>
             </div>

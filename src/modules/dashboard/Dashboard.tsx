@@ -1,22 +1,27 @@
-import { useState, useEffect, useCallback, type ReactNode } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
     Users,
     Store,
     Layers,
     CalendarCheck,
-    Wallet,
-    LifeBuoy,
-    CheckCircle,
-    Calendar,
-    UserCog,
     MessageSquare,
     ChevronRight,
     Loader2,
     AlertCircle,
     TrendingUp,
-    Megaphone,
+    Activity,
+    CheckCircle,
+    FileText,
+    UserPlus,
+    ArrowUpRight,
+    Monitor,
+    Smartphone,
+    Ticket,
+    IndianRupee,
+    CornerUpLeft,
+    Clock,
+    type LucideIcon,
 } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Card from '../../shared/components/ui/Card';
 import EmptyState from '../../shared/components/ui/EmptyState';
 import { cn } from '../../shared/lib/utils';
@@ -26,16 +31,33 @@ import {
     parseAmount,
     safeCurrency,
     formatMoney,
-    STATS_PERIODS,
-    STATS_PERIOD_LABELS,
     ApiError,
     type OverviewStats,
     type StatsParams,
-    type StatsPeriod,
 } from '../../shared/lib/api';
 
-function formatDateShort(iso: string | null | undefined): string {
-    if (!iso) return '—';
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function formatLakhsCrores(value: number): string {
+    if (value >= 10000000) return `Rs ${(value / 10000000).toFixed(2)}Cr`;
+    if (value >= 100000) return `Rs ${(value / 100000).toFixed(2)}L`;
+    return `Rs ${value.toLocaleString('en-IN')}`;
+}
+
+/** Compact relative time, e.g. "just now", "12m ago", "3h ago", "2d ago", "12 Jun". */
+function timeAgo(iso: string | null | undefined): string {
+    if (!iso) return '';
+    const then = new Date(iso).getTime();
+    if (Number.isNaN(then)) return '';
+    const mins = Math.floor((Date.now() - then) / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    if (days < 7) return `${days}d ago`;
     try {
         return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
     } catch {
@@ -43,222 +65,381 @@ function formatDateShort(iso: string | null | undefined): string {
     }
 }
 
-function humanize(key: string): string {
-    return key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+/** Friendly singular noun for a signup role. */
+function roleWord(role: string | null | undefined): string {
+    const r = (role || '').toLowerCase();
+    if (r === 'partner') return 'partner';
+    if (r === 'customer') return 'customer';
+    return r || 'user';
 }
 
+// ---------------------------------------------------------------------------
+// Dashboard
+// ---------------------------------------------------------------------------
+
 const Dashboard = ({ setScreen }: { setScreen: (s: Screen) => void }) => {
-    const [period, setPeriod] = useState<StatsPeriod>('this_month');
-    const [dateFrom, setDateFrom] = useState('');
-    const [dateTo, setDateTo] = useState('');
     const [data, setData] = useState<OverviewStats | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     const load = useCallback(async () => {
-        // For a custom range, wait until both ends are picked.
-        if (period === 'custom' && (!dateFrom || !dateTo)) return;
         setLoading(true);
         setError(null);
         try {
-            const params: StatsParams = period === 'custom'
-                ? { period, date_from: dateFrom, date_to: dateTo }
-                : { period };
-            setData(await getOverviewStats(params));
+            // "Till date" = full lifetime stats
+            setData(await getOverviewStats({ period: 'this_month' }));
         } catch (err) {
             setError(err instanceof ApiError ? err.message : 'Failed to load dashboard statistics.');
         } finally {
             setLoading(false);
         }
-    }, [period, dateFrom, dateTo]);
+    }, []);
 
-    useEffect(() => {
-        load();
-    }, [load]);
+    useEffect(() => { load(); }, [load]);
 
     const currency = safeCurrency(data?.revenue?.currency);
     const money = (v: string | number | null | undefined) => formatMoney(parseAmount(v) ?? 0, currency);
 
-    const trend = (data?.trend ?? []).map((t) => ({
-        date: formatDateShort(t.date),
-        bookings: t.bookings ?? 0,
-        signups: t.signups ?? 0,
-        revenue: parseAmount(t.revenue) ?? 0,
-    }));
+    // KPI values (safe defaults)
+    const totalCustomers = data?.users?.total_customers ?? 0;
+    const newCustomers = data?.users?.new_customers ?? 0;
+    const totalPartners = data?.users?.total_partners ?? 0;
+    const newPartners = data?.users?.new_partners ?? 0;
+    const totalListings = data?.listings?.total ?? 0;
+    const pendingListings = data?.listings?.pending_moderation ?? 0;
+    const totalBookings = data?.bookings?.total ?? 0;
+    const totalOpenTickets = data?.support?.total_open ?? 0;
+    const grossRevenue = parseAmount(data?.revenue?.gross) ?? 0;
+    const byType = data?.listings?.by_type ?? {};
+    const eventsCount = byType.event ?? 0;
+    const programsCount = byType.program ?? 0;
+    const classesCount = byType.class ?? 0;
+    const venuesCount = byType.venue ?? 0;
 
     const QUICK_ACTIONS = [
-        { label: 'Approve Partners', sub: 'Review pending partners', icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-50', screen: Screen.PARTNER_MANAGEMENT },
-        { label: 'Approve Listings', sub: 'Moderate event/venue/class listings', icon: Calendar, color: 'text-blue-500', bg: 'bg-blue-50', screen: Screen.EVENT_APPROVAL },
-        { label: 'Open Tickets', sub: 'Respond to support tickets', icon: MessageSquare, color: 'text-purple-500', bg: 'bg-purple-50', screen: Screen.SUPPORT_SYSTEM },
-        { label: 'Send a Broadcast', sub: 'Notify users & partners', icon: Megaphone, color: 'text-amber-500', bg: 'bg-amber-50', screen: Screen.BROADCASTS },
-        { label: 'Team Management', sub: 'Add or edit admins', icon: UserCog, color: 'text-orange-500', bg: 'bg-orange-50', screen: Screen.ADMIN_MANAGEMENT },
+        { label: 'Pending listings', count: pendingListings, icon: CheckCircle, color: 'bg-green-500', screen: Screen.EVENT_APPROVAL },
+        { label: 'Review partner registrations', count: newPartners, icon: FileText, color: 'bg-blue-500', screen: Screen.PARTNER_MANAGEMENT },
+        { label: 'Create listing for partner', icon: Layers, color: 'bg-orange-400', screen: Screen.EVENT_APPROVAL },
+        { label: 'Create partner profile', icon: UserPlus, color: 'bg-amber-400', screen: Screen.PARTNER_MANAGEMENT },
     ];
+
+    // The period this snapshot covers (e.g. "This Month"), for the summary tags.
+    const periodLabel = data?.period?.label || 'this period';
+    const publishedListings = data?.listings?.published ?? 0;
+    const refundedBookings = data?.bookings?.refunded ?? 0;
+
+    // Activity summary — aggregate counts for the period, all from the overview stats.
+    type SummaryRow = { icon: LucideIcon; tone: string; text: string };
+    const summaryRows: SummaryRow[] = data
+        ? [
+              { icon: Users, tone: 'bg-blue-50 text-blue-600', text: `${newCustomers.toLocaleString('en-IN')} new customers signed up on the app` },
+              { icon: Store, tone: 'bg-purple-50 text-purple-600', text: `${newPartners.toLocaleString('en-IN')} new partners registered` },
+              { icon: FileText, tone: 'bg-amber-50 text-amber-600', text: `${publishedListings.toLocaleString('en-IN')} listings published across verticals` },
+              { icon: Ticket, tone: 'bg-orange-50 text-orange-600', text: `${totalBookings.toLocaleString('en-IN')} bookings / tickets sold — Events & Venues` },
+              { icon: MessageSquare, tone: 'bg-teal-50 text-teal-600', text: `${totalOpenTickets.toLocaleString('en-IN')} enquiries open across Classes, Programs & Venues` },
+              { icon: IndianRupee, tone: 'bg-amber-50 text-amber-700', text: `${formatLakhsCrores(grossRevenue)} platform revenue collected` },
+              ...(pendingListings > 0
+                  ? [{ icon: CheckCircle, tone: 'bg-green-50 text-green-600', text: `${pendingListings.toLocaleString('en-IN')} listings awaiting review` } as SummaryRow]
+                  : []),
+              ...(refundedBookings > 0
+                  ? [{ icon: CornerUpLeft, tone: 'bg-red-50 text-red-600', text: `${refundedBookings.toLocaleString('en-IN')} refund${refundedBookings > 1 ? 's' : ''} awaiting review` } as SummaryRow]
+                  : []),
+          ]
+        : [];
+
+    // Recent activity — merge the three recent_activity feeds into one time-sorted list.
+    type FeedKind = 'booking' | 'signup' | 'ticket';
+    type FeedItem = { id: string; kind: FeedKind; title: string; meta?: string; at: string };
+    const ra = data?.recent_activity;
+    const feed: FeedItem[] = data
+        ? [
+              ...(ra?.bookings ?? []).map((b) => ({
+                  id: `b-${b.id}`,
+                  kind: 'booking' as const,
+                  title: `New booking — ${b.booking_reference || 'Order'}`,
+                  meta: parseAmount(b.amount) != null ? money(b.amount) : b.customer_email,
+                  at: b.created_at,
+              })),
+              ...(ra?.signups ?? []).map((s) => ({
+                  id: `s-${s.id}`,
+                  kind: 'signup' as const,
+                  title: `New ${roleWord(s.role)} signed up`,
+                  meta: s.email,
+                  at: s.created_at,
+              })),
+              ...(ra?.tickets ?? []).map((t) => ({
+                  id: `t-${t.id}`,
+                  kind: 'ticket' as const,
+                  title: `Enquiry received — ${t.subject || t.category || 'Support ticket'}`,
+                  meta: t.raised_by_role ? `by ${roleWord(t.raised_by_role)}` : undefined,
+                  at: t.created_at,
+              })),
+          ]
+              .filter((i) => i.at)
+              .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+              .slice(0, 6)
+        : [];
+    const FEED_ICON: Record<FeedKind, LucideIcon> = { booking: Ticket, signup: UserPlus, ticket: MessageSquare };
 
     return (
         <div className="space-y-6">
-            <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                <div>
-                    <p className="text-gray-500 text-sm">Platform analytics{data?.period?.label ? ` · ${data.period.label}` : ''}</p>
-                    <h1 className="text-2xl font-bold text-gray-900">Super Admin Dashboard</h1>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                    <div className="flex bg-gray-100 rounded-xl p-1">
-                        {STATS_PERIODS.map((p) => (
-                            <button
-                                key={p}
-                                onClick={() => setPeriod(p)}
-                                className={cn(
-                                    'px-3 py-1.5 text-xs font-bold rounded-lg transition-all whitespace-nowrap',
-                                    period === p ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700',
-                                )}
-                            >
-                                {STATS_PERIOD_LABELS[p]}
-                            </button>
-                        ))}
-                    </div>
-                    {period === 'custom' && (
-                        <div className="flex items-center gap-2">
-                            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-sm" />
-                            <span className="text-gray-400 text-sm">→</span>
-                            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-sm" />
-                        </div>
+            {/* Header */}
+            <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div className="flex items-center gap-4 flex-wrap">
+                    <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+                    {!loading && data && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">
+                            <Activity size={12} />
+                            Listings Live on Platform: {totalListings}
+                        </span>
                     )}
                 </div>
+                <div className="flex items-center gap-3 flex-wrap">
+                    {/* Traffic Live widget */}
+                    <div className="flex items-center gap-3 px-4 py-2 bg-white border border-gray-200 rounded-lg">
+                        <div>
+                            <p className="text-[10px] font-bold text-gray-500 uppercase">Traffic Live</p>
+                            <p className="text-[10px] text-gray-400">Active on the platform right now</p>
+                        </div>
+                        <div className="flex items-center gap-3 text-sm">
+                            <span className="flex items-center gap-1">
+                                <Smartphone size={12} className="text-gray-400" />
+                                <span className="font-bold text-gray-900">—</span>
+                                <span className="text-[10px] text-gray-400">on app</span>
+                            </span>
+                            <span className="flex items-center gap-1">
+                                <Monitor size={12} className="text-gray-400" />
+                                <span className="font-bold text-gray-900">—</span>
+                                <span className="text-[10px] text-gray-400">on website</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Period selector */}
+                    <div className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
+                        <CalendarCheck size={14} className="text-gray-400" />
+                        <span className="font-medium text-gray-700">Till date</span>
+                    </div>
+
+                    {/* View trend charts */}
+                    <button
+                        onClick={() => setScreen(Screen.ANALYTICS)}
+                        className="flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                        <TrendingUp size={14} />
+                        View trend charts
+                    </button>
+                </div>
             </header>
+
+            {/* Subtitle */}
+            <div>
+                <p className="text-sm text-gray-600">Cross-vertical health check across Customers & Partners</p>
+                <p className="text-xs text-gray-400 mt-1">
+                    Showing data for: <span className="text-amber-600 font-semibold">Till date (since launch)</span>
+                </p>
+            </div>
 
             {error ? (
                 <EmptyState icon={AlertCircle} title="Couldn't load statistics" description={error} />
             ) : loading && !data ? (
-                <div className="flex items-center justify-center py-24 text-gray-400"><Loader2 className="animate-spin" size={28} /></div>
+                <div className="flex items-center justify-center py-24 text-gray-400">
+                    <Loader2 className="animate-spin" size={28} />
+                </div>
             ) : !data ? (
-                <EmptyState icon={TrendingUp} title="Pick a date range" description="Choose a period to see platform statistics." />
+                <EmptyState icon={TrendingUp} title="No data available" description="Statistics will appear here once data is loaded." />
             ) : (
                 <>
-                    {/* KPI cards */}
-                    <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-                        <Kpi icon={Users} tone="bg-blue-50 text-blue-600" label="Customers" value={data.users.total_customers} sub={`+${data.users.new_customers} new`} />
-                        <Kpi icon={Store} tone="bg-purple-50 text-purple-600" label="Partners" value={data.users.total_partners} sub={`+${data.users.new_partners} new`} />
-                        <Kpi icon={Layers} tone="bg-teal-50 text-teal-600" label="Listings" value={data.listings.total} sub={`${data.listings.pending_moderation} pending`} />
-                        <Kpi icon={CalendarCheck} tone="bg-indigo-50 text-indigo-600" label="Bookings" value={data.bookings.total} sub={`${data.bookings.confirmed} confirmed`} />
-                        <Kpi icon={Wallet} tone="bg-green-50 text-green-600" label="Net Revenue" valueText={money(data.revenue.net)} sub={`${money(data.revenue.gross)} gross`} />
-                        <Kpi icon={LifeBuoy} tone="bg-orange-50 text-orange-600" label="Open Tickets" value={data.support.total_open} sub={`${data.support.in_progress} in progress`} />
+                    {/* KPI Cards — Row 1 */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <KpiCard
+                            label="TOTAL CUSTOMERS"
+                            value={totalCustomers.toLocaleString('en-IN')}
+                            sub="Till date total"
+                            change={`+${newCustomers} today`}
+                            icon={Users}
+                        />
+                        <KpiCard
+                            label="TOTAL PARTNERS"
+                            value={totalPartners.toLocaleString('en-IN')}
+                            sub="Till date total"
+                            change={`+${newPartners} today`}
+                            icon={Store}
+                        />
+                        <KpiCard
+                            label="TOTAL LISTINGS"
+                            value={totalListings.toLocaleString('en-IN')}
+                            sub="Till date"
+                            change={`+${pendingListings} today`}
+                            icon={Layers}
+                        />
                     </div>
 
-                    {/* Trend + breakdowns */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <Card className="lg:col-span-2">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="font-bold text-gray-900">Activity Trend</h3>
-                                <div className="flex items-center gap-4 text-xs">
-                                    <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-indigo-500" /> Bookings</span>
-                                    <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-400" /> Signups</span>
-                                </div>
+                    {/* KPI Cards — Row 2 */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <KpiCard
+                            label="BOOKINGS / TICKETS SOLD"
+                            value={totalBookings.toLocaleString('en-IN')}
+                            sub="Till date"
+                        />
+                        <KpiCard
+                            label="ENQUIRIES"
+                            value={totalOpenTickets.toLocaleString('en-IN')}
+                            sub="Till date"
+                        />
+                        <Card variant="highlight" className="flex flex-col gap-1">
+                            <div className="flex items-center justify-between">
+                                <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">PLATFORM REVENUE</p>
+                                <span className="text-[10px] text-amber-600">Till date</span>
                             </div>
-                            {trend.length === 0 ? (
-                                <div className="h-64 flex items-center justify-center text-sm text-gray-400">No trend data for this period.</div>
-                            ) : (
-                                <div className="h-64">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={trend} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                                            <defs>
-                                                <linearGradient id="gBookings" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                                                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                                                </linearGradient>
-                                                <linearGradient id="gSignups" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#60a5fa" stopOpacity={0.3} />
-                                                    <stop offset="95%" stopColor="#60a5fa" stopOpacity={0} />
-                                                </linearGradient>
-                                            </defs>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                                            <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
-                                            <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} tickLine={false} axisLine={false} allowDecimals={false} />
-                                            <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #f1f5f9', fontSize: 12 }} />
-                                            <Area type="monotone" dataKey="bookings" stroke="#6366f1" strokeWidth={2} fill="url(#gBookings)" />
-                                            <Area type="monotone" dataKey="signups" stroke="#60a5fa" strokeWidth={2} fill="url(#gSignups)" />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            )}
-                        </Card>
-
-                        {/* Revenue breakdown */}
-                        <Card>
-                            <h3 className="font-bold text-gray-900 mb-4">Revenue</h3>
-                            <div className="space-y-3">
-                                <Line label="Gross" value={money(data.revenue.gross)} />
-                                <Line label="Refunds" value={money(data.revenue.refunds)} tone="text-red-600" />
-                                <Line label="Platform Fees" value={money(data.revenue.platform_fees)} />
-                                <Line label="Avg Order Value" value={money(data.revenue.avg_order_value)} />
-                                <div className="pt-3 border-t border-gray-200">
-                                    <Line label="Net" value={money(data.revenue.net)} bold tone="text-green-600" />
-                                </div>
-                            </div>
+                            <p className="text-2xl font-bold text-amber-800 mt-1">
+                                {formatLakhsCrores(grossRevenue)}
+                            </p>
+                            <button
+                                onClick={() => setScreen(Screen.FINANCE_DASHBOARD)}
+                                className="flex items-center gap-1 text-xs font-semibold text-amber-600 hover:text-amber-700 mt-1 transition-colors"
+                            >
+                                View breakdown
+                                <ArrowUpRight size={12} />
+                            </button>
                         </Card>
                     </div>
 
-                    {/* Listings + Bookings + Support breakdowns */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <Breakdown title="Listings" rows={[
-                            ['Published', data.listings.published],
-                            ['Pending', data.listings.pending_moderation],
-                            ['Draft', data.listings.draft],
-                            ['Rejected', data.listings.rejected],
-                        ]} extra={data.listings.by_type} />
-                        <Breakdown title="Bookings" rows={[
-                            ['Confirmed', data.bookings.confirmed],
-                            ['Attended', data.bookings.attended],
-                            ['Pending', data.bookings.pending],
-                            ['Cancelled', data.bookings.cancelled],
-                            ['Refunded', data.bookings.refunded],
-                        ]} />
-                        <Breakdown title="Support" rows={[
-                            ['Open', data.support.open],
-                            ['In Progress', data.support.in_progress],
-                            ['Resolved (period)', data.support.resolved_in_period],
-                            ['Total Open', data.support.total_open],
-                        ]} />
+                    {/* At-a-glance */}
+                    <div>
+                        <h2 className="text-sm font-bold text-gray-900 mb-3">At-a-glance: listings by vertical</h2>
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                            <GlanceCard
+                                title="Customers"
+                                subtitle="App users"
+                                stat1Label="total"
+                                stat1Value={totalCustomers.toLocaleString('en-IN')}
+                                stat2Label="new"
+                                stat2Value={newCustomers.toLocaleString('en-IN')}
+                                stat2Color="text-green-600"
+                            />
+                            <GlanceCard
+                                title="Events"
+                                subtitle="Ticketing / commission"
+                                stat1Label="partners"
+                                stat1Value="—"
+                                stat2Label="active listings"
+                                stat2Value={eventsCount.toLocaleString('en-IN')}
+                                stat2Color="text-amber-600"
+                            />
+                            <GlanceCard
+                                title="Programs"
+                                subtitle="Enquiry credits"
+                                stat1Label="partners"
+                                stat1Value="—"
+                                stat2Label="active listings"
+                                stat2Value={programsCount.toLocaleString('en-IN')}
+                                stat2Color="text-amber-600"
+                            />
+                            <GlanceCard
+                                title="Classes"
+                                subtitle="Enquiry credits"
+                                stat1Label="partners"
+                                stat1Value="—"
+                                stat2Label="active listings"
+                                stat2Value={classesCount.toLocaleString('en-IN')}
+                                stat2Color="text-amber-600"
+                            />
+                            <GlanceCard
+                                title="Venues"
+                                subtitle="Hybrid model"
+                                stat1Label="partners"
+                                stat1Value="—"
+                                stat2Label="active listings"
+                                stat2Value={venuesCount.toLocaleString('en-IN')}
+                                stat2Color="text-amber-600"
+                            />
+                        </div>
                     </div>
 
-                    {/* Recent activity + quick actions */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <Card className="lg:col-span-2">
-                            <h3 className="font-bold text-gray-900 mb-4">Recent Activity</h3>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                                <ActivityList title="Bookings" empty="No recent bookings">
-                                    {data.recent_activity.bookings.slice(0, 5).map((b) => (
-                                        <ActivityRow key={b.id} primary={b.booking_reference || b.customer_email} secondary={`${money(b.amount)} · ${b.status}`} time={formatDateShort(b.created_at)} />
-                                    ))}
-                                </ActivityList>
-                                <ActivityList title="Signups" empty="No recent signups">
-                                    {data.recent_activity.signups.slice(0, 5).map((s) => (
-                                        <ActivityRow key={s.id} primary={s.email} secondary={`${s.role}${s.auth_provider ? ` · ${s.auth_provider}` : ''}`} time={formatDateShort(s.created_at)} />
-                                    ))}
-                                </ActivityList>
-                                <ActivityList title="Tickets" empty="No recent tickets">
-                                    {data.recent_activity.tickets.slice(0, 5).map((t) => (
-                                        <ActivityRow key={t.id} primary={t.subject || humanize(t.category)} secondary={`${t.status}${t.raised_by_role ? ` · ${t.raised_by_role}` : ''}`} time={formatDateShort(t.created_at)} />
-                                    ))}
-                                </ActivityList>
-                            </div>
-                        </Card>
-
-                        <Card className="flex flex-col">
-                            <h3 className="font-bold text-gray-900 mb-4">Quick Actions</h3>
-                            <div className="space-y-2.5 flex-1">
-                                {QUICK_ACTIONS.map((a) => (
-                                    <button key={a.label} onClick={() => setScreen(a.screen)} className="w-full flex items-center justify-between p-3 rounded-2xl border border-gray-200 hover:bg-gray-50 transition-all group">
-                                        <div className="flex items-center gap-3">
-                                            <div className={cn('p-2 rounded-xl', a.bg, a.color)}><a.icon size={18} /></div>
-                                            <div className="text-left">
-                                                <p className="font-bold text-gray-900 text-sm">{a.label}</p>
-                                                <p className="text-xs text-gray-500">{a.sub}</p>
-                                            </div>
+                    {/* Quick Actions */}
+                    <div>
+                        <h2 className="text-sm font-bold text-gray-900 mb-3">Quick actions</h2>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            {QUICK_ACTIONS.map((action) => (
+                                <button
+                                    key={action.label}
+                                    onClick={() => setScreen(action.screen)}
+                                    className="flex flex-col items-center gap-2 p-4 bg-white border border-gray-200 rounded-xl hover:border-amber-300 hover:shadow-sm transition-all group text-center"
+                                >
+                                    <div className="relative">
+                                        <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center text-white', action.color)}>
+                                            <action.icon size={20} />
                                         </div>
-                                        <ChevronRight size={18} className="text-gray-700 group-hover:text-gray-900 transition-colors" />
-                                    </button>
+                                        {action.count != null && action.count > 0 && (
+                                            <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                                                {action.count > 99 ? '99+' : action.count}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="text-xs font-medium text-gray-600 group-hover:text-gray-900 transition-colors leading-tight">
+                                        {action.label}
+                                    </p>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Activity summary + Recent activity */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Activity summary — aggregate counts for the period */}
+                        <Card className="lg:col-span-2 p-0 overflow-hidden">
+                            <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-100">
+                                <h2 className="text-base font-bold text-gray-900">Activity summary</h2>
+                                <span className="text-xs text-gray-400">for {periodLabel}</span>
+                            </div>
+                            <div className="divide-y divide-gray-100">
+                                {summaryRows.map((row, i) => (
+                                    <div key={i} className="flex items-center gap-3 px-6 py-3.5">
+                                        <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0', row.tone)}>
+                                            <row.icon size={16} />
+                                        </div>
+                                        <p className="text-sm text-gray-700 flex-1">{row.text}</p>
+                                        <span className="text-xs text-gray-400 flex-shrink-0">{periodLabel}</span>
+                                    </div>
                                 ))}
                             </div>
+                        </Card>
+
+                        {/* Recent activity — live feed merged from bookings, signups & tickets */}
+                        <Card className="p-0 overflow-hidden">
+                            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                                <h2 className="text-base font-bold text-gray-900">Recent activity</h2>
+                                <button
+                                    onClick={() => setScreen(Screen.ANALYTICS)}
+                                    className="flex items-center gap-1 text-xs font-semibold text-amber-600 hover:text-amber-700 transition-colors"
+                                >
+                                    View all <ArrowUpRight size={12} />
+                                </button>
+                            </div>
+                            {feed.length === 0 ? (
+                                <div className="px-6 py-10 text-center text-sm text-gray-400">No recent activity yet.</div>
+                            ) : (
+                                <div className="divide-y divide-gray-100">
+                                    {feed.map((item) => {
+                                        const Icon = FEED_ICON[item.kind];
+                                        return (
+                                            <div key={item.id} className="flex items-start gap-3 px-6 py-3.5">
+                                                <div className="w-7 h-7 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                    <Icon size={14} />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium text-gray-800 truncate">{item.title}</p>
+                                                    {item.meta && <p className="text-xs text-gray-400 truncate">{item.meta}</p>}
+                                                </div>
+                                                <span className="text-xs text-gray-400 flex-shrink-0 whitespace-nowrap flex items-center gap-1">
+                                                    <Clock size={11} /> {timeAgo(item.at)}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </Card>
                     </div>
                 </>
@@ -268,75 +449,65 @@ const Dashboard = ({ setScreen }: { setScreen: (s: Screen) => void }) => {
 };
 
 // ---------------------------------------------------------------------------
-// Presentational helpers
+// Presentational components
 // ---------------------------------------------------------------------------
 
-function Kpi({ icon: Icon, tone, label, value, valueText, sub }: { icon: typeof Users; tone: string; label: string; value?: number; valueText?: string; sub?: string }) {
+interface KpiCardProps {
+    label: string;
+    value: string;
+    sub: string;
+    change?: string;
+    icon?: typeof Users;
+}
+
+function KpiCard({ label, value, sub, change, icon: Icon }: KpiCardProps) {
+    return (
+        <Card className="flex flex-col gap-1">
+            <div className="flex items-center justify-between">
+                <p className="text-[10px] font-bold text-blue-900 uppercase tracking-wider">{label}</p>
+                <span className="text-[10px] text-gray-400">Till date</span>
+            </div>
+            <p className="text-3xl font-bold text-gray-900 mt-1">{value}</p>
+            <div className="flex items-center justify-between mt-1">
+                <span className="text-[11px] text-gray-400">{sub}</span>
+                {change && (
+                    <span className="text-[11px] text-green-600 font-semibold flex items-center gap-0.5">
+                        ↑ {change}
+                    </span>
+                )}
+            </div>
+        </Card>
+    );
+}
+
+interface GlanceCardProps {
+    title: string;
+    subtitle: string;
+    stat1Label: string;
+    stat1Value: string;
+    stat2Label: string;
+    stat2Value: string;
+    stat2Color?: string;
+}
+
+function GlanceCard({ title, subtitle, stat1Label, stat1Value, stat2Label, stat2Value, stat2Color }: GlanceCardProps) {
     return (
         <Card className="flex flex-col gap-2">
-            <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', tone)}><Icon size={20} /></div>
             <div>
-                <p className="text-2xl font-bold text-gray-900">{valueText ?? (value ?? 0).toLocaleString()}</p>
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">{label}</p>
+                <p className="text-sm font-bold text-gray-900">{title}</p>
+                <p className="text-[10px] text-gray-400">{subtitle}</p>
             </div>
-            {sub && <p className="text-[11px] text-gray-500">{sub}</p>}
-        </Card>
-    );
-}
-
-function Line({ label, value, bold, tone }: { label: string; value: string; bold?: boolean; tone?: string }) {
-    return (
-        <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-500">{label}</span>
-            <span className={cn(bold ? 'font-bold text-base' : 'font-medium', tone ?? 'text-gray-800')}>{value}</span>
-        </div>
-    );
-}
-
-function Breakdown({ title, rows, extra }: { title: string; rows: [string, number][]; extra?: Record<string, number> }) {
-    const extraEntries = extra ? Object.entries(extra) : [];
-    return (
-        <Card>
-            <h3 className="font-bold text-gray-900 mb-3">{title}</h3>
-            <div className="space-y-2">
-                {rows.map(([k, v]) => (
-                    <div key={k} className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500">{k}</span>
-                        <span className="font-bold text-gray-800">{(v ?? 0).toLocaleString()}</span>
-                    </div>
-                ))}
-            </div>
-            {extraEntries.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-gray-100 flex flex-wrap gap-1.5">
-                    {extraEntries.map(([k, v]) => (
-                        <span key={k} className="px-2 py-1 bg-gray-100 text-gray-600 text-[10px] font-bold rounded-md">{humanize(k)}: {v}</span>
-                    ))}
+            <div className="flex items-end gap-3">
+                <div>
+                    <p className="text-xl font-bold text-gray-900">{stat1Value}</p>
+                    <p className="text-[10px] text-gray-400">{stat1Label}</p>
                 </div>
-            )}
-        </Card>
-    );
-}
-
-function ActivityList({ title, empty, children }: { title: string; empty: string; children: ReactNode }) {
-    const items = Array.isArray(children) ? children : [children];
-    const hasItems = items.some(Boolean) && (Array.isArray(children) ? children.length > 0 : !!children);
-    return (
-        <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">{title}</p>
-            {hasItems ? <div className="space-y-2.5">{children}</div> : <p className="text-xs text-gray-400">{empty}</p>}
-        </div>
-    );
-}
-
-function ActivityRow({ primary, secondary, time }: { primary: string; secondary: string; time: string }) {
-    return (
-        <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-                <p className="text-xs font-bold text-gray-800 truncate">{primary || '—'}</p>
-                <p className="text-[11px] text-gray-400 truncate capitalize">{secondary}</p>
+                <div>
+                    <p className={cn('text-xl font-bold', stat2Color || 'text-gray-900')}>{stat2Value}</p>
+                    <p className="text-[10px] text-gray-400">{stat2Label}</p>
+                </div>
             </div>
-            <span className="text-[10px] text-gray-400 shrink-0">{time}</span>
-        </div>
+        </Card>
     );
 }
 

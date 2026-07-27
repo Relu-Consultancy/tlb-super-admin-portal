@@ -731,7 +731,7 @@ function ModeButton({ active, onClick, icon: Icon, label }: { active: boolean; o
         <button
             type="button"
             onClick={onClick}
-            className={cn('flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-bold transition-all', active ? 'bg-gray-900 text-gray-900 border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50')}
+            className={cn('flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-bold transition-all', active ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50')}
         >
             <Icon size={15} /> {label}
         </button>

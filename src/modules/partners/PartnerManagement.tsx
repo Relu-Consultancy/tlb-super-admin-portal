@@ -819,7 +819,7 @@ const PartnerManagement = () => {
                                         <td className="px-6 py-4">
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); openReview(p); }}
-                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-gray-900 text-xs font-bold rounded-lg hover:bg-gray-800 transition-all"
+                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-white text-xs font-bold rounded-lg hover:bg-gray-800 transition-all"
                                             >
                                                 <Eye size={14} /> Review
                                             </button>

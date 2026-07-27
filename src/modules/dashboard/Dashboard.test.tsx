@@ -4,16 +4,6 @@ import userEvent from '@testing-library/user-event';
 import Dashboard from './Dashboard';
 import { Screen } from '../../types';
 
-vi.mock('recharts', () => ({
-    ResponsiveContainer: ({ children }: any) => <div data-testid="responsive-container">{children}</div>,
-    AreaChart: ({ children }: any) => <div data-testid="area-chart">{children}</div>,
-    Area: () => null,
-    XAxis: () => null,
-    YAxis: () => null,
-    CartesianGrid: () => null,
-    Tooltip: () => null,
-}));
-
 vi.mock('../../shared/lib/api', () => ({
     getOverviewStats: vi.fn(),
     parseAmount: (v: any) => (v == null || v === '' || v === '-' ? null : (Number.isNaN(Number(v)) ? null : Number(v))),
@@ -50,61 +40,64 @@ describe('Dashboard', () => {
         (getOverviewStats as any).mockResolvedValue(OVERVIEW);
     });
 
-    it('renders the heading and loads overview stats', async () => {
+    it('renders the heading and loads overview stats for this month', async () => {
         render(<Dashboard setScreen={setScreen} />);
-        expect(screen.getByText('Super Admin Dashboard')).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
         await waitFor(() => expect(getOverviewStats).toHaveBeenCalledWith({ period: 'this_month' }));
     });
 
     it('renders KPI cards from the API', async () => {
         render(<Dashboard setScreen={setScreen} />);
-        expect(await screen.findByText('1,200')).toBeInTheDocument(); // customers
-        expect(screen.getByText('Customers')).toBeInTheDocument();
-        expect(screen.getByText('Partners')).toBeInTheDocument();
-        expect(screen.getByText('540')).toBeInTheDocument(); // bookings total
+        expect(await screen.findByText('540')).toBeInTheDocument(); // bookings total (unique)
+        // Total customers appears in both the KPI card and the glance card.
+        expect(screen.getAllByText('1,200').length).toBeGreaterThanOrEqual(1);
+        expect(screen.getByText('TOTAL PARTNERS')).toBeInTheDocument();
     });
 
-    it('renders the trend chart and breakdown sections', async () => {
+    it('renders the at-a-glance listings-by-vertical cards', async () => {
         render(<Dashboard setScreen={setScreen} />);
-        await screen.findByText('1,200');
-        expect(screen.getByTestId('area-chart')).toBeInTheDocument();
-        expect(screen.getByText('Activity Trend')).toBeInTheDocument();
-        expect(screen.getByText('Revenue')).toBeInTheDocument();
-        expect(screen.getByText('Recent Activity')).toBeInTheDocument();
+        await screen.findByText('Activity summary');
+        expect(screen.getByText('Events')).toBeInTheDocument();
+        expect(screen.getByText('Venues')).toBeInTheDocument();
+        expect(screen.getByText('120')).toBeInTheDocument(); // event count
     });
 
-    it('shows recent activity items', async () => {
+    it('renders the Activity summary from period aggregates', async () => {
         render(<Dashboard setScreen={setScreen} />);
-        expect(await screen.findByText('BK-001')).toBeInTheDocument();
+        await screen.findByText('Activity summary');
+        expect(screen.getByText(/45 new customers signed up on the app/)).toBeInTheDocument();
+        expect(screen.getByText(/6 new partners registered/)).toBeInTheDocument();
+        expect(screen.getByText(/240 listings published across verticals/)).toBeInTheDocument();
+        expect(screen.getByText(/platform revenue collected/)).toBeInTheDocument();
+        // refunded > 0 → the refund row appears
+        expect(screen.getByText(/refunds? awaiting review/)).toBeInTheDocument();
+    });
+
+    it('renders the Recent activity feed merged from bookings, signups and tickets', async () => {
+        render(<Dashboard setScreen={setScreen} />);
+        await screen.findByText('Recent activity');
+        expect(screen.getByText(/New booking — BK-001/)).toBeInTheDocument();
         expect(screen.getByText('newbie@x.com')).toBeInTheDocument();
-        expect(screen.getByText('Refund please')).toBeInTheDocument();
+        expect(screen.getByText(/Enquiry received — Refund please/)).toBeInTheDocument();
     });
 
-    it('re-fetches when the period changes', async () => {
+    it('shows an empty recent-activity state when there is nothing to show', async () => {
+        (getOverviewStats as any).mockResolvedValue({
+            ...OVERVIEW,
+            recent_activity: { bookings: [], signups: [], tickets: [] },
+        });
         render(<Dashboard setScreen={setScreen} />);
-        await screen.findByText('1,200');
-        await userEvent.click(screen.getByRole('button', { name: 'Today' }));
-        await waitFor(() => expect(getOverviewStats).toHaveBeenCalledWith({ period: 'today' }));
-    });
-
-    it('reveals custom date inputs and waits for both ends', async () => {
-        render(<Dashboard setScreen={setScreen} />);
-        await screen.findByText('1,200');
-        (getOverviewStats as any).mockClear();
-        await userEvent.click(screen.getByRole('button', { name: 'Custom Range' }));
-        // No fetch until both dates are set.
-        expect(getOverviewStats).not.toHaveBeenCalled();
+        await screen.findByText('Activity summary');
+        expect(screen.getByText('No recent activity yet.')).toBeInTheDocument();
     });
 
     it('quick actions navigate to the right screens', async () => {
         render(<Dashboard setScreen={setScreen} />);
-        await screen.findByText('1,200');
-        await userEvent.click(screen.getByText('Approve Partners'));
+        await screen.findByText('Activity summary');
+        await userEvent.click(screen.getByText('Review partner registrations'));
         expect(setScreen).toHaveBeenCalledWith(Screen.PARTNER_MANAGEMENT);
-        await userEvent.click(screen.getByText('Approve Listings'));
+        await userEvent.click(screen.getByText('Pending listings'));
         expect(setScreen).toHaveBeenCalledWith(Screen.EVENT_APPROVAL);
-        await userEvent.click(screen.getByText('Send a Broadcast'));
-        expect(setScreen).toHaveBeenCalledWith(Screen.BROADCASTS);
     });
 
     it('shows an error state when the API fails', async () => {

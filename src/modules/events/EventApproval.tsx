@@ -132,7 +132,12 @@ function SmartValue({ value }: { value: unknown }) {
 
 type Toast = { type: 'success' | 'error'; text: string } | null;
 
-const EventApproval = () => {
+interface EventApprovalProps {
+    /** Pre-select a listing vertical (from the Partners sidebar sub-item). */
+    listingType?: string;
+}
+
+const EventApproval = ({ listingType = '' }: EventApprovalProps) => {
     const { hasPermission } = useAuth();
     const canManage = hasPermission('MANAGE_LISTINGS');
 
@@ -146,7 +151,8 @@ const EventApproval = () => {
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
-    const [typeFilter, setTypeFilter] = useState('');
+    // Seeded from the Partners sub-item; the dropdown can still change it within the tab.
+    const [typeFilter, setTypeFilter] = useState(listingType);
 
     // Review (detail) view
     const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -547,8 +553,14 @@ const EventApproval = () => {
         <div className="space-y-6">
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Listings Approval</h1>
-                    <p className="text-gray-500 text-sm">Review and moderate partner listings of every type</p>
+                    <h1 className="text-2xl font-bold text-gray-900">
+                        {typeFilter ? `${listingTypeLabel(typeFilter)} Approval` : 'Listings Approval'}
+                    </h1>
+                    <p className="text-gray-500 text-sm">
+                        {typeFilter
+                            ? `Review and moderate partner ${listingTypeLabel(typeFilter).toLowerCase()} listings`
+                            : 'Review and moderate partner listings of every type'}
+                    </p>
                 </div>
             </header>
 
@@ -646,7 +658,7 @@ const EventApproval = () => {
                                         <td className="px-6 py-4">
                                             <button
                                                 onClick={(ev) => { ev.stopPropagation(); openReview(l); }}
-                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-gray-900 text-xs font-bold rounded-lg hover:bg-gray-800 transition-all"
+                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-white text-xs font-bold rounded-lg hover:bg-gray-800 transition-all"
                                             >
                                                 <Eye size={14} /> Review
                                             </button>
@@ -996,7 +1008,7 @@ function RejectModal({
                     <button
                         onClick={onConfirm}
                         disabled={disabled}
-                        className="flex items-center gap-2 px-6 py-3 bg-red-600 text-gray-900 font-bold rounded-xl hover:bg-red-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                         {submitting && <Loader2 size={16} className="animate-spin" />}
                         {submitting ? 'Rejecting…' : 'Reject Listing'}

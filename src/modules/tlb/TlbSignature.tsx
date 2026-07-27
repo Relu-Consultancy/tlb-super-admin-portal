@@ -367,7 +367,7 @@ function DetailDrawer({ id, onClose, onChanged, onError }: DrawerProps) {
         {data && !loading && (
           <div className="border-t border-gray-200 p-4 flex flex-wrap gap-2">
             {!editing && !isArchived && (
-              <button onClick={() => setEditing(true)} className="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-gray-900 font-bold rounded-xl hover:bg-gray-800 text-sm">
+              <button onClick={() => setEditing(true)} className="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 text-sm">
                 <PencilLine size={15} /> Edit
               </button>
             )}

@@ -205,7 +205,7 @@ const FinanceDashboard = () => {
                         </div>
                     )}
                     {canExport && (
-                        <button onClick={handleExport} disabled={exporting || !summary} className="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-gray-900 text-sm font-bold rounded-xl hover:bg-gray-800 disabled:opacity-60">
+                        <button onClick={handleExport} disabled={exporting || !summary} className="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white text-sm font-bold rounded-xl hover:bg-gray-800 disabled:opacity-60">
                             {exporting ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />} Export
                         </button>
                     )}

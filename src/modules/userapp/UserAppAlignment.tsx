@@ -260,7 +260,7 @@ const UserAppAlignment = () => {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-bold text-gray-900">UserApp Alignment</h1>
+        <h1 className="text-2xl font-bold text-gray-900">App Content</h1>
         <p className="text-gray-500 text-sm">Curate which listings appear on the app homepage and each discovery screen.</p>
       </header>
 
@@ -276,7 +276,7 @@ const UserAppAlignment = () => {
               className={cn(
                 'inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold border transition-all',
                 active
-                  ? 'bg-gray-900 text-gray-900 border-gray-900 shadow-sm'
+                  ? 'bg-gray-900 text-white border-gray-900 shadow-sm'
                   : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300',
               )}
             >
@@ -757,7 +757,7 @@ function TypeChip({ label, active, onClick }: { label: string; active: boolean; 
       onClick={onClick}
       className={cn(
         'px-3 py-1 rounded-lg text-xs font-bold transition-colors',
-        active ? 'bg-gray-900 text-gray-900' : 'bg-gray-100 text-gray-600 hover:bg-gray-100',
+        active ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-100',
       )}
     >
       {label}
