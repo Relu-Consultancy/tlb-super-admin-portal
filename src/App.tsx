@@ -32,6 +32,7 @@ const TlbSignature = lazy(() => import('./modules/tlb/TlbSignature'));
 const CreateTlbSignature = lazy(() => import('./modules/tlb/CreateTlbSignature'));
 const Settings = lazy(() => import('./modules/settings/Settings'));
 const Analytics = lazy(() => import('./modules/analytics/Analytics'));
+const TrafficEngagement = lazy(() => import('./modules/traffic/TrafficEngagement'));
 const UserSection = lazy(() => import('./modules/users/UserSection/UserSection'));
 const Hub = lazy(() => import('./modules/home/Hub'));
 
@@ -207,7 +208,7 @@ export default function App() {
       case Screen.SETTINGS: return <Settings />;
       case Screen.ANALYTICS: return <Analytics />;
       case Screen.USER_SECTION: return <UserSection setScreen={selectScreen} />;
-      case Screen.TRAFFIC_ENGAGEMENT: return <ComingSoon title="Traffic & Engagement" onBack={goToDashboard} />;
+      case Screen.TRAFFIC_ENGAGEMENT: return <TrafficEngagement />;
       case Screen.APP_CONTENT: return <ComingSoon title="App Content" onBack={goToDashboard} />;
       default: return (
         <ComingSoon title="Screen Under Development" onBack={goToDashboard} />

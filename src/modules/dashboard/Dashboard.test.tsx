@@ -6,14 +6,22 @@ import { Screen } from '../../types';
 
 vi.mock('../../shared/lib/api', () => ({
     getOverviewStats: vi.fn(),
+    getCustomerStats: vi.fn(),
+    getPartnerStats: vi.fn(),
     parseAmount: (v: any) => (v == null || v === '' || v === '-' ? null : (Number.isNaN(Number(v)) ? null : Number(v))),
     safeCurrency: () => 'INR',
     formatMoney: (n: any) => `₹${Number(n).toLocaleString()}`,
-    STATS_PERIODS: ['today', 'yesterday', 'this_week', 'last_week', 'this_month', 'custom'],
-    STATS_PERIOD_LABELS: { today: 'Today', yesterday: 'Yesterday', this_week: 'This Week', last_week: 'Last Week', this_month: 'This Month', custom: 'Custom Range' },
     ApiError: class ApiError extends Error { code: string | null = null; },
 }));
-import { getOverviewStats } from '../../shared/lib/api';
+import { getOverviewStats, getCustomerStats, getPartnerStats } from '../../shared/lib/api';
+
+const CUSTOMER_STATS = {
+    summary: { total: 1200, new_in_period: 45, active: 900, inactive: 300, disabled: 5 },
+};
+const PARTNER_STATS = {
+    summary: { total: 80, new_in_period: 6, active: 60, inactive: 20, disabled: 2 },
+    pending_actions: { awaiting_approval: 4, awaiting_verification: 7 },
+};
 
 const OVERVIEW = {
     period: { type: 'this_month', date_from: '2026-06-01', date_to: '2026-06-30', label: 'This Month' },
@@ -38,6 +46,8 @@ describe('Dashboard', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         (getOverviewStats as any).mockResolvedValue(OVERVIEW);
+        (getCustomerStats as any).mockResolvedValue(CUSTOMER_STATS);
+        (getPartnerStats as any).mockResolvedValue(PARTNER_STATS);
     });
 
     it('renders the heading and loads overview stats for this month', async () => {
@@ -46,20 +56,35 @@ describe('Dashboard', () => {
         await waitFor(() => expect(getOverviewStats).toHaveBeenCalledWith({ period: 'this_month' }));
     });
 
-    it('renders KPI cards from the API', async () => {
+    it('renders KPI tiles from the API', async () => {
         render(<Dashboard setScreen={setScreen} />);
         expect(await screen.findByText('540')).toBeInTheDocument(); // bookings total (unique)
-        // Total customers appears in both the KPI card and the glance card.
-        expect(screen.getAllByText('1,200').length).toBeGreaterThanOrEqual(1);
-        expect(screen.getByText('TOTAL PARTNERS')).toBeInTheDocument();
+        expect(screen.getAllByText('1,200').length).toBeGreaterThanOrEqual(1); // total customers
+        expect(screen.getByText('Total Partners')).toBeInTheDocument();
+        expect(screen.getByText('Total Customers')).toBeInTheDocument();
     });
 
-    it('renders the at-a-glance listings-by-vertical cards', async () => {
+    it('renders the guide-grouped metric sections with wired Active/Inactive/Pending-KYC', async () => {
         render(<Dashboard setScreen={setScreen} />);
         await screen.findByText('Activity summary');
-        expect(screen.getByText('Events')).toBeInTheDocument();
-        expect(screen.getByText('Venues')).toBeInTheDocument();
-        expect(screen.getByText('120')).toBeInTheDocument(); // event count
+        // Section headings
+        ['Customers', 'Partners', 'Listings', 'Bookings & Enquiries'].forEach((h) =>
+            expect(screen.getByRole('heading', { name: h })).toBeInTheDocument());
+        // Backed metrics from getCustomerStats / getPartnerStats
+        expect(screen.getByText('Active Customers')).toBeInTheDocument();
+        expect(screen.getByText('900')).toBeInTheDocument();   // active customers (unique)
+        expect(screen.getByText('300')).toBeInTheDocument();   // inactive customers (unique)
+        expect(screen.getByText('Pending KYC')).toBeInTheDocument();
+        // Listings vocab: Live tile
+        expect(screen.getByText('Live')).toBeInTheDocument();
+    });
+
+    it('shows an em-dash when the customer/partner stats endpoints are unavailable', async () => {
+        (getCustomerStats as any).mockResolvedValue(null);
+        (getPartnerStats as any).mockResolvedValue(null);
+        render(<Dashboard setScreen={setScreen} />);
+        await screen.findByText('Active Customers');
+        expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(1);
     });
 
     it('renders the Activity summary from period aggregates', async () => {

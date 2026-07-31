@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, type ReactNode } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
     Search,
     Eye,
@@ -27,6 +27,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import Card from '../../shared/components/ui/Card';
 import EmptyState from '../../shared/components/ui/EmptyState';
+import Select from '../../shared/components/ui/Select';
 import { cn } from '../../shared/lib/utils';
 import { useAuth } from '../../shared/auth/AuthContext';
 import {
@@ -542,7 +543,7 @@ const EventApproval = ({ listingType = '' }: EventApprovalProps) => {
     const statTiles = stats
         ? [
               { label: 'Pending', value: stats.pending, tone: 'text-amber-600' },
-              { label: 'Published', value: stats.published, tone: 'text-green-600' },
+              { label: 'Live', value: stats.published, tone: 'text-green-600' },
               { label: 'Rejected', value: stats.rejected, tone: 'text-red-600' },
               { label: 'Total', value: stats.total, tone: 'text-gray-900' },
           ]
@@ -598,12 +599,18 @@ const EventApproval = ({ listingType = '' }: EventApprovalProps) => {
                     />
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                 </div>
-                <FilterSelect value={typeFilter} onChange={setTypeFilter} allLabel="All types">
-                    {LISTING_TYPES.map((t) => <option key={t} value={t}>{listingTypeLabel(t)}</option>)}
-                </FilterSelect>
-                <FilterSelect value={statusFilter} onChange={setStatusFilter} allLabel="All statuses">
-                    {LISTING_STATUSES.map((s) => <option key={s} value={s}>{listingStatusLabel(s)}</option>)}
-                </FilterSelect>
+                <Select
+                    value={typeFilter}
+                    onChange={setTypeFilter}
+                    placeholder="All types"
+                    options={[{ value: '', label: 'All types' }, ...LISTING_TYPES.map((t) => ({ value: t, label: listingTypeLabel(t) }))]}
+                />
+                <Select
+                    value={statusFilter}
+                    onChange={setStatusFilter}
+                    placeholder="All statuses"
+                    options={[{ value: '', label: 'All statuses' }, ...LISTING_STATUSES.map((s) => ({ value: s, label: listingStatusLabel(s) }))]}
+                />
             </div>
 
             {/* Table */}
@@ -850,28 +857,6 @@ function MiniMetric({ label, value }: { label: string; value: number }) {
     );
 }
 
-function FilterSelect({
-    value,
-    onChange,
-    allLabel,
-    children,
-}: {
-    value: string;
-    onChange: (v: string) => void;
-    allLabel: string;
-    children: ReactNode;
-}) {
-    return (
-        <select
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 appearance-none cursor-pointer"
-        >
-            <option value="">{allLabel}</option>
-            {children}
-        </select>
-    );
-}
 
 function RejectModal({
     reason,

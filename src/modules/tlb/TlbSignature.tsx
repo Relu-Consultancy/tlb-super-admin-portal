@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import Card from '../../shared/components/ui/Card';
 import EmptyState from '../../shared/components/ui/EmptyState';
+import Select from '../../shared/components/ui/Select';
 import { cn } from '../../shared/lib/utils';
 import { useAuth } from '../../shared/auth/AuthContext';
 import {
@@ -139,14 +140,18 @@ const TlbSignature = ({ onCreate }: Props) => {
             className="w-full pl-9 pr-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40"
           />
         </div>
-        <select value={type} onChange={(e) => setType(e.target.value)} className="px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm">
-          <option value="">All types</option>
-          {LISTING_TYPES.map((t) => <option key={t} value={t}>{listingTypeLabel(t)}</option>)}
-        </select>
-        <select value={status} onChange={(e) => setStatus(e.target.value)} className="px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm">
-          <option value="">All statuses</option>
-          {TLB_STATUSES.map((s) => <option key={s} value={s}>{listingStatusLabel(s)}</option>)}
-        </select>
+        <Select
+          value={type}
+          onChange={setType}
+          placeholder="All types"
+          options={[{ value: '', label: 'All types' }, ...LISTING_TYPES.map((t) => ({ value: t, label: listingTypeLabel(t) }))]}
+        />
+        <Select
+          value={status}
+          onChange={setStatus}
+          placeholder="All statuses"
+          options={[{ value: '', label: 'All statuses' }, ...TLB_STATUSES.map((s) => ({ value: s, label: listingStatusLabel(s) }))]}
+        />
       </div>
 
       {error ? (

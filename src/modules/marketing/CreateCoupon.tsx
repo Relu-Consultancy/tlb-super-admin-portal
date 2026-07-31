@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import Card from '../../shared/components/ui/Card';
+import Select from '../../shared/components/ui/Select';
 import { cn } from '../../shared/lib/utils';
 import {
     createCoupon,
@@ -159,10 +160,13 @@ const CreateCoupon = ({ onBack, onCreated }: CreateCouponProps) => {
                         </div>
                         {couponType === 'partner' && (
                             <Labeled label="Partner" required>
-                                <select value={partnerId} onChange={(e) => setPartnerId(e.target.value)} className={inputCls}>
-                                    <option value="">Select a partner…</option>
-                                    {partners.map((p) => <option key={p.id} value={p.id}>{p.business_name || p.email}</option>)}
-                                </select>
+                                <Select
+                                    value={partnerId}
+                                    onChange={setPartnerId}
+                                    placeholder="Select a partner…"
+                                    variant="form"
+                                    options={partners.map((p) => ({ value: p.id, label: p.business_name || p.email }))}
+                                />
                             </Labeled>
                         )}
                     </Card>

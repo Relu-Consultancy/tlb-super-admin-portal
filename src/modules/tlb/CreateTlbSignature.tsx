@@ -14,6 +14,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import Card from '../../shared/components/ui/Card';
+import Select, { type SelectOption } from '../../shared/components/ui/Select';
 import { cn } from '../../shared/lib/utils';
 import { useAuth } from '../../shared/auth/AuthContext';
 import {
@@ -403,27 +404,17 @@ function Text({ value, onChange, placeholder, type = 'text' }: { value?: string;
 function Area({ value, onChange, placeholder }: { value?: string; onChange: (v: string) => void; placeholder?: string }) {
   return <textarea value={value ?? ''} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} rows={3} className={inputCls} />;
 }
-interface Option { value: string; label: string }
-function Select({ value, onChange, options, placeholder = 'Select…' }: { value?: string; onChange: (v: string) => void; options: Option[]; placeholder?: string }) {
-  return (
-    <select value={value ?? ''} onChange={(e) => onChange(e.target.value)} className={inputCls}>
-      <option value="">{placeholder}</option>
-      {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-    </select>
-  );
-}
 
-// Fixed-option value sets surfaced as dropdowns.
-const MODE_OPTIONS: Option[] = [
+const MODE_OPTIONS: SelectOption[] = [
   { value: 'online', label: 'Online' },
   { value: 'offline', label: 'Offline' },
   { value: 'hybrid', label: 'Hybrid' },
 ];
-const BOOKING_TYPE_OPTIONS: Option[] = [
+const BOOKING_TYPE_OPTIONS: SelectOption[] = [
   { value: 'enquiry', label: 'Enquiry' },
   { value: 'booking', label: 'Booking' },
 ];
-const YES_NO: Option[] = [
+const YES_NO: SelectOption[] = [
   { value: 'true', label: 'Yes' },
   { value: 'false', label: 'No' },
 ];

@@ -18,6 +18,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import Card from '../../shared/components/ui/Card';
 import EmptyState from '../../shared/components/ui/EmptyState';
+import Select from '../../shared/components/ui/Select';
 import { cn } from '../../shared/lib/utils';
 import { useAuth } from '../../shared/auth/AuthContext';
 import {
@@ -494,10 +495,13 @@ const AdminManagement = () => {
                             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">
                                 Full Activity Log {auditCount > 0 && <span className="text-gray-700">· {auditCount} entries</span>}
                             </h3>
-                            <select value={actionFilter} onChange={(e) => setActionFilter(e.target.value)} className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 appearance-none cursor-pointer">
-                                <option value="">All actions</option>
-                                {AUDIT_ACTIONS.map((code) => <option key={code} value={code}>{auditActionLabel(code)}</option>)}
-                            </select>
+                            <Select
+                                value={actionFilter}
+                                onChange={setActionFilter}
+                                placeholder="All actions"
+                                className="w-48"
+                                options={[{ value: '', label: 'All actions' }, ...AUDIT_ACTIONS.map((code) => ({ value: code, label: auditActionLabel(code) }))]}
+                            />
                         </div>
 
                         {!canViewAudit ? (
@@ -594,9 +598,13 @@ const AdminManagement = () => {
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Role *</label>
-                                    <select value={createForm.role} onChange={(e) => setCreateForm({ ...createForm, role: e.target.value as AdminRole })} disabled={createSubmitting} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 appearance-none disabled:opacity-60">
-                                        {ASSIGNABLE_ROLES.map((r) => <option key={r} value={r}>{roleLabel(r)}</option>)}
-                                    </select>
+                                    <Select
+                                        value={createForm.role}
+                                        onChange={(v) => setCreateForm({ ...createForm, role: v as AdminRole })}
+                                        disabled={createSubmitting}
+                                        variant="form"
+                                        options={ASSIGNABLE_ROLES.map((r) => ({ value: r, label: roleLabel(r) }))}
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Password *</label>
@@ -697,9 +705,13 @@ const AdminManagement = () => {
                                                 <p className="text-sm text-gray-500">You cannot change your own role.</p>
                                             ) : (
                                                 <>
-                                                    <select value={roleDraft} onChange={(e) => setRoleDraft(e.target.value as AdminRole)} disabled={roleSaving} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 appearance-none disabled:opacity-60">
-                                                        {ASSIGNABLE_ROLES.map((r) => <option key={r} value={r}>{roleLabel(r)}</option>)}
-                                                    </select>
+                                                    <Select
+                                                        value={roleDraft}
+                                                        onChange={(v) => setRoleDraft(v as AdminRole)}
+                                                        disabled={roleSaving}
+                                                        variant="form"
+                                                        options={ASSIGNABLE_ROLES.map((r) => ({ value: r, label: roleLabel(r) }))}
+                                                    />
                                                     <p className="text-[10px] text-gray-400">Changing the role force-logs the admin out; they must re-login.</p>
                                                     <button onClick={saveRole} disabled={roleSaving || roleDraft === detail.role} className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-xs font-bold rounded-lg hover:bg-gray-800 transition-all disabled:opacity-50">
                                                         {roleSaving && <Loader2 size={14} className="animate-spin" />} Save Role

@@ -24,8 +24,10 @@ import {
 import Card from '../../shared/components/ui/Card';
 import StatCard from '../../shared/components/ui/StatCard';
 import EmptyState from '../../shared/components/ui/EmptyState';
+import PeriodFilter from '../../shared/components/ui/PeriodFilter';
 import { cn } from '../../shared/lib/utils';
 import { useAuth } from '../../shared/auth/AuthContext';
+import { resolvePeriodParams, STANDARD_PERIOD_LABELS, type StandardPeriod } from '../../shared/lib/period';
 import {
     getFinanceSummary,
     getFinanceDashboard,
@@ -35,13 +37,10 @@ import {
     parseAmount,
     safeCurrency,
     formatMoney,
-    FINANCE_PERIODS,
-    FINANCE_PERIOD_LABELS,
     ApiError,
     type FinanceSummary,
     type FinanceDashboardData,
     type FinanceParams,
-    type FinancePeriod,
 } from '../../shared/lib/api';
 
 /** Safely format an integer-ish value that may arrive as a number, string, or be missing. */
@@ -106,7 +105,7 @@ const FinanceDashboard = () => {
     const canView = hasPermission('VIEW_TRANSACTIONS') || hasPermission('VIEW_REVENUE');
     const canExport = hasPermission('EXPORT_REPORTS');
 
-    const [period, setPeriod] = useState<FinancePeriod>('this_month');
+    const [period, setPeriod] = useState<StandardPeriod>('this_month');
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
     const [summary, setSummary] = useState<FinanceSummary | null>(null);
@@ -116,16 +115,14 @@ const FinanceDashboard = () => {
     const [exporting, setExporting] = useState(false);
     const [exportBanner, setExportBanner] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
 
-    const params = useCallback((): FinanceParams => (
-        period === 'custom' ? { period, date_from: dateFrom, date_to: dateTo } : { period }
-    ), [period, dateFrom, dateTo]);
+    const params = useCallback((): FinanceParams => resolvePeriodParams(period, dateFrom, dateTo), [period, dateFrom, dateTo]);
 
     const load = useCallback(async () => {
         if (period === 'custom' && (!dateFrom || !dateTo)) return;
         setLoading(true);
         setError(null);
         try {
-            const p = period === 'custom' ? { period, date_from: dateFrom, date_to: dateTo } : { period };
+            const p = resolvePeriodParams(period, dateFrom, dateTo);
             // Summary is the documented source of truth for KPIs; the dashboard
             // (trend + breakdowns) is best-effort and must not break the KPIs.
             const [s, d] = await Promise.all([
@@ -187,23 +184,16 @@ const FinanceDashboard = () => {
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Finance Dashboard</h1>
-                    <p className="text-gray-500 text-sm">Revenue, refunds, commission &amp; payouts · {FINANCE_PERIOD_LABELS[period]}</p>
+                    <p className="text-gray-500 text-sm">Revenue, refunds, commission &amp; payouts · {STANDARD_PERIOD_LABELS[period]}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                    <div className="flex bg-gray-100 rounded-xl p-1">
-                        {FINANCE_PERIODS.map((p) => (
-                            <button key={p} onClick={() => setPeriod(p)} className={cn('px-3 py-1.5 text-xs font-bold rounded-lg transition-all whitespace-nowrap', period === p ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
-                                {FINANCE_PERIOD_LABELS[p]}
-                            </button>
-                        ))}
-                    </div>
-                    {period === 'custom' && (
-                        <div className="flex items-center gap-2">
-                            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-sm" />
-                            <span className="text-gray-400 text-sm">→</span>
-                            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-sm" />
-                        </div>
-                    )}
+                    <PeriodFilter
+                        value={period}
+                        onChange={setPeriod}
+                        dateFrom={dateFrom}
+                        dateTo={dateTo}
+                        onDateChange={(from, to) => { setDateFrom(from); setDateTo(to); }}
+                    />
                     {canExport && (
                         <button onClick={handleExport} disabled={exporting || !summary} className="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white text-sm font-bold rounded-xl hover:bg-gray-800 disabled:opacity-60">
                             {exporting ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />} Export
@@ -238,7 +228,7 @@ const FinanceDashboard = () => {
                         <Card className="lg:col-span-2">
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="font-bold text-gray-900">Revenue Trend</h3>
-                                <span className="text-xs text-gray-400">{FINANCE_PERIOD_LABELS[period]}</span>
+                                <span className="text-xs text-gray-400">{STANDARD_PERIOD_LABELS[period]}</span>
                             </div>
                             <div className="h-72">
                                 {trend.length === 0 ? (

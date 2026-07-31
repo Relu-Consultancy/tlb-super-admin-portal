@@ -81,8 +81,8 @@ describe('Analytics', () => {
     it('re-fetches when the period changes', async () => {
         render(<Analytics />);
         await screen.findByText('540');
-        await userEvent.click(screen.getByRole('button', { name: 'Last Week' }));
-        await waitFor(() => expect(getOverviewStats).toHaveBeenCalledWith({ period: 'last_week' }));
+        await userEvent.click(screen.getByRole('button', { name: 'As of Today' }));
+        await waitFor(() => expect(getOverviewStats).toHaveBeenCalledWith({ period: 'today' }));
     });
 
     it('shows an error state when the API fails', async () => {

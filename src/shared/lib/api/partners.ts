@@ -182,9 +182,15 @@ export async function listPartners(params?: ListPartnersParams): Promise<Partner
   return asArray<PartnerListItem>(res);
 }
 
-/** GET /partners/metrics/ — aggregate counts by status, activity, verification. */
-export function getPartnerMetrics(): Promise<PartnerMetrics> {
-  return api.get<PartnerMetrics>(adminPath('partners/metrics/'));
+/**
+ * GET /partners/metrics/ — aggregate counts by status, activity, verification.
+ * Optionally scoped to a `date_from`/`date_to` window (period-based counts like
+ * "new partners" reflect the range; the backend ignores the params if unsupported).
+ */
+export function getPartnerMetrics(params?: { date_from?: string; date_to?: string }): Promise<PartnerMetrics> {
+  return api.get<PartnerMetrics>(adminPath('partners/metrics/'), {
+    params: params as Record<string, string | undefined>,
+  });
 }
 
 /** GET /partners/{id}/ — full partner profile detail. */

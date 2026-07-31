@@ -62,7 +62,7 @@ describe('partner service', () => {
     it('getPartnerMetrics hits the metrics endpoint', async () => {
         (api.get as any).mockResolvedValue({});
         await getPartnerMetrics();
-        expect(api.get).toHaveBeenCalledWith('/api/v1/admin/partners/metrics/');
+        expect(api.get).toHaveBeenCalledWith('/api/v1/admin/partners/metrics/', { params: undefined });
     });
 
     it('approve sends an (optional) comment', async () => {

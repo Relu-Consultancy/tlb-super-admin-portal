@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, type ReactNode } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
     Plus,
     Search,
@@ -21,6 +21,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import Card from '../../shared/components/ui/Card';
 import EmptyState from '../../shared/components/ui/EmptyState';
+import Select from '../../shared/components/ui/Select';
 import { cn } from '../../shared/lib/utils';
 import { useAuth } from '../../shared/auth/AuthContext';
 import {
@@ -254,16 +255,28 @@ const CouponsMarketing = ({ onCreateCoupon }: { onCreateCoupon?: () => void }) =
                     <input type="text" placeholder="Search by code or partner…" value={search} onChange={(e) => setSearch(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 pl-11 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                 </div>
-                <FilterSelect value={typeFilter} onChange={setTypeFilter} allLabel="All types">
-                    {COUPON_TYPES.map((t) => <option key={t} value={t}>{couponTypeLabel(t)}</option>)}
-                </FilterSelect>
-                <FilterSelect value={discountFilter} onChange={setDiscountFilter} allLabel="Any discount">
-                    {DISCOUNT_TYPES.map((d) => <option key={d} value={d}>{d === 'percent' ? 'Percentage' : 'Fixed'}</option>)}
-                </FilterSelect>
-                <FilterSelect value={activeFilter} onChange={(v) => setActiveFilter(v as '' | 'true' | 'false')} allLabel="Any status">
-                    <option value="true">Active</option>
-                    <option value="false">Inactive</option>
-                </FilterSelect>
+                <Select
+                    value={typeFilter}
+                    onChange={setTypeFilter}
+                    placeholder="All types"
+                    options={[{ value: '', label: 'All types' }, ...COUPON_TYPES.map((t) => ({ value: t, label: couponTypeLabel(t) }))]}
+                />
+                <Select
+                    value={discountFilter}
+                    onChange={setDiscountFilter}
+                    placeholder="Any discount"
+                    options={[{ value: '', label: 'Any discount' }, ...DISCOUNT_TYPES.map((d) => ({ value: d, label: d === 'percent' ? 'Percentage' : 'Fixed' }))]}
+                />
+                <Select
+                    value={activeFilter}
+                    onChange={(v) => setActiveFilter(v as '' | 'true' | 'false')}
+                    placeholder="Any status"
+                    options={[
+                        { value: '', label: 'Any status' },
+                        { value: 'true', label: 'Active' },
+                        { value: 'false', label: 'Inactive' },
+                    ]}
+                />
             </div>
 
             {/* Table */}
@@ -505,15 +518,6 @@ function Chips({ label, items }: { label: string; items: string[] }) {
                 {items.map((it, i) => <span key={i} className="px-2 py-0.5 bg-gray-100 text-gray-600 text-[11px] font-medium rounded-md capitalize">{it}</span>)}
             </div>
         </div>
-    );
-}
-
-function FilterSelect({ value, onChange, allLabel, children }: { value: string; onChange: (v: string) => void; allLabel: string; children: ReactNode }) {
-    return (
-        <select value={value} onChange={(e) => onChange(e.target.value)} className="bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 appearance-none cursor-pointer">
-            <option value="">{allLabel}</option>
-            {children}
-        </select>
     );
 }
 

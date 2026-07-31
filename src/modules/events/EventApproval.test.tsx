@@ -86,7 +86,8 @@ describe('Listings Approval', () => {
     it('renders the heading and stats', async () => {
         render(<EventApproval />);
         expect(screen.getByText('Listings Approval')).toBeInTheDocument();
-        expect(await screen.findByText('Pending')).toBeInTheDocument();
+        // "Live" is the guide term for a published listing (unique stat tile).
+        expect(await screen.findByText('Live')).toBeInTheDocument();
         expect(await screen.findByText('11')).toBeInTheDocument();
     });
 
@@ -112,7 +113,9 @@ describe('Listings Approval', () => {
     it('sends listing_type and search filters to the API', async () => {
         render(<EventApproval />);
         await screen.findByText('Summer Jam');
-        await userEvent.selectOptions(screen.getByDisplayValue('All types'), 'venue');
+        // The type filter is a custom dropdown: open the "All types" trigger, pick the option.
+        await userEvent.click(screen.getByText('All types'));
+        await userEvent.click(screen.getByRole('button', { name: 'Venue' }));
         await waitFor(() =>
             expect(listListings).toHaveBeenCalledWith(expect.objectContaining({ listing_type: 'venue' })),
         );

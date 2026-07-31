@@ -27,18 +27,17 @@ import {
 } from 'recharts';
 import Card from '../../shared/components/ui/Card';
 import EmptyState from '../../shared/components/ui/EmptyState';
+import PeriodFilter from '../../shared/components/ui/PeriodFilter';
 import { cn } from '../../shared/lib/utils';
+import { resolvePeriodParams, type StandardPeriod } from '../../shared/lib/period';
 import {
     getOverviewStats,
     parseAmount,
     safeCurrency,
     formatMoney,
-    STATS_PERIODS,
-    STATS_PERIOD_LABELS,
     ApiError,
     type OverviewStats,
     type StatsParams,
-    type StatsPeriod,
 } from '../../shared/lib/api';
 
 const TYPE_COLORS = ['#FACC15', '#6366f1', '#14b8a6', '#ec4899', '#f97316', '#0ea5e9'];
@@ -57,7 +56,7 @@ function humanize(key: string): string {
 }
 
 const Analytics = () => {
-    const [period, setPeriod] = useState<StatsPeriod>('this_month');
+    const [period, setPeriod] = useState<StandardPeriod>('this_month');
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
     const [data, setData] = useState<OverviewStats | null>(null);
@@ -69,7 +68,7 @@ const Analytics = () => {
         setLoading(true);
         setError(null);
         try {
-            const params: StatsParams = period === 'custom' ? { period, date_from: dateFrom, date_to: dateTo } : { period };
+            const params: StatsParams = resolvePeriodParams(period, dateFrom, dateTo);
             setData(await getOverviewStats(params));
         } catch (err) {
             setError(err instanceof ApiError ? err.message : 'Failed to load analytics.');
@@ -124,31 +123,18 @@ const Analytics = () => {
                     <p className="text-gray-500 text-sm">Super Admin Portal{data?.period?.label ? ` · ${data.period.label}` : ''}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                    <div className="flex bg-gray-100 rounded-xl p-1">
-                        {STATS_PERIODS.map((p) => (
-                            <button
-                                key={p}
-                                onClick={() => setPeriod(p)}
-                                className={cn('px-3 py-1.5 text-xs font-bold rounded-lg transition-all whitespace-nowrap', period === p ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}
-                            >
-                                {STATS_PERIOD_LABELS[p]}
-                            </button>
-                        ))}
-                    </div>
+                    <PeriodFilter
+                        value={period}
+                        onChange={setPeriod}
+                        dateFrom={dateFrom}
+                        dateTo={dateTo}
+                        onDateChange={(from, to) => { setDateFrom(from); setDateTo(to); }}
+                    />
                     <button onClick={exportCsv} disabled={!data} className="flex items-center gap-2 px-4 py-2 bg-yellow-400 rounded-xl text-sm font-bold text-gray-900 hover:bg-yellow-500 transition-all disabled:opacity-50">
                         <Download size={16} /> Export CSV
                     </button>
                 </div>
             </header>
-
-            {period === 'custom' && (
-                <div className="flex items-center gap-2">
-                    <Calendar size={16} className="text-gray-400" />
-                    <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-sm" />
-                    <span className="text-gray-400 text-sm">→</span>
-                    <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-sm" />
-                </div>
-            )}
 
             {error ? (
                 <EmptyState icon={AlertCircle} title="Couldn't load analytics" description={error} />

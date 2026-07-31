@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, type ReactNode } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
     Search,
     Eye,
@@ -30,7 +30,10 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import Card from '../../shared/components/ui/Card';
 import EmptyState from '../../shared/components/ui/EmptyState';
+import Select from '../../shared/components/ui/Select';
 import { cn } from '../../shared/lib/utils';
+import PeriodFilter from '../../shared/components/ui/PeriodFilter';
+import { resolvePeriodRange, type StandardPeriod } from '../../shared/lib/period';
 import { useAuth } from '../../shared/auth/AuthContext';
 import {
     listPartners,
@@ -161,6 +164,9 @@ const PartnerManagement = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [metrics, setMetrics] = useState<PartnerMetrics | null>(null);
+    const [period, setPeriod] = useState<StandardPeriod>('this_month');
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
 
     // Filters
     const [search, setSearch] = useState('');
@@ -217,12 +223,13 @@ const PartnerManagement = () => {
     }, [buildParams]);
 
     const loadMetrics = useCallback(async () => {
+        if (period === 'custom' && (!dateFrom || !dateTo)) return;
         try {
-            setMetrics(await getPartnerMetrics());
+            setMetrics(await getPartnerMetrics(resolvePeriodRange(period, dateFrom, dateTo)));
         } catch {
             /* metrics are non-critical */
         }
-    }, []);
+    }, [period, dateFrom, dateTo]);
 
     useEffect(() => {
         loadPartners();
@@ -412,7 +419,10 @@ const PartnerManagement = () => {
                                             )}
                                             {identityVerified && <BadgeCheck size={16} className="text-green-500" />}
                                         </div>
-                                        <p className="text-sm text-gray-500 mt-0.5">{detail.email}</p>
+                                        {detail.profile?.business_name && detail.profile.business_name !== detail.email && (
+                                            <p className="text-sm text-gray-500 mt-0.5">{detail.email}</p>
+                                        )}
+                                        <p className="text-[10px] text-gray-400 font-mono mt-0.5">ID: {detail.id}</p>
                                         <div className="flex items-center gap-3 mt-2 text-xs text-gray-400 flex-wrap">
                                             <span className="flex items-center gap-1"><Building2 size={12} /> {detail.profile?.business_type || '—'}</span>
                                             <span className="flex items-center gap-1"><MapPin size={12} /> {detail.profile?.base_city || '—'}</span>
@@ -678,17 +688,26 @@ const PartnerManagement = () => {
         <div className="space-y-6">
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Partner Management</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">Partners</h1>
                     <p className="text-gray-500 text-sm">Review documents & banking, then approve partners</p>
                 </div>
-                <button
-                    onClick={handleExport}
-                    disabled={exporting}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all disabled:opacity-60"
-                >
-                    {exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-                    {exporting ? 'Exporting…' : 'Export CSV'}
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                    <PeriodFilter
+                        value={period}
+                        onChange={setPeriod}
+                        dateFrom={dateFrom}
+                        dateTo={dateTo}
+                        onDateChange={(from, to) => { setDateFrom(from); setDateTo(to); }}
+                    />
+                    <button
+                        onClick={handleExport}
+                        disabled={exporting}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all disabled:opacity-60"
+                    >
+                        {exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                        {exporting ? 'Exporting…' : 'Export CSV'}
+                    </button>
+                </div>
             </header>
 
             {/* Metrics */}
@@ -705,8 +724,8 @@ const PartnerManagement = () => {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <MiniMetric label="Activated Limited" value={metrics.activated_limited} />
                     <MiniMetric label="Verified" value={metrics.is_verified_count} />
-                    <MiniMetric label="Active" value={metrics.is_active_count} />
-                    <MiniMetric label="New This Month" value={metrics.new_this_month} />
+                    <MiniMetric label="Active Partners" value={metrics.is_active_count} />
+                    <MiniMetric label="New Partners" value={metrics.new_this_month} />
                 </div>
             )}
 
@@ -736,20 +755,38 @@ const PartnerManagement = () => {
                     />
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                 </div>
-                <FilterSelect value={statusFilter} onChange={setStatusFilter} allLabel="All statuses">
-                    {PARTNER_STATUSES.map((s) => <option key={s} value={s}>{partnerStatusLabel(s)}</option>)}
-                </FilterSelect>
-                <FilterSelect value={categoryFilter} onChange={setCategoryFilter} allLabel="All categories">
-                    {PARTNER_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                </FilterSelect>
-                <FilterSelect value={verifiedFilter} onChange={(v) => setVerifiedFilter(v as '' | 'true' | 'false')} allLabel="Any verification">
-                    <option value="true">Verified</option>
-                    <option value="false">Unverified</option>
-                </FilterSelect>
-                <FilterSelect value={activeFilter} onChange={(v) => setActiveFilter(v as '' | 'true' | 'false')} allLabel="Any account">
-                    <option value="true">Active</option>
-                    <option value="false">Inactive</option>
-                </FilterSelect>
+                <Select
+                    value={statusFilter}
+                    onChange={setStatusFilter}
+                    placeholder="All statuses"
+                    options={[{ value: '', label: 'All statuses' }, ...PARTNER_STATUSES.map((s) => ({ value: s, label: partnerStatusLabel(s) }))]}
+                />
+                <Select
+                    value={categoryFilter}
+                    onChange={setCategoryFilter}
+                    placeholder="All categories"
+                    options={[{ value: '', label: 'All categories' }, ...PARTNER_CATEGORIES.map((c) => ({ value: c, label: c }))]}
+                />
+                <Select
+                    value={verifiedFilter}
+                    onChange={(v) => setVerifiedFilter(v as '' | 'true' | 'false')}
+                    placeholder="Any verification"
+                    options={[
+                        { value: '', label: 'Any verification' },
+                        { value: 'true', label: 'Verified' },
+                        { value: 'false', label: 'Unverified' },
+                    ]}
+                />
+                <Select
+                    value={activeFilter}
+                    onChange={(v) => setActiveFilter(v as '' | 'true' | 'false')}
+                    placeholder="Any account"
+                    options={[
+                        { value: '', label: 'Any account' },
+                        { value: 'true', label: 'Active' },
+                        { value: 'false', label: 'Inactive' },
+                    ]}
+                />
             </div>
 
             {/* Table */}
@@ -794,6 +831,7 @@ const PartnerManagement = () => {
                                                 )}
                                             </div>
                                             <p className="text-xs text-gray-500">{p.email}</p>
+                                            <p className="text-[10px] text-gray-400 font-mono mt-0.5">ID: {p.id}</p>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex gap-1 flex-wrap max-w-[180px]">
@@ -896,28 +934,6 @@ function MiniMetric({ label, value }: { label: string; value: number }) {
     );
 }
 
-function FilterSelect({
-    value,
-    onChange,
-    allLabel,
-    children,
-}: {
-    value: string;
-    onChange: (v: string) => void;
-    allLabel: string;
-    children: ReactNode;
-}) {
-    return (
-        <select
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 appearance-none cursor-pointer"
-        >
-            <option value="">{allLabel}</option>
-            {children}
-        </select>
-    );
-}
 
 function ActionModal({
     kind,

@@ -24,6 +24,7 @@ import {
     X,
 } from 'lucide-react';
 import Card from '../../shared/components/ui/Card';
+import Select from '../../shared/components/ui/Select';
 import { cn } from '../../shared/lib/utils';
 import { useAuth } from '../../shared/auth/AuthContext';
 import {
@@ -392,16 +393,13 @@ const SupportSystem = () => {
                     </div>
 
                     <div className="flex gap-2">
-                        <select
+                        <Select
                             value={categoryFilter}
-                            onChange={(e) => setCategoryFilter(e.target.value)}
-                            className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 appearance-none cursor-pointer"
-                        >
-                            <option value="">All categories</option>
-                            {categories.map((c) => (
-                                <option key={c} value={c}>{ticketCategoryLabel(c)}</option>
-                            ))}
-                        </select>
+                            onChange={setCategoryFilter}
+                            placeholder="All categories"
+                            className="flex-1"
+                            options={[{ value: '', label: 'All categories' }, ...categories.map((c) => ({ value: c, label: ticketCategoryLabel(c) }))]}
+                        />
                         <button
                             onClick={loadTickets}
                             title="Refresh tickets"

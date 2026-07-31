@@ -86,8 +86,9 @@ export const SIDEBAR_ENTRIES: SidebarEntry[] = [
       id: 'partners',
       label: 'Partners',
       icon: Store,
-      subtitle: 'Events · Programs · Classes · Venues',
+      subtitle: 'Approvals · Events · Programs · Classes · Venues',
       items: [
+        { screen: Screen.PARTNER_MANAGEMENT, label: 'Partner Approvals', icon: Store },
         { screen: Screen.EVENT_APPROVAL, label: 'Events', icon: CheckCircle, badge: 'Ticketing', badgeTone: 'coral', listingType: 'event' },
         { screen: Screen.EVENT_APPROVAL, label: 'Programs', icon: CheckCircle, badge: 'Enquiry', badgeTone: 'green', listingType: 'program' },
         { screen: Screen.EVENT_APPROVAL, label: 'Classes', icon: CheckCircle, badge: 'Enquiry', badgeTone: 'green', listingType: 'class' },

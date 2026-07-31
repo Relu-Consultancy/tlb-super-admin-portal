@@ -13,6 +13,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import Card from '../../../shared/components/ui/Card';
 import EmptyState from '../../../shared/components/ui/EmptyState';
+import Select from '../../../shared/components/ui/Select';
 import { cn } from '../../../shared/lib/utils';
 import { useAuth } from '../../../shared/auth/AuthContext';
 import { listUsers, disableUser, enableUser, userDisplayName, ApiError, type AdminUserListItem } from '../../../shared/lib/api';
@@ -142,15 +143,16 @@ const UserDirectoryGrid = ({ onOpenHistory, refreshSignal }: UserDirectoryGridPr
                     />
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                 </div>
-                <select
+                <Select
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value as '' | 'active' | 'disabled')}
-                    className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 appearance-none cursor-pointer"
-                >
-                    <option value="">All Account Status</option>
-                    <option value="active">Active</option>
-                    <option value="disabled">Disabled</option>
-                </select>
+                    onChange={(v) => setStatusFilter(v as '' | 'active' | 'disabled')}
+                    placeholder="All Account Status"
+                    options={[
+                        { value: '', label: 'All Account Status' },
+                        { value: 'active', label: 'Active' },
+                        { value: 'disabled', label: 'Disabled' },
+                    ]}
+                />
             </div>
 
             {toast && (

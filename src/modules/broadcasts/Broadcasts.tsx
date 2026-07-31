@@ -22,6 +22,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import Card from '../../shared/components/ui/Card';
 import EmptyState from '../../shared/components/ui/EmptyState';
+import Select from '../../shared/components/ui/Select';
 import { cn } from '../../shared/lib/utils';
 import { useAuth } from '../../shared/auth/AuthContext';
 import {
@@ -293,12 +294,18 @@ const Broadcasts = () => {
                                 <div className="p-5 pb-3 flex items-center justify-between gap-3 flex-wrap">
                                     <h3 className="font-bold text-gray-900">Recipients</h3>
                                     <div className="flex gap-2">
-                                        <FilterSelect value={delChannel} onChange={setDelChannel} allLabel="All channels">
-                                            {DELIVERY_CHANNELS.map((c) => <option key={c} value={c}>{c === 'IN_APP' ? 'In-app' : 'Email'}</option>)}
-                                        </FilterSelect>
-                                        <FilterSelect value={delStatus} onChange={setDelStatus} allLabel="All statuses">
-                                            {DELIVERY_STATUSES.map((s) => <option key={s} value={s}>{broadcastStatusLabel(s)}</option>)}
-                                        </FilterSelect>
+                                        <Select
+                                            value={delChannel}
+                                            onChange={setDelChannel}
+                                            placeholder="All channels"
+                                            options={[{ value: '', label: 'All channels' }, ...DELIVERY_CHANNELS.map((c) => ({ value: c, label: c === 'IN_APP' ? 'In-app' : 'Email' }))]}
+                                        />
+                                        <Select
+                                            value={delStatus}
+                                            onChange={setDelStatus}
+                                            placeholder="All statuses"
+                                            options={[{ value: '', label: 'All statuses' }, ...DELIVERY_STATUSES.map((s) => ({ value: s, label: broadcastStatusLabel(s) }))]}
+                                        />
                                     </div>
                                 </div>
                                 <div className="overflow-x-auto">
@@ -415,9 +422,12 @@ const Broadcasts = () => {
 
             {/* Filters */}
             <div className="flex flex-wrap gap-3">
-                <FilterSelect value={statusFilter} onChange={setStatusFilter} allLabel="All statuses">
-                    {BROADCAST_STATUSES.map((s) => <option key={s} value={s}>{broadcastStatusLabel(s)}</option>)}
-                </FilterSelect>
+                <Select
+                    value={statusFilter}
+                    onChange={setStatusFilter}
+                    placeholder="All statuses"
+                    options={[{ value: '', label: 'All statuses' }, ...BROADCAST_STATUSES.map((s) => ({ value: s, label: broadcastStatusLabel(s) }))]}
+                />
                 <DateInput label="From" value={dateFrom} onChange={setDateFrom} />
                 <DateInput label="To" value={dateTo} onChange={setDateTo} />
             </div>
@@ -611,9 +621,12 @@ function Composer({
 
                         <div className="pt-4 border-t border-gray-100">
                             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Audience</p>
-                            <select value={audience} onChange={(e) => setAudience(e.target.value as BroadcastAudience)} className={cn(inputCls, 'cursor-pointer')}>
-                                {BROADCAST_AUDIENCES.map((a) => <option key={a.value} value={a.value}>{a.label}</option>)}
-                            </select>
+                            <Select
+                                value={audience}
+                                onChange={(v) => setAudience(v as BroadcastAudience)}
+                                variant="form"
+                                options={BROADCAST_AUDIENCES.map((a) => ({ value: a.value, label: a.label }))}
+                            />
                             <p className="text-[11px] text-gray-400 mt-1.5">{audienceCfg.hint}</p>
                             <div className="mt-3 flex items-center gap-2 bg-yellow-50 border border-yellow-100 rounded-xl px-3 py-2.5">
                                 <Users size={16} className="text-yellow-600 shrink-0" />
@@ -764,14 +777,7 @@ function MiniMetric({ label, value, tone }: { label: string; value: string; tone
     );
 }
 
-function FilterSelect({ value, onChange, allLabel, children }: { value: string; onChange: (v: string) => void; allLabel: string; children: ReactNode }) {
-    return (
-        <select value={value} onChange={(e) => onChange(e.target.value)} className="bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 appearance-none cursor-pointer">
-            <option value="">{allLabel}</option>
-            {children}
-        </select>
-    );
-}
+
 
 function DateInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
     return (

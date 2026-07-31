@@ -70,8 +70,8 @@ describe('UserManagement', () => {
 
     it('renders heading and metrics', async () => {
         render(<UserManagement />);
-        expect(screen.getByText('User Management')).toBeInTheDocument();
-        expect(await screen.findByText('Total Users')).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'Customers' })).toBeInTheDocument();
+        expect(await screen.findByText('Total Customers')).toBeInTheDocument();
         expect(await screen.findByText('8')).toBeInTheDocument();
     });
 

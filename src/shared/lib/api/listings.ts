@@ -212,9 +212,13 @@ export function setListingVisibility(listingId: string, isPaused: boolean): Prom
 
 // --- Display helpers ---
 
-/** Humanize a status code, e.g. `pending` -> "Pending". */
+/**
+ * Humanize a status code, e.g. `pending` -> "Pending".
+ * Per the Terminology Guide a published (approved & visible) listing is "Live".
+ */
 export function listingStatusLabel(status: string): string {
   if (!status) return '—';
+  if (status === 'published') return 'Live';
   return status.charAt(0).toUpperCase() + status.slice(1);
 }
 
