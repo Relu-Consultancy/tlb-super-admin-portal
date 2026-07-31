@@ -152,6 +152,14 @@ export interface ListUsersParams {
   date_from?: string;
   date_to?: string;
   ordering?: string;
+  page?: number;
+}
+
+export interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
 }
 
 export interface UserExportJob {
@@ -216,6 +224,18 @@ export async function listUsers(params?: ListUsersParams): Promise<AdminUserList
     params: params as Record<string, string | number | boolean | undefined>,
   });
   return asArray<AdminUserListItem>(res);
+}
+
+/** GET /users/ — returns raw paginated response to support frontend pagination. */
+export async function listUsersPaginated(params?: ListUsersParams): Promise<PaginatedResponse<AdminUserListItem>> {
+  const res = await api.get<unknown>(adminPath('users/'), {
+    params: params as Record<string, string | number | boolean | undefined>,
+  });
+  if (res && typeof res === 'object' && 'results' in res) {
+    return res as PaginatedResponse<AdminUserListItem>;
+  }
+  const arr = asArray<AdminUserListItem>(res);
+  return { count: arr.length, next: null, previous: null, results: arr };
 }
 
 /** GET /users/{id}/ — full customer detail. */

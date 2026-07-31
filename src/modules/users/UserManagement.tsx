@@ -17,6 +17,8 @@ import {
     Mail,
     Phone,
     BadgeCheck,
+    ChevronLeft,
+    ChevronRight,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Card from '../../shared/components/ui/Card';
@@ -28,7 +30,7 @@ import { resolvePeriodRange, type StandardPeriod } from '../../shared/lib/period
 import { useAuth } from '../../shared/auth/AuthContext';
 import UserHistorySlideOut from './UserSection/UserHistorySlideOut';
 import {
-    listUsers,
+    listUsersPaginated,
     getUser,
     getUserMetrics,
     getUserLoginHistory,
@@ -94,6 +96,11 @@ const UserManagement = () => {
     const [providerFilter, setProviderFilter] = useState('');
     const [ordering, setOrdering] = useState('-created_at');
 
+    const [page, setPage] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
+    const [hasNextPage, setHasNextPage] = useState(false);
+    const [hasPrevPage, setHasPrevPage] = useState(false);
+
     const [busyId, setBusyId] = useState<string | null>(null);
     const [toast, setToast] = useState<Toast>(null);
     const [exporting, setExporting] = useState(false);
@@ -109,9 +116,17 @@ const UserManagement = () => {
     const flash = (type: 'success' | 'error', text: string) => setToast({ type, text });
 
     useEffect(() => {
-        const t = setTimeout(() => setDebouncedSearch(search.trim()), 350);
+        const t = setTimeout(() => {
+            setDebouncedSearch(search.trim());
+            setPage(1); // reset page on search
+        }, 350);
         return () => clearTimeout(t);
     }, [search]);
+
+    // reset page on filter change
+    useEffect(() => {
+        setPage(1);
+    }, [statusFilter, providerFilter, ordering]);
 
     const buildParams = useCallback(
         (): ListUsersParams => ({
@@ -119,15 +134,20 @@ const UserManagement = () => {
             is_active: statusFilter === '' ? undefined : statusFilter === 'true',
             auth_provider: providerFilter || undefined,
             ordering,
+            page,
         }),
-        [debouncedSearch, statusFilter, providerFilter, ordering],
+        [debouncedSearch, statusFilter, providerFilter, ordering, page],
     );
 
     const loadUsers = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            setUsers(await listUsers(buildParams()));
+            const res = await listUsersPaginated(buildParams());
+            setUsers(res.results);
+            setTotalCount(res.count);
+            setHasNextPage(!!res.next);
+            setHasPrevPage(!!res.previous);
         } catch (err) {
             setError(err instanceof ApiError ? err.message : 'Failed to load users.');
         } finally {
@@ -411,6 +431,30 @@ const UserManagement = () => {
                         </tbody>
                     </table>
                 </div>
+                {!loading && !error && (
+                    <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-white">
+                        <div className="text-sm text-gray-500">
+                            Showing <span className="font-medium text-gray-900">{users.length}</span> of <span className="font-medium text-gray-900">{totalCount}</span> customers
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                disabled={!hasPrevPage}
+                                className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                            >
+                                <ChevronLeft size={16} /> Previous
+                            </button>
+                            <span className="text-sm font-medium text-gray-700 px-2">Page {page}</span>
+                            <button
+                                onClick={() => setPage((p) => p + 1)}
+                                disabled={!hasNextPage}
+                                className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                            >
+                                Next <ChevronRight size={16} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </Card>
 
             {/* Disable reason modal */}
