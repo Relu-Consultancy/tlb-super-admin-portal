@@ -67,6 +67,7 @@ export type { AdminListItem, ListAdminsParams, AdminDetail, CreateAdminPayload }
 // Admin user (customer) management
 export {
   listUsers,
+  listUsersPaginated,
   getUser,
   getUserMetrics,
   getUserActivity,
