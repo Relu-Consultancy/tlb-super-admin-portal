@@ -26,47 +26,23 @@ interface TopListing { listing: string; vertical: string; views: string; enquiri
 
 const TRAFFIC = {
     kpis: [
-        { label: 'App visits', value: '9,840' },
-        { label: 'Website visits', value: '2,110' },
-        { label: 'Active customers (app)', value: '3,010' },
-        { label: 'Active partners (website)', value: '230' },
-        { label: 'Live now — app', value: '184', accent: true },
-        { label: 'Live now — website', value: '12', accent: true },
+        { label: 'App visits', value: '--' },
+        { label: 'Website visits', value: '--' },
+        { label: 'Active customers (app)', value: '--' },
+        { label: 'Active partners (website)', value: '--' },
+        { label: 'Live now — app', value: '--', accent: true },
+        { label: 'Live now — website', value: '--', accent: true },
     ] as Kpi[],
-    mostViewed: [
-        { label: 'Listing details page', percent: '38%' },
-        { label: 'Events category', percent: '22%' },
-        { label: 'Search results', percent: '17%' },
-        { label: 'Partner profile', percent: '13%' },
-        { label: 'Home / discover', percent: '10%' },
-    ] as BarDatum[],
-    dropOff: [
-        { label: 'Checkout — payment step', percent: '29%' },
-        { label: 'Listing details page', percent: '24%' },
-        { label: 'Enquiry form', percent: '19%' },
-        { label: 'Search results', percent: '16%' },
-        { label: 'Login / signup', percent: '12%' },
-    ] as BarDatum[],
-    sources: [
-        { label: 'Organic / App search', percent: '34%' },
-        { label: 'Push notification', percent: '21%' },
-        { label: 'Social media', percent: '19%' },
-        { label: 'Partner referral', percent: '15%' },
-        { label: 'Direct / returning', percent: '11%' },
-    ] as BarDatum[],
+    mostViewed: [] as BarDatum[],
+    dropOff: [] as BarDatum[],
+    sources: [] as BarDatum[],
     pushStats: [
-        { label: 'Push sent', value: '12,400' },
-        { label: 'Delivery rate', value: '92.4%' },
-        { label: 'Open rate', value: '24.1%' },
-        { label: 'Tap-through rate', value: '8.6%' },
+        { label: 'Push sent', value: '--' },
+        { label: 'Delivery rate', value: '--' },
+        { label: 'Open rate', value: '--' },
+        { label: 'Tap-through rate', value: '--' },
     ] as PushStat[],
-    topViewed: [
-        { listing: 'Storytime carnival', vertical: 'Events', views: '1,240', enquiries: '186', convRate: '15%' },
-        { listing: 'Junior art fest', vertical: 'Events', views: '980', enquiries: '142', convRate: '14.5%' },
-        { listing: 'Sunshine Hall bookings', vertical: 'Venues', views: '760', enquiries: '98', convRate: '12.9%' },
-        { listing: 'Weekend art workshop', vertical: 'Classes', views: '640', enquiries: '74', convRate: '11.6%' },
-        { listing: 'Coding for kids', vertical: 'Programs', views: '510', enquiries: '58', convRate: '11.4%' },
-    ] as TopListing[],
+    topViewed: [] as TopListing[],
 };
 
 const TrafficEngagement = () => {
@@ -94,9 +70,10 @@ const TrafficEngagement = () => {
             {/* KPI cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {TRAFFIC.kpis.map((k) => (
-                    <Card key={k.label} className="flex flex-col gap-1">
+                    <Card key={k.label} className="flex flex-col gap-1 relative">
+                        <span className="absolute top-2 right-2 px-2 py-0.5 text-[9px] font-bold bg-gray-100 text-gray-500 rounded uppercase tracking-wider">Coming Soon</span>
                         <p className="text-xs text-gray-500">{k.label}</p>
-                        <p className={cn('text-3xl font-bold mt-1', k.accent ? 'text-green-600' : 'text-gray-900')}>{k.value}</p>
+                        <p className={cn('text-3xl font-bold mt-1 text-gray-300')}>{k.value}</p>
                     </Card>
                 ))}
             </div>
@@ -129,9 +106,10 @@ const TrafficEngagement = () => {
                 <p className="text-xs text-gray-500 mt-0.5 mb-4">App push campaigns this period</p>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {TRAFFIC.pushStats.map((s) => (
-                        <div key={s.label} className="bg-gray-50 rounded-xl p-3.5">
+                        <div key={s.label} className="bg-gray-50 rounded-xl p-3.5 relative">
+                            <span className="absolute top-2 right-2 px-1.5 py-0.5 text-[8px] font-bold bg-gray-200 text-gray-500 rounded uppercase tracking-wider">Coming Soon</span>
                             <p className="text-[11px] text-gray-500">{s.label}</p>
-                            <p className="text-xl font-bold mt-1.5" style={{ color: INDIGO }}>{s.value}</p>
+                            <p className="text-xl font-bold mt-1.5 text-gray-300">{s.value}</p>
                         </div>
                     ))}
                 </div>
@@ -154,19 +132,25 @@ const TrafficEngagement = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {TRAFFIC.topViewed.map((r) => (
-                                <tr key={r.listing} className="hover:bg-gray-50/50 transition-colors">
-                                    <td className="px-6 py-3.5 text-sm font-semibold text-gray-900">{r.listing}</td>
-                                    <td className="px-6 py-3.5">
-                                        <span className="px-2 py-0.5 text-[10px] font-bold rounded-full uppercase tracking-wider bg-gray-100 text-gray-600">
-                                            {r.vertical}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-3.5 text-sm text-gray-700 text-right">{r.views}</td>
-                                    <td className="px-6 py-3.5 text-sm text-gray-700 text-right">{r.enquiries}</td>
-                                    <td className="px-6 py-3.5 text-sm font-semibold text-right" style={{ color: GREEN }}>{r.convRate}</td>
+                            {TRAFFIC.topViewed.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-12 text-center text-sm text-gray-400 font-medium">Coming soon</td>
                                 </tr>
-                            ))}
+                            ) : (
+                                TRAFFIC.topViewed.map((r) => (
+                                    <tr key={r.listing} className="hover:bg-gray-50/50 transition-colors">
+                                        <td className="px-6 py-3.5 text-sm font-semibold text-gray-900">{r.listing}</td>
+                                        <td className="px-6 py-3.5">
+                                            <span className="px-2 py-0.5 text-[10px] font-bold rounded-full uppercase tracking-wider bg-gray-100 text-gray-600">
+                                                {r.vertical}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-3.5 text-sm text-gray-700 text-right">{r.views}</td>
+                                        <td className="px-6 py-3.5 text-sm text-gray-700 text-right">{r.enquiries}</td>
+                                        <td className="px-6 py-3.5 text-sm font-semibold text-right" style={{ color: GREEN }}>{r.convRate}</td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
                 </div>
@@ -185,17 +169,21 @@ function BarCard({ title, subtitle, rows, color }: { title: string; subtitle: st
             <h3 className="text-base font-bold text-gray-900">{title}</h3>
             <p className="text-xs text-gray-500 mt-0.5 mb-4">{subtitle}</p>
             <div>
-                {rows.map((r) => (
-                    <div key={r.label} className="mb-3.5 last:mb-0">
-                        <div className="flex justify-between items-baseline text-xs mb-1.5 gap-2">
-                            <span className="flex-1 min-w-0 truncate text-gray-700">{r.label}</span>
-                            <span className="font-semibold text-gray-900 flex-none">{r.percent}</span>
+                {rows.length === 0 ? (
+                    <div className="py-8 text-center text-sm text-gray-400 font-medium bg-gray-50/50 rounded-lg border border-dashed border-gray-200">Coming soon</div>
+                ) : (
+                    rows.map((r) => (
+                        <div key={r.label} className="mb-3.5 last:mb-0">
+                            <div className="flex justify-between items-baseline text-xs mb-1.5 gap-2">
+                                <span className="flex-1 min-w-0 truncate text-gray-700">{r.label}</span>
+                                <span className="font-semibold text-gray-900 flex-none">{r.percent}</span>
+                            </div>
+                            <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                                <div className="h-1.5 rounded-full" style={{ width: r.percent, backgroundColor: color }} />
+                            </div>
                         </div>
-                        <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
-                            <div className="h-1.5 rounded-full" style={{ width: r.percent, backgroundColor: color }} />
-                        </div>
-                    </div>
-                ))}
+                    ))
+                )}
             </div>
         </Card>
     );
