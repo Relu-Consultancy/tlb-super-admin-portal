@@ -29,15 +29,21 @@ import Card from '../../shared/components/ui/Card';
 import EmptyState from '../../shared/components/ui/EmptyState';
 import PeriodFilter from '../../shared/components/ui/PeriodFilter';
 import { cn } from '../../shared/lib/utils';
+import { useAuth } from '../../shared/auth/AuthContext';
 import { resolvePeriodParams, type StandardPeriod } from '../../shared/lib/period';
 import {
     getOverviewStats,
+    getActivitySummary,
+    analyticsErrorMessage,
     parseAmount,
     safeCurrency,
     formatMoney,
     ApiError,
     type OverviewStats,
     type StatsParams,
+    type ActivitySummary,
+    type ActivityEventStat,
+    type ActivityGroupStats,
 } from '../../shared/lib/api';
 
 const TYPE_COLORS = ['#FACC15', '#6366f1', '#14b8a6', '#ec4899', '#f97316', '#0ea5e9'];
@@ -56,6 +62,9 @@ function humanize(key: string): string {
 }
 
 const Analytics = () => {
+    const { hasPermission } = useAuth();
+    const canViewAnalytics = hasPermission('VIEW_ANALYTICS');
+
     const [period, setPeriod] = useState<StandardPeriod>('this_month');
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
@@ -63,19 +72,35 @@ const Analytics = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // Activity engagement — a separate, non-critical panel gated on
+    // VIEW_ANALYTICS; its failure must not block the KPI cards above.
+    const [activity, setActivity] = useState<ActivitySummary | null>(null);
+    const [activityError, setActivityError] = useState<string | null>(null);
+
     const load = useCallback(async () => {
         if (period === 'custom' && (!dateFrom || !dateTo)) return;
         setLoading(true);
         setError(null);
+        setActivityError(null);
         try {
             const params: StatsParams = resolvePeriodParams(period, dateFrom, dateTo);
-            setData(await getOverviewStats(params));
+            const [overview, activityRes] = await Promise.all([
+                getOverviewStats(params),
+                canViewAnalytics
+                    ? getActivitySummary(params).catch((e) => {
+                          setActivityError(e instanceof ApiError ? analyticsErrorMessage(e.code, e.message) : 'Failed to load engagement data.');
+                          return null;
+                      })
+                    : Promise.resolve(null),
+            ]);
+            setData(overview);
+            setActivity(activityRes);
         } catch (err) {
             setError(err instanceof ApiError ? err.message : 'Failed to load analytics.');
         } finally {
             setLoading(false);
         }
-    }, [period, dateFrom, dateTo]);
+    }, [period, dateFrom, dateTo, canViewAnalytics]);
 
     useEffect(() => {
         load();
@@ -243,6 +268,47 @@ const Analytics = () => {
                             </div>
                         </Card>
                     </div>
+
+                    {/* Engagement — activity within the period, not account status */}
+                    {canViewAnalytics && (
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <Card>
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="font-bold text-gray-900">Customer &amp; Partner Engagement</h3>
+                                    <span className="text-xs text-gray-400">{activity?.period?.label || data.period?.label || 'Selected period'}</span>
+                                </div>
+                                {activityError ? (
+                                    <EmptyState icon={AlertCircle} title="Couldn't load engagement" description={activityError} className="h-40" />
+                                ) : !activity ? (
+                                    <div className="h-40 flex items-center justify-center text-gray-400"><Loader2 className="animate-spin" size={24} /></div>
+                                ) : (
+                                    <>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <EngagementTile label="Customers" group={activity.customers} />
+                                            <EngagementTile label="Partners" group={activity.partners} />
+                                        </div>
+                                        <p className="text-[11px] text-gray-400 mt-4">
+                                            Active = performed at least one meaningful action in the period. Expect this to read low until activity tracking accumulates data.
+                                        </p>
+                                    </>
+                                )}
+                            </Card>
+
+                            <Card>
+                                <h3 className="font-bold text-gray-900 mb-4">Top Activity Types</h3>
+                                {activityError ? (
+                                    <EmptyState icon={AlertCircle} title="Couldn't load activity" description={activityError} className="h-40" />
+                                ) : !activity ? (
+                                    <div className="h-40 flex items-center justify-center text-gray-400"><Loader2 className="animate-spin" size={24} /></div>
+                                ) : (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <EventTypeList title="Customers" events={activity.customer_events} />
+                                        <EventTypeList title="Partners" events={activity.partner_events} />
+                                    </div>
+                                )}
+                            </Card>
+                        </div>
+                    )}
                 </>
             )}
         </div>
@@ -257,6 +323,42 @@ function KpiCard({ icon: Icon, label, value, sub }: { icon: typeof Users; label:
             <h3 className="text-3xl font-bold text-gray-900 mt-1">{value}</h3>
             {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
         </Card>
+    );
+}
+
+/** One side of the engagement split (customers or partners): active/total + the pre-computed active rate. */
+function EngagementTile({ label, group }: { label: string; group: ActivityGroupStats }) {
+    return (
+        <div className="p-4 rounded-2xl border border-gray-200">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</p>
+            <p className="text-2xl font-bold text-gray-900 mt-1">
+                {group.active.toLocaleString()} <span className="text-sm font-medium text-gray-400">/ {group.total.toLocaleString()}</span>
+            </p>
+            <p className="text-xs text-green-600 font-semibold mt-1">{group.active_rate}% active</p>
+        </div>
+    );
+}
+
+/** Top event types for one audience (customers or partners) — an explicit empty state, not an assumed row. */
+function EventTypeList({ title, events }: { title: string; events: ActivityEventStat[] }) {
+    return (
+        <div>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">{title}</p>
+            {events.length === 0 ? (
+                <p className="text-xs text-gray-400 py-2">No activity recorded in this period.</p>
+            ) : (
+                <div className="space-y-2">
+                    {events.map((e) => (
+                        <div key={e.event_type} className="flex items-center justify-between text-sm gap-2">
+                            <span className="text-gray-600 truncate">{e.label}</span>
+                            <span className="font-bold text-gray-900 shrink-0">
+                                {e.count.toLocaleString()} <span className="text-gray-400 font-normal">({e.unique_users.toLocaleString()} users)</span>
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
     );
 }
 

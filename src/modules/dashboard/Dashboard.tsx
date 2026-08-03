@@ -30,6 +30,7 @@ import {
     getOverviewStats,
     getCustomerStats,
     getPartnerStats,
+    getListingStats,
     parseAmount,
     safeCurrency,
     formatMoney,
@@ -38,11 +39,21 @@ import {
     type CustomerStats,
     type PartnerStats,
     type StatsParams,
+    type ListingStats,
+    type ListingType,
 } from '../../shared/lib/api';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/** The 4 moderated listing verticals, in display order, with their static blurb and matching partner category. */
+const VERTICALS: { type: ListingType; label: string; subtitle: string; category: string }[] = [
+    { type: 'event', label: 'Events', subtitle: 'Ticketing · commission', category: 'Events' },
+    { type: 'program', label: 'Programs', subtitle: 'Enquiry credits', category: 'Programs' },
+    { type: 'class', label: 'Classes', subtitle: 'Enquiry credits', category: 'Classes' },
+    { type: 'venue', label: 'Venues', subtitle: 'Hybrid model', category: 'Venues' },
+];
 
 function formatLakhsCrores(value: number): string {
     if (value >= 10000000) return `Rs ${(value / 10000000).toFixed(2)}Cr`;
@@ -91,6 +102,9 @@ const Dashboard = ({ setScreen }: { setScreen: (s: Screen) => void }) => {
     // the dashboard still renders if these fail.
     const [customerStats, setCustomerStats] = useState<CustomerStats | null>(null);
     const [partnerStats, setPartnerStats] = useState<PartnerStats | null>(null);
+    // Per-vertical "active listings" (published count), keyed by listing type.
+    // Non-critical: the dashboard still renders (as "—") if a type's fetch fails.
+    const [verticalListingStats, setVerticalListingStats] = useState<Partial<Record<ListingType, ListingStats>>>({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -100,14 +114,21 @@ const Dashboard = ({ setScreen }: { setScreen: (s: Screen) => void }) => {
         setError(null);
         const params: StatsParams = resolvePeriodParams(period, dateFrom, dateTo);
         try {
-            const [overview, custom, partner] = await Promise.all([
+            const [overview, custom, partner, ...verticalStats] = await Promise.all([
                 getOverviewStats(params),
                 getCustomerStats(params).catch(() => null),
                 getPartnerStats(params).catch(() => null),
+                ...VERTICALS.map((v) => getListingStats(v.type).catch(() => null)),
             ]);
             setData(overview);
             setCustomerStats(custom);
             setPartnerStats(partner);
+            const byType: Partial<Record<ListingType, ListingStats>> = {};
+            VERTICALS.forEach((v, i) => {
+                const stats = verticalStats[i];
+                if (stats) byType[v.type] = stats;
+            });
+            setVerticalListingStats(byType);
         } catch (err) {
             setError(err instanceof ApiError ? err.message : 'Failed to load dashboard statistics.');
         } finally {
@@ -146,6 +167,12 @@ const Dashboard = ({ setScreen }: { setScreen: (s: Screen) => void }) => {
     const activePartners = partnerStats?.summary?.active ?? null;
     const inactivePartners = partnerStats?.summary?.inactive ?? null;
     const pendingKyc = partnerStats?.pending_actions?.awaiting_verification ?? null;
+
+    /** Partner count for a vertical, from the partner stats' category breakdown (or `null` if unavailable). */
+    const partnerCountFor = (category: string): number | null => {
+        const entry = partnerStats?.by_category?.find((c) => c.category.toLowerCase() === category.toLowerCase());
+        return entry ? entry.partner_count : null;
+    };
 
     const QUICK_ACTIONS = [
         { label: 'Pending listings', count: pendingListings, icon: CheckCircle, color: 'bg-green-500', screen: Screen.EVENT_APPROVAL },
@@ -305,29 +332,38 @@ const Dashboard = ({ setScreen }: { setScreen: (s: Screen) => void }) => {
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                             <Card className="flex flex-col gap-1 bg-blue-50/50 border-blue-100">
                                 <p className="text-xs font-bold text-blue-800 uppercase tracking-widest">Customers</p>
-                                <p className="text-2xl font-bold text-blue-900 mt-2">{num(totalCustomers)}</p>
-                                <span className="text-[11px] text-blue-600 font-medium">total, {num(newCustomers)} new {pLabel}</span>
+                                <p className="text-[11px] text-blue-500 -mt-0.5">App users</p>
+                                <div className="flex items-end gap-4 mt-1.5">
+                                    <div>
+                                        <p className="text-2xl font-bold text-blue-900">{num(totalCustomers)}</p>
+                                        <span className="text-[11px] text-blue-600">total</span>
+                                    </div>
+                                    <div>
+                                        <p className="text-2xl font-bold text-amber-600">{num(newCustomers)}</p>
+                                        <span className="text-[11px] text-blue-600">new</span>
+                                    </div>
+                                </div>
                             </Card>
-                            <Card className="flex flex-col gap-1">
-                                <p className="text-xs font-bold text-gray-700 uppercase tracking-widest">Events</p>
-                                <p className="text-lg font-bold text-gray-900 mt-2">-- <span className="text-[10px] text-gray-400 font-normal uppercase">Coming Soon</span></p>
-                                <span className="text-[11px] text-gray-500">partners, active listings</span>
-                            </Card>
-                            <Card className="flex flex-col gap-1">
-                                <p className="text-xs font-bold text-gray-700 uppercase tracking-widest">Programs</p>
-                                <p className="text-lg font-bold text-gray-900 mt-2">-- <span className="text-[10px] text-gray-400 font-normal uppercase">Coming Soon</span></p>
-                                <span className="text-[11px] text-gray-500">partners, active listings</span>
-                            </Card>
-                            <Card className="flex flex-col gap-1">
-                                <p className="text-xs font-bold text-gray-700 uppercase tracking-widest">Classes</p>
-                                <p className="text-lg font-bold text-gray-900 mt-2">-- <span className="text-[10px] text-gray-400 font-normal uppercase">Coming Soon</span></p>
-                                <span className="text-[11px] text-gray-500">partners, active listings</span>
-                            </Card>
-                            <Card className="flex flex-col gap-1">
-                                <p className="text-xs font-bold text-gray-700 uppercase tracking-widest">Venues</p>
-                                <p className="text-lg font-bold text-gray-900 mt-2">-- <span className="text-[10px] text-gray-400 font-normal uppercase">Coming Soon</span></p>
-                                <span className="text-[11px] text-gray-500">partners, active listings</span>
-                            </Card>
+                            {VERTICALS.map((v) => {
+                                const stats = verticalListingStats[v.type];
+                                const partners = partnerCountFor(v.category);
+                                return (
+                                    <Card key={v.type} className="flex flex-col gap-1">
+                                        <p className="text-xs font-bold text-gray-700 uppercase tracking-widest">{v.label}</p>
+                                        <p className="text-[11px] text-gray-400 -mt-0.5">{v.subtitle}</p>
+                                        <div className="flex items-end gap-4 mt-1.5">
+                                            <div>
+                                                <p className="text-2xl font-bold text-gray-900">{show(partners)}</p>
+                                                <span className="text-[11px] text-gray-500">partners</span>
+                                            </div>
+                                            <div>
+                                                <p className="text-2xl font-bold text-amber-600">{stats ? num(stats.published) : '—'}</p>
+                                                <span className="text-[11px] text-gray-500">active listings</span>
+                                            </div>
+                                        </div>
+                                    </Card>
+                                );
+                            })}
                         </div>
                     </div>
 

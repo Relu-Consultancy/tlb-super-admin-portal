@@ -348,23 +348,33 @@ const AdminManagement = () => {
 
     return (
         <div className="space-y-6">
-            <header className="flex flex-col gap-4">
-                <h1 className="text-2xl font-bold text-gray-900">Admin Management</h1>
-                <div className="flex border-b border-gray-200">
-                    {['Admins', 'Activity Log', 'Roles & Permissions'].map((tab) => (
-                        <button
-                            key={tab}
-                            onClick={() => setActiveTab(tab)}
-                            className={cn(
-                                "px-6 py-3 text-sm font-medium transition-all relative",
-                                activeTab === tab ? "text-gray-900" : "text-gray-400 hover:text-gray-600"
-                            )}
-                        >
-                            {tab}
-                            {activeTab === tab && <motion.div layoutId="adminTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-yellow-400" />}
-                        </button>
-                    ))}
+            <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div className="space-y-4 w-full md:w-auto">
+                    <h1 className="text-2xl font-bold text-gray-900">Admin Management</h1>
+                    <div className="flex border-b border-gray-200">
+                        {['Admins', 'Activity Log', 'Roles & Permissions'].map((tab) => (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={cn(
+                                    "px-6 py-3 text-sm font-medium transition-all relative",
+                                    activeTab === tab ? "text-gray-900" : "text-gray-400 hover:text-gray-600"
+                                )}
+                            >
+                                {tab}
+                                {activeTab === tab && <motion.div layoutId="adminTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-yellow-400" />}
+                            </button>
+                        ))}
+                    </div>
                 </div>
+                {activeTab === 'Admins' && canManage && (
+                    <button
+                        onClick={() => { setCreateError(null); setCreateForm(emptyCreateForm); setShowAddModal(true); }}
+                        className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-gray-900 text-white text-sm font-bold rounded-xl hover:bg-gray-800 shadow-sm transition-all active:scale-[0.98] md:mb-1"
+                    >
+                        <UserCog size={18} /> Add New Admin
+                    </button>
+                )}
             </header>
 
             {toast && (
@@ -384,80 +394,114 @@ const AdminManagement = () => {
             <AnimatePresence mode="wait">
                 {activeTab === 'Admins' && (
                     <motion.div key="admins" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }} className="space-y-6">
-                        {canManage && (
-                            <button
-                                onClick={() => { setCreateError(null); setCreateForm(emptyCreateForm); setShowAddModal(true); }}
-                                className="w-full py-4 bg-yellow-400 text-gray-900 font-bold rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-yellow-400/20 hover:bg-yellow-500 transition-all active:scale-[0.99]"
-                            >
-                                <UserCog size={20} /> Add New Admin
-                            </button>
-                        )}
-
                         <div className="space-y-4">
                             <div className="flex justify-between items-center">
                                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Administrators</h3>
                                 <span className="text-xs text-gray-400">{admins.length} total</span>
                             </div>
 
-                            {adminsLoading ? (
-                                <Card className="flex items-center justify-center py-12 text-gray-400"><Loader2 className="animate-spin" size={24} /></Card>
-                            ) : adminsError ? (
-                                <Card><EmptyState icon={AlertCircle} title="Couldn't load admins" description={adminsError} /></Card>
-                            ) : admins.length === 0 ? (
-                                <Card><EmptyState icon={UserCog} title="No admins yet" /></Card>
-                            ) : (
-                                admins.map((a) => {
-                                    const isSelf = a.id === currentAdmin?.id;
-                                    const rowBusy = busy?.id === a.id;
-                                    return (
-                                        <Card key={a.id} className="flex items-center justify-between p-4 gap-4 flex-wrap">
-                                            <div className="flex items-center gap-4">
-                                                <div className="relative">
-                                                    <img src={`https://picsum.photos/seed/${a.email}/100/100`} className="w-12 h-12 rounded-full object-cover" alt="" />
-                                                    <div className={cn('absolute bottom-0 right-0 w-3 h-3 border-2 border-white rounded-full', a.is_active ? 'bg-green-500' : 'bg-gray-400')} />
-                                                </div>
-                                                <div>
-                                                    <div className="flex items-center gap-2">
-                                                        <h4 className="font-bold text-gray-900">{a.full_name || a.email}</h4>
-                                                        {isSelf && <span className="px-2 py-0.5 bg-gray-100 text-gray-400 text-[10px] font-bold rounded-md uppercase tracking-wider">You</span>}
-                                                    </div>
-                                                    <div className="flex items-center gap-2 flex-wrap mt-0.5">
-                                                        <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-md uppercase tracking-wider">{roleLabel(a.role)}</span>
-                                                        {a.is_locked && <span className="px-2 py-0.5 bg-red-50 text-red-600 text-[10px] font-bold rounded-md uppercase tracking-wider flex items-center gap-1"><Lock size={10} /> Locked</span>}
-                                                        {!a.is_active && <span className="px-2 py-0.5 bg-gray-100 text-gray-400 text-[10px] font-bold rounded-md uppercase tracking-wider">Disabled</span>}
-                                                        <span className="text-[10px] text-gray-400">Last login: {formatDateTime(a.last_login_at)}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="flex items-center gap-2">
-                                                <button onClick={() => openDetail(a)} title="Manage" className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-all">
-                                                    <SettingsIcon size={18} />
-                                                </button>
-                                                {canManage && a.is_locked && (
-                                                    <button onClick={() => handleUnlock(a)} disabled={rowBusy} className="flex items-center gap-1.5 px-3 py-2 bg-green-50 text-green-700 text-xs font-bold rounded-lg hover:bg-green-100 transition-all disabled:opacity-60">
-                                                        {rowBusy && busy?.type === 'unlock' ? <Loader2 size={14} className="animate-spin" /> : <Unlock size={14} />} Unlock
-                                                    </button>
-                                                )}
-                                                {canManage && !isSelf && (
-                                                    pendingForceId === a.id ? (
-                                                        <div className="flex items-center gap-2">
-                                                            <button onClick={() => setPendingForceId(null)} disabled={rowBusy} className="px-3 py-2 bg-white border border-gray-200 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-50 disabled:opacity-60">Cancel</button>
-                                                            <button onClick={() => handleForceLogout(a)} disabled={rowBusy} className="flex items-center gap-1.5 px-3 py-2 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 transition-all disabled:opacity-70">
-                                                                {rowBusy && busy?.type === 'force' ? <Loader2 size={14} className="animate-spin" /> : <LogOut size={14} />} Confirm
-                                                            </button>
-                                                        </div>
-                                                    ) : (
-                                                        <button onClick={() => { setToast(null); setPendingForceId(a.id); }} className="flex items-center gap-1.5 px-3 py-2 bg-white border border-red-200 text-red-600 text-xs font-bold rounded-lg hover:bg-red-50 transition-all">
-                                                            <LogOut size={14} /> Force Logout
-                                                        </button>
-                                                    )
-                                                )}
-                                            </div>
-                                        </Card>
-                                    );
-                                })
-                            )}
+                            <Card className="p-0 overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left whitespace-nowrap">
+                                        <thead>
+                                            <tr className="bg-gray-50 border-b border-gray-200">
+                                                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Admin</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Role</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Last Login</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {adminsLoading ? (
+                                                <tr><td colSpan={5}><div className="flex items-center justify-center py-12 text-gray-400"><Loader2 className="animate-spin" size={24} /></div></td></tr>
+                                            ) : adminsError ? (
+                                                <tr><td colSpan={5}><EmptyState icon={AlertCircle} title="Couldn't load admins" description={adminsError} /></td></tr>
+                                            ) : admins.length === 0 ? (
+                                                <tr><td colSpan={5}><EmptyState icon={UserCog} title="No admins yet" /></td></tr>
+                                            ) : (
+                                                admins.map((a) => {
+                                                    const isSelf = a.id === currentAdmin?.id;
+                                                    const rowBusy = busy?.id === a.id;
+                                                    return (
+                                                        <tr key={a.id} className="hover:bg-gray-50/50 transition-colors">
+                                                            <td className="px-6 py-4">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="relative">
+                                                                        <img src={`https://picsum.photos/seed/${a.email}/100/100`} className="w-10 h-10 rounded-full object-cover border border-gray-100" alt="" />
+                                                                        <div className={cn('absolute bottom-0 right-0 w-2.5 h-2.5 border-2 border-white rounded-full', a.is_active ? 'bg-green-500' : 'bg-gray-400')} />
+                                                                    </div>
+                                                                    <div>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <h4 className="font-bold text-gray-900 text-sm">{a.full_name || a.email}</h4>
+                                                                            {isSelf && <span className="px-2 py-0.5 bg-gray-100 text-gray-400 text-[10px] font-bold rounded-md uppercase tracking-wider">You</span>}
+                                                                        </div>
+                                                                        <p className="text-[11px] text-gray-400 font-mono mt-0.5">{a.id}</p>
+                                                                        <p className="text-xs text-gray-500 mt-0.5">{a.email}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-6 py-4">
+                                                                <span className="px-2.5 py-1 bg-gray-100 text-gray-700 text-[11px] font-bold rounded-lg uppercase tracking-wider">
+                                                                    {roleLabel(a.role)}
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-6 py-4">
+                                                                <div className="flex items-center gap-2">
+                                                                    {a.is_locked ? (
+                                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-red-50 text-red-600 text-[11px] font-bold rounded-lg uppercase tracking-wider">
+                                                                            <Lock size={12} /> Locked
+                                                                        </span>
+                                                                    ) : a.is_active ? (
+                                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-green-700 text-[11px] font-bold rounded-lg uppercase tracking-wider">
+                                                                            <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> Active
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-gray-500 text-[11px] font-bold rounded-lg uppercase tracking-wider">
+                                                                            <span className="w-1.5 h-1.5 rounded-full bg-gray-400" /> Disabled
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-6 py-4 text-xs text-gray-500">
+                                                                {formatDateTime(a.last_login_at)}
+                                                            </td>
+                                                            <td className="px-6 py-4 text-right">
+                                                                <div className="flex items-center justify-end gap-2">
+                                                                    <button onClick={() => openDetail(a)} title="Manage" className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all">
+                                                                        <SettingsIcon size={16} />
+                                                                    </button>
+                                                                    
+                                                                    {canManage && a.is_locked && (
+                                                                        <button onClick={() => handleUnlock(a)} disabled={rowBusy} title="Unlock" className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all disabled:opacity-60">
+                                                                            {rowBusy && busy?.type === 'unlock' ? <Loader2 size={16} className="animate-spin" /> : <Unlock size={16} />}
+                                                                        </button>
+                                                                    )}
+                                                                    
+                                                                    {canManage && !isSelf && (
+                                                                        pendingForceId === a.id ? (
+                                                                            <div className="flex items-center gap-1">
+                                                                                <button onClick={() => setPendingForceId(null)} disabled={rowBusy} className="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-200 disabled:opacity-60">Cancel</button>
+                                                                                <button onClick={() => handleForceLogout(a)} disabled={rowBusy} className="flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 transition-all disabled:opacity-70">
+                                                                                    {rowBusy && busy?.type === 'force' ? <Loader2 size={12} className="animate-spin" /> : <LogOut size={12} />} Logout
+                                                                                </button>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <button onClick={() => { setToast(null); setPendingForceId(a.id); }} title="Force Logout" className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
+                                                                                <LogOut size={16} />
+                                                                            </button>
+                                                                        )
+                                                                    )}
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </Card>
                         </div>
 
                         <div className="space-y-4">

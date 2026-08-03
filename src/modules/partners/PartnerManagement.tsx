@@ -530,18 +530,28 @@ const PartnerManagement = () => {
                                 <h3 className="font-bold text-gray-900 flex items-center gap-2 mb-4"><FileText size={18} className="text-yellow-500" /> Uploaded Media & Documents</h3>
                                 {detail.media?.length ? (
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                        {detail.media.map((m) => (
-                                            <a key={m.id} href={mediaUrl(m.file)} target="_blank" rel="noreferrer" className="group block rounded-xl overflow-hidden border border-gray-200 hover:border-yellow-300 transition-all">
-                                                {m.media_type === 'image' ? (
-                                                    <img src={mediaUrl(m.file)} alt="" className="w-full h-24 object-cover" />
-                                                ) : (
-                                                    <div className="w-full h-24 bg-gray-50 flex flex-col items-center justify-center text-gray-400 group-hover:text-yellow-500">
-                                                        <FileText size={24} />
-                                                        <span className="text-[10px] mt-1 uppercase font-bold">{m.media_type}</span>
-                                                    </div>
-                                                )}
-                                            </a>
-                                        ))}
+                                        {detail.media.map((m) => {
+                                            const isImage = m.file && /\.(jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i.test(m.file);
+                                            return (
+                                                <a
+                                                    key={m.id}
+                                                    href={m.file ? mediaUrl(m.file) : '#'}
+                                                    target={m.file ? "_blank" : undefined}
+                                                    rel="noreferrer"
+                                                    onClick={(e) => { if (!m.file) e.preventDefault(); }}
+                                                    className="group block rounded-xl overflow-hidden border border-gray-200 hover:border-yellow-300 transition-all"
+                                                >
+                                                    {isImage ? (
+                                                        <img src={mediaUrl(m.file)} alt="" className="w-full h-24 object-cover" />
+                                                    ) : (
+                                                        <div className="w-full h-24 bg-gray-50 flex flex-col items-center justify-center text-gray-400 group-hover:text-yellow-500">
+                                                            <FileText size={24} />
+                                                            <span className="text-[10px] mt-1 uppercase font-bold text-center px-1">{m.media_type || 'file'}</span>
+                                                        </div>
+                                                    )}
+                                                </a>
+                                            );
+                                        })}
                                     </div>
                                 ) : (
                                     <p className="text-sm text-gray-400">No media uploaded.</p>
@@ -721,10 +731,11 @@ const PartnerManagement = () => {
                 {!metrics && <Card className="col-span-2 lg:col-span-4 text-center text-gray-400 text-sm py-6">Loading metrics…</Card>}
             </div>
             {metrics && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                     <MiniMetric label="Activated Limited" value={metrics.activated_limited} />
                     <MiniMetric label="Verified" value={metrics.is_verified_count} />
-                    <MiniMetric label="Active Partners" value={metrics.is_active_count} />
+                    <MiniMetric label="Enabled Partners" value={metrics.is_active_count} />
+                    <MiniMetric label="Active Partners (30d)" value={metrics.active_partners_30d} />
                     <MiniMetric label="New Partners" value={metrics.new_this_month} />
                 </div>
             )}

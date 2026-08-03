@@ -8,12 +8,13 @@ vi.mock('../../shared/lib/api', () => ({
     getOverviewStats: vi.fn(),
     getCustomerStats: vi.fn(),
     getPartnerStats: vi.fn(),
+    getListingStats: vi.fn(),
     parseAmount: (v: any) => (v == null || v === '' || v === '-' ? null : (Number.isNaN(Number(v)) ? null : Number(v))),
     safeCurrency: () => 'INR',
     formatMoney: (n: any) => `₹${Number(n).toLocaleString()}`,
     ApiError: class ApiError extends Error { code: string | null = null; },
 }));
-import { getOverviewStats, getCustomerStats, getPartnerStats } from '../../shared/lib/api';
+import { getOverviewStats, getCustomerStats, getPartnerStats, getListingStats } from '../../shared/lib/api';
 
 const CUSTOMER_STATS = {
     summary: { total: 1200, new_in_period: 45, active: 900, inactive: 300, disabled: 5 },
@@ -21,6 +22,18 @@ const CUSTOMER_STATS = {
 const PARTNER_STATS = {
     summary: { total: 80, new_in_period: 6, active: 60, inactive: 20, disabled: 2 },
     pending_actions: { awaiting_approval: 4, awaiting_verification: 7 },
+    by_category: [
+        { category: 'Events', partner_count: 54 },
+        { category: 'Programs', partner_count: 38 },
+        { category: 'Classes', partner_count: 62 },
+        { category: 'Venues', partner_count: 12 },
+    ],
+};
+const LISTING_STATS_BY_TYPE: Record<string, any> = {
+    event: { draft: 1, pending: 2, published: 86, rejected: 0, archived: 0, total: 89 },
+    program: { draft: 1, pending: 2, published: 94, rejected: 0, archived: 0, total: 97 },
+    class: { draft: 1, pending: 2, published: 211, rejected: 0, archived: 0, total: 214 },
+    venue: { draft: 1, pending: 2, published: 49, rejected: 0, archived: 0, total: 52 },
 };
 
 const OVERVIEW = {
@@ -48,6 +61,7 @@ describe('Dashboard', () => {
         (getOverviewStats as any).mockResolvedValue(OVERVIEW);
         (getCustomerStats as any).mockResolvedValue(CUSTOMER_STATS);
         (getPartnerStats as any).mockResolvedValue(PARTNER_STATS);
+        (getListingStats as any).mockImplementation((type: string) => Promise.resolve(LISTING_STATS_BY_TYPE[type]));
     });
 
     it('renders the heading and loads overview stats for this month', async () => {
@@ -85,6 +99,27 @@ describe('Dashboard', () => {
         render(<Dashboard setScreen={setScreen} />);
         await screen.findByText('Active Customers');
         expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('renders per-vertical partner and active-listing counts from the stats endpoints', async () => {
+        render(<Dashboard setScreen={setScreen} />);
+        await screen.findByText('At-a-glance: Listings by Vertical');
+        expect(screen.getByText('54')).toBeInTheDocument(); // Events partners
+        expect(screen.getByText('86')).toBeInTheDocument(); // Events active listings
+        expect(screen.getByText('38')).toBeInTheDocument(); // Programs partners
+        expect(screen.getByText('94')).toBeInTheDocument(); // Programs active listings
+        expect(screen.getByText('62')).toBeInTheDocument(); // Classes partners
+        expect(screen.getByText('211')).toBeInTheDocument(); // Classes active listings
+        expect(screen.getByText('12')).toBeInTheDocument(); // Venues partners
+        expect(screen.getByText('49')).toBeInTheDocument(); // Venues active listings
+    });
+
+    it('falls back to an em-dash per vertical when the listing/partner stats are unavailable', async () => {
+        (getPartnerStats as any).mockResolvedValue(null);
+        (getListingStats as any).mockResolvedValue(null);
+        render(<Dashboard setScreen={setScreen} />);
+        await screen.findByText('At-a-glance: Listings by Vertical');
+        expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(4);
     });
 
     it('renders the Activity summary from period aggregates', async () => {

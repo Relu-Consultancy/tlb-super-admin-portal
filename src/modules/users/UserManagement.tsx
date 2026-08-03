@@ -255,8 +255,8 @@ const UserManagement = () => {
 
     const metricTiles = metrics ? [
         { label: 'Total Customers', value: metrics.total_users, tone: 'text-gray-900' },
-        { label: 'Active Customers', value: metrics.active_users, tone: 'text-green-600' },
-        { label: 'Inactive Customers', value: metrics.inactive_users, tone: 'text-red-600' },
+        { label: 'Active Customers (30d)', value: metrics.active_users, tone: 'text-green-600' },
+        { label: 'Inactive Customers (30d)', value: metrics.inactive_users, tone: 'text-red-600' },
         { label: 'New Customers', value: metrics.new_this_month, tone: 'text-blue-600' },
     ] : [];
 
@@ -297,9 +297,11 @@ const UserManagement = () => {
                 {!metrics && <Card className="col-span-2 lg:col-span-4 text-center text-gray-400 text-sm py-6">Loading metrics…</Card>}
             </div>
             {metrics && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                     <MiniMetric label="New Today" value={metrics.new_today} />
                     <MiniMetric label="New This Week" value={metrics.new_this_week} />
+                    <MiniMetric label="Enabled Accounts" value={metrics.enabled_users} />
+                    <MiniMetric label="Disabled Accounts" value={metrics.disabled_users} />
                     <MiniMetric label="OTP Users" value={metrics.by_auth_provider?.otp ?? 0} />
                     <MiniMetric label="Google Users" value={metrics.by_auth_provider?.google ?? 0} />
                 </div>

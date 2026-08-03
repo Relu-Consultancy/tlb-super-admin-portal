@@ -345,8 +345,8 @@ const SupportSystem = () => {
                     <Card
                         key={stat.key}
                         className={cn(
-                            'flex items-center gap-4 cursor-pointer hover:shadow-md transition-shadow',
-                            activeFilter === stat.key && 'ring-2 ring-yellow-400',
+                            'flex items-center gap-4 cursor-pointer transition-all border-b-2',
+                            activeFilter === stat.key ? 'border-b-yellow-400 bg-yellow-50/30' : 'border-b-transparent hover:border-b-gray-200 hover:bg-gray-50/50',
                         )}
                         onClick={() => setActiveFilter(stat.key)}
                     >
@@ -410,16 +410,16 @@ const SupportSystem = () => {
                     </div>
 
                     {/* Filter Tabs */}
-                    <div className="flex flex-wrap bg-gray-100 rounded-xl p-1 gap-1">
+                    <div className="flex border-b border-gray-200 px-1">
                         {TABS.map((tab) => (
                             <button
                                 key={tab.key}
                                 onClick={() => setActiveFilter(tab.key)}
                                 className={cn(
-                                    'flex-1 py-1.5 px-1 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all whitespace-nowrap',
+                                    'flex-1 py-2 text-[10px] font-bold uppercase tracking-wider transition-all whitespace-nowrap border-b-2 relative top-[1px]',
                                     activeFilter === tab.key
-                                        ? 'bg-white text-gray-900 shadow-sm'
-                                        : 'text-gray-500 hover:text-gray-700',
+                                        ? 'border-b-yellow-400 text-gray-900'
+                                        : 'border-b-transparent text-gray-400 hover:text-gray-600',
                                 )}
                             >
                                 {tab.label} ({counts[tab.key]})
@@ -457,17 +457,20 @@ const SupportSystem = () => {
                                             className={cn(
                                                 'w-full p-3.5 text-left transition-all flex gap-3 border-b border-gray-100',
                                                 selectedId === ticket.id
-                                                    ? 'bg-yellow-50/70 border-l-[3px] border-l-yellow-400'
-                                                    : 'hover:bg-gray-50 border-l-[3px] border-l-transparent',
+                                                    ? 'bg-gray-50/80 border-l-[3px] border-l-gray-900'
+                                                    : 'hover:bg-gray-50/50 border-l-[3px] border-l-transparent',
                                             )}
                                         >
-                                            <div className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
+                                            <div className={cn(
+                                                "w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0",
+                                                selectedId === ticket.id ? 'bg-gray-200 text-gray-900' : 'bg-gray-100 text-gray-500'
+                                            )}>
                                                 {initials(ticket.raised_by_email)}
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex justify-between items-center mb-0.5 gap-2">
-                                                    <h4 className="text-sm font-bold text-gray-900 truncate">{ticket.raised_by_email}</h4>
-                                                    <span className="text-[10px] text-gray-400 flex-shrink-0">{formatTime(ticket.updated_at)}</span>
+                                                    <h4 className="text-sm font-semibold text-gray-900 truncate">{ticket.raised_by_email}</h4>
+                                                    <span className="text-[10px] text-gray-400 flex-shrink-0 font-medium">{formatTime(ticket.updated_at)}</span>
                                                 </div>
                                                 <p className="text-xs text-gray-500 truncate mb-1.5">{ticket.subject || ticketCategoryLabel(ticket.category)}</p>
                                                 <div className="flex items-center gap-1.5 flex-wrap">
@@ -499,7 +502,7 @@ const SupportSystem = () => {
                             {/* Chat Header */}
                             <div className="px-5 py-3 border-b border-gray-200 flex justify-between items-center bg-white">
                                 <div className="flex items-center gap-3 min-w-0">
-                                    <div className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
+                                    <div className="w-9 h-9 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xs font-bold flex-shrink-0">
                                         {initials(selectedTicket.raised_by_email)}
                                     </div>
                                     <div className="min-w-0">
@@ -563,18 +566,18 @@ const SupportSystem = () => {
                                                         {!alignRight && (
                                                             <div className={cn(
                                                                 'w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold mt-1 flex-shrink-0',
-                                                                partner ? 'bg-purple-100 text-purple-700' : 'bg-gray-300 text-gray-700',
+                                                                partner ? 'bg-purple-100 text-purple-700' : 'bg-gray-200 text-gray-600',
                                                             )}>
                                                                 {partner ? <Building2 size={13} /> : initials(msg.sender_email)}
                                                             </div>
                                                         )}
                                                         <div className={cn(
-                                                            'p-3.5 rounded-2xl shadow-sm max-w-full',
+                                                            'p-3.5 rounded-2xl max-w-full shadow-sm',
                                                             mine
-                                                                ? 'bg-slate-900 text-white rounded-tr-none'
+                                                                ? 'bg-gray-800 text-white rounded-tr-sm'
                                                                 : partner
-                                                                    ? 'bg-purple-50 border border-purple-100 text-gray-700 rounded-tl-none'
-                                                                    : 'bg-white border border-gray-200 text-gray-700 rounded-tl-none',
+                                                                    ? 'bg-purple-50 border border-purple-100 text-gray-800 rounded-tl-sm'
+                                                                    : 'bg-white border border-gray-200 text-gray-800 rounded-tl-sm',
                                                         )}>
                                                             {mine && (
                                                                 <div className="flex items-center gap-1 mb-1.5">

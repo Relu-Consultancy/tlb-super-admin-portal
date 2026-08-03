@@ -24,7 +24,7 @@ const GlobalHealthMetrics = ({ onBroadcast }: { onBroadcast?: () => void }) => {
                     </div>
                     <div>
                         <h3 className="text-2xl font-bold text-gray-900">{n(metrics?.active_users)}</h3>
-                        <p className="text-sm font-medium text-gray-500">Active Users</p>
+                        <p className="text-sm font-medium text-gray-500">Active Users (30d)</p>
                     </div>
                     <div className="pt-3 border-t border-gray-200">
                         <p className="text-xs text-gray-500"><span className="font-bold text-gray-700">New today:</span> {n(metrics?.new_today)}</p>
@@ -54,11 +54,11 @@ const GlobalHealthMetrics = ({ onBroadcast }: { onBroadcast?: () => void }) => {
                     </div>
                     <div>
                         <h3 className="text-2xl font-bold text-gray-900">{n(metrics?.inactive_users)}</h3>
-                        <p className="text-sm font-medium text-gray-500">Inactive Accounts</p>
+                        <p className="text-sm font-medium text-gray-500">Inactive Users (30d)</p>
                     </div>
                     <div className="pt-3 border-t border-gray-200">
-                        <p className="text-xs text-gray-500"><span className="font-bold text-gray-700">Deleted:</span> {n(metrics?.deleted_users)}</p>
-                        <p className="text-xs text-gray-500 mt-1"><span className="font-bold text-gray-700">Total:</span> {n(metrics?.total_users)}</p>
+                        <p className="text-xs text-gray-500"><span className="font-bold text-gray-700">Disabled accounts:</span> {n(metrics?.disabled_users)}</p>
+                        <p className="text-xs text-gray-500 mt-1"><span className="font-bold text-gray-700">Deleted:</span> {n(metrics?.deleted_users)}</p>
                     </div>
                 </Card>
             </div>

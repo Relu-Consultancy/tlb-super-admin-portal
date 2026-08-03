@@ -5,6 +5,7 @@ import GlobalHealthMetrics from './GlobalHealthMetrics';
 vi.mock('../../../shared/lib/api', () => ({
     getUserMetrics: vi.fn(() => Promise.resolve({
         total_users: 100, active_users: 80, inactive_users: 20, deleted_users: 2,
+        enabled_users: 95, disabled_users: 5,
         new_today: 3, new_this_week: 9, new_this_month: 25, by_auth_provider: { otp: 60, google: 40 },
     })),
 }));
@@ -17,9 +18,9 @@ describe('GlobalHealthMetrics', () => {
 
     it('renders the metric labels', () => {
         render(<GlobalHealthMetrics />);
-        expect(screen.getByText('Active Users')).toBeInTheDocument();
+        expect(screen.getByText('Active Users (30d)')).toBeInTheDocument();
         expect(screen.getByText('Total Registered Users')).toBeInTheDocument();
-        expect(screen.getByText('Inactive Accounts')).toBeInTheDocument();
+        expect(screen.getByText('Inactive Users (30d)')).toBeInTheDocument();
     });
 
     it('renders a disabled broadcast button without a navigation callback', () => {

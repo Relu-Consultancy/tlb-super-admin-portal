@@ -38,6 +38,7 @@ vi.mock('../../shared/lib/api', () => ({
     })),
     getUserMetrics: vi.fn(() => Promise.resolve({
         total_users: 8, active_users: 5, inactive_users: 3, deleted_users: 0,
+        enabled_users: 9, disabled_users: 10,
         new_today: 1, new_this_week: 2, new_this_month: 4, by_auth_provider: { otp: 6, google: 2 },
     })),
     getUserLoginHistory: vi.fn(() => Promise.resolve([])),

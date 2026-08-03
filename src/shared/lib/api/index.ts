@@ -2,12 +2,26 @@
  * Barrel export for the API layer.
  *
  *   import { api, ApiError, login, getProfile } from '@/shared/lib/api';
+ *
+ * Internal structure:
+ *   core/        — HTTP client, config, token helpers, roles & shared types
+ *   auth/        — Authentication (login/logout/password) & profile/sessions
+ *   admins/      — Admin user management (RBAC, force-logout, unlock)
+ *   users/       — Customer management (bookings, reviews, exports)
+ *   partners/    — Partner onboarding, verification & export
+ *   listings/    — Listing moderation & homepage section curation
+ *   finance/     — Transactions, payments & financial reporting
+ *   analytics/   — Dashboard stats & engagement analytics
+ *   marketing/   — Coupons & broadcast notifications
+ *   support/     — Help-desk ticket management
+ *   audit/       — Audit logs
+ *   tlb/         — TLB Signature first-party listings
  */
 
-// Core client
-export { api, ApiError, SESSION_EXPIRED_EVENT } from './client';
-export type { RequestOptions, SessionExpiredDetail } from './client';
-export { API_BASE_URL, API_TIMEOUT, ADMIN_API_PREFIX, adminPath, HELP_ADMIN_PREFIX, helpPath, mediaUrl } from './config';
+// ── Core infrastructure ──────────────────────────────────────────────────────
+export { api, ApiError, SESSION_EXPIRED_EVENT } from './core/client';
+export type { RequestOptions, SessionExpiredDetail } from './core/client';
+export { API_BASE_URL, API_TIMEOUT, ADMIN_API_PREFIX, adminPath, HELP_ADMIN_PREFIX, helpPath, mediaUrl } from './core/config';
 
 // Token storage
 export {
@@ -16,8 +30,8 @@ export {
   setTokens,
   clearTokens,
   hasSession,
-} from './token';
-export type { TokenPair } from './token';
+} from './core/token';
+export type { TokenPair } from './core/token';
 
 // Roles & permissions
 export {
@@ -28,10 +42,13 @@ export {
   PERMISSIONS,
   ROLE_DEFAULT_PERMISSIONS,
   permissionLabel,
-} from './roles';
-export type { AdminRole, Permission } from './roles';
+} from './core/roles';
+export type { AdminRole, Permission } from './core/roles';
 
-// Auth service
+// Shared types
+export type { Paginated } from './core/types';
+
+// ── Auth ─────────────────────────────────────────────────────────────────────
 export {
   login,
   refresh,
@@ -40,17 +57,14 @@ export {
   changePassword,
   forgotPassword,
   resetPassword,
-} from './auth';
-export type { AdminUser, LoginResponse, RefreshResponse } from './auth';
+} from './auth/auth';
+export type { AdminUser, LoginResponse, RefreshResponse } from './auth/auth';
 
 // Profile & sessions
-export { getProfile, getSessions } from './profile';
-export type { AdminProfile, AdminSession } from './profile';
+export { getProfile, getSessions } from './auth/profile';
+export type { AdminProfile, AdminSession } from './auth/profile';
 
-// Shared types
-export type { Paginated } from './types';
-
-// Admin management (§4 actions + §5 list/detail/disable/enable + §6 RBAC)
+// ── Admin management ─────────────────────────────────────────────────────────
 export {
   listAdmins,
   getAdmin,
@@ -61,10 +75,10 @@ export {
   updateAdminPermissions,
   forceLogoutAdmin,
   unlockAdmin,
-} from './admins';
-export type { AdminListItem, ListAdminsParams, AdminDetail, CreateAdminPayload } from './admins';
+} from './admins/admins';
+export type { AdminListItem, ListAdminsParams, AdminDetail, CreateAdminPayload } from './admins/admins';
 
-// Admin user (customer) management
+// ── User (customer) management ───────────────────────────────────────────────
 export {
   listUsers,
   listUsersPaginated,
@@ -88,7 +102,7 @@ export {
   pickStat,
   formatMoney,
   humanizeKey,
-} from './users';
+} from './users/users';
 export type {
   AdminUserListItem,
   AdminUserDetail,
@@ -103,9 +117,9 @@ export type {
   ListUsersParams,
   UserExportJob,
   ListingRef,
-} from './users';
+} from './users/users';
 
-// Partner management (admin partner workflow)
+// ── Partner management ───────────────────────────────────────────────────────
 export {
   listPartners,
   getPartnerMetrics,
@@ -127,7 +141,7 @@ export {
   isPartnerOnboarding,
   PARTNER_STATUSES,
   PARTNER_CATEGORIES,
-} from './partners';
+} from './partners/partners';
 export type {
   PartnerListItem,
   PartnerDetail,
@@ -141,9 +155,9 @@ export type {
   PartnerStatus,
   ListPartnersParams,
   ExportJob,
-} from './partners';
+} from './partners/partners';
 
-// Listing moderation (unified admin listing approval workflow — all types)
+// ── Listing moderation ───────────────────────────────────────────────────────
 export {
   listListings,
   getListingStats,
@@ -160,7 +174,7 @@ export {
   listingCategoryName,
   LISTING_TYPES,
   LISTING_STATUSES,
-} from './listings';
+} from './listings/listings';
 export type {
   ListingListItem,
   ListingDetail,
@@ -173,9 +187,9 @@ export type {
   CategoryRef,
   ListListingsParams,
   RejectionReason,
-} from './listings';
+} from './listings/listings';
 
-// Listing sections (UserApp Alignment — homepage + discovery-screen curation)
+// Listing sections (UserApp homepage/discovery curation)
 export {
   listSections,
   getSectionRows,
@@ -189,49 +203,16 @@ export {
   SECTION_MAX_LISTINGS,
   TLB_SIGNATURE_SECTION,
   ALIGNMENT_PAGES,
-} from './listingSections';
+} from './listings/listingSections';
 export type {
   AlignmentSection,
   AlignmentPage,
   AlignmentPageId,
   SectionListing,
   SectionListingRef,
-} from './listingSections';
+} from './listings/listingSections';
 
-// TLB Signature listings (admin-authored first-party listings)
-export {
-  listTlbSignature,
-  getTlbSignature,
-  archiveTlbSignature,
-  updateTlbSignature,
-  toggleTlbVisibility,
-  createTlbEvent,
-  createTlbClass,
-  createTlbProgram,
-  createTlbVenue,
-  tlbErrorMessage,
-  TLB_ERROR_LABELS,
-  TLB_STATUSES,
-  TLB_CREATE_TYPES,
-} from './tlbSignature';
-export type {
-  TlbListItem,
-  TlbDetail,
-  ListTlbParams,
-  TlbStatus,
-  TlbCreateType,
-  TlbEventInput,
-  TlbEventTicket,
-  TlbClassInput,
-  TlbClassBatch,
-  TlbProgramInput,
-  TlbProgramBatch,
-  TlbVenueInput,
-  TlbVenuePackage,
-  TlbUpdateInput,
-} from './tlbSignature';
-
-// Payments & Finance (transactions — Phase 1)
+// ── Finance ──────────────────────────────────────────────────────────────────
 export {
   listTransactions,
   getTransaction,
@@ -253,7 +234,7 @@ export {
   BOOKING_TYPES,
   FINANCE_PERIODS,
   FINANCE_PERIOD_LABELS,
-} from './finance';
+} from './finance/finance';
 export type {
   TransactionListItem,
   TransactionDetail,
@@ -268,9 +249,9 @@ export type {
   FinanceTrendPoint,
   TransactionSource,
   FinancePeriod,
-} from './finance';
+} from './finance/finance';
 
-// Admin statistics (dashboard analytics)
+// ── Analytics & Stats ────────────────────────────────────────────────────────
 export {
   getOverviewStats,
   getCustomerStats,
@@ -279,7 +260,7 @@ export {
   safeCurrency,
   STATS_PERIODS,
   STATS_PERIOD_LABELS,
-} from './stats';
+} from './analytics/stats';
 export type {
   StatsParams,
   StatsPeriod,
@@ -294,9 +275,25 @@ export type {
   RecentTicket,
   TopCustomer,
   TopPartner,
-} from './stats';
+} from './analytics/stats';
 
-// Broadcasts (admin mass-notification engine)
+// Activity engagement & top-viewed listings
+export {
+  getActivitySummary,
+  getTopViewedListings,
+  analyticsErrorMessage,
+} from './analytics/analytics';
+export type {
+  AnalyticsParams,
+  ActivityGroupStats,
+  ActivityEventStat,
+  ActivitySummary,
+  TopViewedListing,
+  TopViewedListingsResponse,
+  TopViewedListingsParams,
+} from './analytics/analytics';
+
+// ── Marketing ────────────────────────────────────────────────────────────────
 export {
   listBroadcasts,
   createBroadcast,
@@ -313,7 +310,7 @@ export {
   BROADCAST_AUDIENCES,
   DELIVERY_CHANNELS,
   DELIVERY_STATUSES,
-} from './broadcasts';
+} from './marketing/broadcasts';
 export type {
   BroadcastListItem,
   BroadcastDetail,
@@ -325,34 +322,9 @@ export type {
   BroadcastAudience,
   DeliveryChannel,
   DeliveryStatus,
-} from './broadcasts';
+} from './marketing/broadcasts';
 
-// Audit logs (§4)
-export {
-  getAuditLogs,
-  auditActionLabel,
-  auditActionTone,
-  AUDIT_ACTIONS,
-} from './auditLogs';
-export type { AuditLog, AuditAction, AuditLogParams } from './auditLogs';
-
-// Support tickets (Help / Admin)
-export {
-  listTickets,
-  getTicket,
-  getTicketMessages,
-  sendTicketMessage,
-  updateTicketStatus,
-  shareTicketWithPartner,
-  ticketStatusLabel,
-  ticketStatusTone,
-  ticketCategoryLabel,
-  ticketPollInterval,
-  TICKET_STATUSES,
-} from './support';
-export type { SupportTicket, TicketMessage, TicketThread, TicketStatus, ListTicketsParams } from './support';
-
-// Admin coupons (platform + partner) with analytics & redemption report
+// Coupons
 export {
   listCoupons,
   getCoupon,
@@ -372,7 +344,7 @@ export {
   isCouponExpired,
   COUPON_TYPES,
   DISCOUNT_TYPES,
-} from './coupons';
+} from './marketing/coupons';
 export type {
   CouponListItem,
   CouponDetail,
@@ -388,4 +360,62 @@ export type {
   TargetCategory,
   CouponType,
   DiscountType,
-} from './coupons';
+} from './marketing/coupons';
+
+// ── Support ──────────────────────────────────────────────────────────────────
+export {
+  listTickets,
+  getTicket,
+  getTicketMessages,
+  sendTicketMessage,
+  updateTicketStatus,
+  shareTicketWithPartner,
+  ticketStatusLabel,
+  ticketStatusTone,
+  ticketCategoryLabel,
+  ticketPollInterval,
+  TICKET_STATUSES,
+} from './support/support';
+export type { SupportTicket, TicketMessage, TicketThread, TicketStatus, ListTicketsParams } from './support/support';
+
+// ── Audit logs ───────────────────────────────────────────────────────────────
+export {
+  getAuditLogs,
+  auditActionLabel,
+  auditActionTone,
+  AUDIT_ACTIONS,
+} from './audit/auditLogs';
+export type { AuditLog, AuditAction, AuditLogParams } from './audit/auditLogs';
+
+// ── TLB Signature ────────────────────────────────────────────────────────────
+export {
+  listTlbSignature,
+  getTlbSignature,
+  archiveTlbSignature,
+  updateTlbSignature,
+  toggleTlbVisibility,
+  createTlbEvent,
+  createTlbClass,
+  createTlbProgram,
+  createTlbVenue,
+  tlbErrorMessage,
+  TLB_ERROR_LABELS,
+  TLB_STATUSES,
+  TLB_CREATE_TYPES,
+} from './tlb/tlbSignature';
+export type {
+  TlbListItem,
+  TlbDetail,
+  ListTlbParams,
+  TlbStatus,
+  TlbCreateType,
+  TlbEventInput,
+  TlbEventTicket,
+  TlbClassInput,
+  TlbClassBatch,
+  TlbProgramInput,
+  TlbProgramBatch,
+  TlbVenueInput,
+  TlbVenuePackage,
+  TlbUpdateInput,
+} from './tlb/tlbSignature';

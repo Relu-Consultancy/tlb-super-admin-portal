@@ -178,12 +178,13 @@ const TlbSignature = ({ onCreate }: Props) => {
               <tbody>
                 {rows.map((r) => (
                   <tr key={r.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="px-5 py-3 font-bold text-gray-900">
-                      <span className="flex items-center gap-1.5">
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-1.5 font-bold text-gray-900">
                         <Sparkles size={12} className="text-yellow-500 shrink-0" />
                         {r.title}
                         {r.is_paused && <Pause size={12} className="text-orange-400 shrink-0" aria-label="Paused" />}
-                      </span>
+                      </div>
+                      <p className="text-[11px] text-gray-400 font-mono mt-1">{r.id}</p>
                     </td>
                     <td className="px-5 py-3">
                       <span className={cn('px-2 py-0.5 rounded text-[11px] font-bold', listingTypeTone(r.listing_type))}>{listingTypeLabel(r.listing_type)}</span>

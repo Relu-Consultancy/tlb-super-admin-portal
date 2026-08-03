@@ -394,24 +394,57 @@ const EventApproval = ({ listingType = '' }: EventApprovalProps) => {
                                 {detail.media?.length ? (
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                         {detail.media.map((m, i) => {
-                                            const isImage = (m.media_type ?? '').startsWith('image') && !!m.file;
-                                            return isImage ? (
-                                                <button
+                                            const fileUrl = m.file ? mediaUrl(m.file) : null;
+                                            const mt = (m.media_type ?? '').toLowerCase();
+                                            const isImage = fileUrl && (
+                                                /\.(jpg|jpeg|png|webp|gif|svg|bmp)(\?.*)?$/i.test(fileUrl) ||
+                                                mt.startsWith('image') ||
+                                                mt === 'cover' ||
+                                                mt === 'gallery' ||
+                                                mt === 'photo' ||
+                                                mt === 'thumbnail'
+                                            );
+                                            const label = m.media_type || 'file';
+
+                                            if (isImage) {
+                                                return (
+                                                    <button
+                                                        key={m.id ?? i}
+                                                        type="button"
+                                                        onClick={() => setLightbox(fileUrl!)}
+                                                        aria-label={`Preview ${label}`}
+                                                        className="group relative block rounded-xl overflow-hidden border border-gray-200 hover:border-yellow-300 transition-all"
+                                                    >
+                                                        <img src={fileUrl!} alt={label} className="w-full h-24 object-cover transition-transform duration-300 group-hover:scale-105" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                                        <span className="absolute inset-0 bg-black/0 group-hover:bg-black/30 flex items-center justify-center transition-all">
+                                                            <EyeIcon size={18} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                        </span>
+                                                        <span className="absolute bottom-0 inset-x-0 bg-black/40 text-white text-[9px] font-bold uppercase tracking-wider text-center py-0.5">{label}</span>
+                                                    </button>
+                                                );
+                                            }
+
+                                            // Document / unknown type
+                                            return fileUrl ? (
+                                                <a
                                                     key={m.id ?? i}
-                                                    onClick={() => setLightbox(mediaUrl(m.file))}
-                                                    aria-label="Preview image"
-                                                    className="group relative block rounded-xl overflow-hidden border border-gray-200 hover:border-yellow-300 transition-all"
+                                                    href={fileUrl}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="group flex flex-col items-center justify-center h-24 rounded-xl border border-gray-200 bg-gray-50 text-gray-400 hover:border-yellow-300 hover:text-yellow-500 transition-all"
                                                 >
-                                                    <img src={mediaUrl(m.file)} alt="" className="w-full h-24 object-cover transition-transform duration-300 group-hover:scale-105" />
-                                                    <span className="absolute inset-0 bg-black/0 group-hover:bg-black/30 flex items-center justify-center transition-all">
-                                                        <EyeIcon size={18} className="text-gray-900 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                    </span>
-                                                </button>
-                                            ) : (
-                                                <a key={m.id ?? i} href={mediaUrl(m.file)} target="_blank" rel="noreferrer" className="group flex flex-col items-center justify-center h-24 rounded-xl border border-gray-200 bg-gray-50 text-gray-400 hover:border-yellow-300 hover:text-yellow-500 transition-all">
                                                     <FileText size={24} />
-                                                    <span className="text-[10px] mt-1 uppercase font-bold flex items-center gap-1">{m.media_type || 'file'} <ExternalLink size={10} /></span>
+                                                    <span className="text-[10px] mt-1 uppercase font-bold flex items-center gap-1">{label} <ExternalLink size={10} /></span>
                                                 </a>
+                                            ) : (
+                                                <div
+                                                    key={m.id ?? i}
+                                                    className="flex flex-col items-center justify-center h-24 rounded-xl border border-dashed border-gray-200 bg-gray-50 text-gray-300"
+                                                >
+                                                    <FileText size={24} />
+                                                    <span className="text-[10px] mt-1 uppercase font-bold">{label}</span>
+                                                    <span className="text-[9px] text-gray-400">No file</span>
+                                                </div>
                                             );
                                         })}
                                     </div>
@@ -620,6 +653,7 @@ const EventApproval = ({ listingType = '' }: EventApprovalProps) => {
                         <thead>
                             <tr className="bg-gray-50 border-b border-gray-200">
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Listing</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Listing Owner</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Type</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Category</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">City</th>
@@ -629,11 +663,11 @@ const EventApproval = ({ listingType = '' }: EventApprovalProps) => {
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                             {loading ? (
-                                <tr><td colSpan={6}><div className="flex items-center justify-center py-16 text-gray-400"><Loader2 className="animate-spin" size={24} /></div></td></tr>
+                                <tr><td colSpan={7}><div className="flex items-center justify-center py-16 text-gray-400"><Loader2 className="animate-spin" size={24} /></div></td></tr>
                             ) : error ? (
-                                <tr><td colSpan={6}><EmptyState icon={AlertCircle} title="Couldn't load listings" description={error} /></td></tr>
+                                <tr><td colSpan={7}><EmptyState icon={AlertCircle} title="Couldn't load listings" description={error} /></td></tr>
                             ) : listings.length === 0 ? (
-                                <tr><td colSpan={6}><EmptyState icon={Calendar} title="No listings found" description="No listings match the current filters." /></td></tr>
+                                <tr><td colSpan={7}><EmptyState icon={Calendar} title="No listings found" description="No listings match the current filters." /></td></tr>
                             ) : (
                                 listings.map((l) => (
                                     <tr key={l.id} className="hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => openReview(l)}>
@@ -648,7 +682,10 @@ const EventApproval = ({ listingType = '' }: EventApprovalProps) => {
                                                     </span>
                                                 )}
                                             </div>
-                                            <p className="text-xs text-gray-500">{l.partner_name || l.partner_email || '—'}</p>
+                                            <p className="text-[11px] text-gray-400 font-mono mt-0.5">{l.id}</p>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <p className="text-xs text-gray-600">{l.partner_name || l.partner_email || '—'}</p>
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={cn('px-2 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider', listingTypeTone(l.listing_type))}>
