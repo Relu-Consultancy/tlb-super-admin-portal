@@ -59,6 +59,7 @@ import { listPartners, getPartner, getPartnerMetrics, verifyPartner, approvePart
 const METRICS = {
     total_partners: 12, approved: 5, under_review: 3, rejected: 2,
     activated_limited: 1, profile_created: 1, is_active_count: 8, is_verified_count: 6, new_this_month: 4,
+    active_partners_30d: 3, inactive_partners_30d: 9,
 };
 
 const PARTNERS = [
@@ -88,7 +89,7 @@ describe('PartnerManagement', () => {
 
     it('renders heading and metrics', async () => {
         render(<PartnerManagement />);
-        expect(screen.getByText('Partner Management')).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'Partners' })).toBeInTheDocument();
         expect(await screen.findByText('Total Partners')).toBeInTheDocument();
         expect(await screen.findByText('12')).toBeInTheDocument();
     });

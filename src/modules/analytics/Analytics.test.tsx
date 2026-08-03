@@ -16,8 +16,15 @@ vi.mock('recharts', () => ({
     Cell: () => null,
 }));
 
+const { authState } = vi.hoisted(() => ({ authState: { viewAnalytics: true } }));
+vi.mock('../../shared/auth/AuthContext', () => ({
+    useAuth: () => ({ hasPermission: (p: string) => (p === 'VIEW_ANALYTICS' ? authState.viewAnalytics : false) }),
+}));
+
 vi.mock('../../shared/lib/api', () => ({
     getOverviewStats: vi.fn(),
+    getActivitySummary: vi.fn(),
+    analyticsErrorMessage: (_code: any, fallback: string) => fallback,
     parseAmount: (v: any) => (v == null || v === '' || v === '-' ? null : (Number.isNaN(Number(v)) ? null : Number(v))),
     safeCurrency: () => 'INR',
     formatMoney: (n: any) => `₹${Number(n).toLocaleString()}`,
@@ -25,7 +32,18 @@ vi.mock('../../shared/lib/api', () => ({
     STATS_PERIOD_LABELS: { today: 'Today', yesterday: 'Yesterday', this_week: 'This Week', last_week: 'Last Week', this_month: 'This Month', custom: 'Custom Range' },
     ApiError: class ApiError extends Error { code: string | null = null; },
 }));
-import { getOverviewStats } from '../../shared/lib/api';
+import { getOverviewStats, getActivitySummary } from '../../shared/lib/api';
+
+const ACTIVITY = {
+    period: { type: 'this_month', date_from: '2026-08-01', date_to: '2026-08-31', label: 'This Month' },
+    customers: { total: 8, active: 3, inactive: 5, active_rate: 37.5 },
+    partners: { total: 1, active: 0, inactive: 1, active_rate: 0.0 },
+    customer_events: [
+        { event_type: 'view_listing', label: 'View Listing', count: 2, unique_users: 2 },
+        { event_type: 'apply_filters', label: 'Apply Filters', count: 1, unique_users: 1 },
+    ],
+    partner_events: [],
+};
 
 const OVERVIEW = {
     period: { type: 'this_month', date_from: '2026-06-01', date_to: '2026-06-30', label: 'This Month' },
@@ -44,7 +62,9 @@ const OVERVIEW = {
 describe('Analytics', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        authState.viewAnalytics = true;
         (getOverviewStats as any).mockResolvedValue(OVERVIEW);
+        (getActivitySummary as any).mockResolvedValue(ACTIVITY);
     });
 
     it('renders the heading and loads overview stats', async () => {
@@ -81,13 +101,30 @@ describe('Analytics', () => {
     it('re-fetches when the period changes', async () => {
         render(<Analytics />);
         await screen.findByText('540');
-        await userEvent.click(screen.getByRole('button', { name: 'Last Week' }));
-        await waitFor(() => expect(getOverviewStats).toHaveBeenCalledWith({ period: 'last_week' }));
+        await userEvent.click(screen.getByRole('button', { name: 'As of Today' }));
+        await waitFor(() => expect(getOverviewStats).toHaveBeenCalledWith({ period: 'today' }));
     });
 
     it('shows an error state when the API fails', async () => {
         (getOverviewStats as any).mockRejectedValue(new Error('boom'));
         render(<Analytics />);
         expect(await screen.findByText("Couldn't load analytics")).toBeInTheDocument();
+    });
+
+    it('renders customer/partner engagement rates and top activity types', async () => {
+        render(<Analytics />);
+        expect(await screen.findByText('Customer & Partner Engagement')).toBeInTheDocument();
+        expect(screen.getByText('37.5% active')).toBeInTheDocument();
+        expect(screen.getByText('0% active')).toBeInTheDocument();
+        expect(screen.getByText('View Listing')).toBeInTheDocument();
+        expect(screen.getByText('No activity recorded in this period.')).toBeInTheDocument();
+    });
+
+    it('hides the engagement panel without VIEW_ANALYTICS', async () => {
+        authState.viewAnalytics = false;
+        render(<Analytics />);
+        await screen.findByText('540');
+        expect(screen.queryByText('Customer & Partner Engagement')).not.toBeInTheDocument();
+        expect(getActivitySummary).not.toHaveBeenCalled();
     });
 });

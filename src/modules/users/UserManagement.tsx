@@ -17,14 +17,20 @@ import {
     Mail,
     Phone,
     BadgeCheck,
+    ChevronLeft,
+    ChevronRight,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Card from '../../shared/components/ui/Card';
 import EmptyState from '../../shared/components/ui/EmptyState';
+import Select from '../../shared/components/ui/Select';
 import { cn } from '../../shared/lib/utils';
+import PeriodFilter from '../../shared/components/ui/PeriodFilter';
+import { resolvePeriodRange, type StandardPeriod } from '../../shared/lib/period';
 import { useAuth } from '../../shared/auth/AuthContext';
+import UserHistorySlideOut from './UserSection/UserHistorySlideOut';
 import {
-    listUsers,
+    listUsersPaginated,
     getUser,
     getUserMetrics,
     getUserLoginHistory,
@@ -80,12 +86,20 @@ const UserManagement = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [metrics, setMetrics] = useState<UserMetrics | null>(null);
+    const [period, setPeriod] = useState<StandardPeriod>('this_month');
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
 
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<'' | 'true' | 'false'>('');
     const [providerFilter, setProviderFilter] = useState('');
     const [ordering, setOrdering] = useState('-created_at');
+
+    const [page, setPage] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
+    const [hasNextPage, setHasNextPage] = useState(false);
+    const [hasPrevPage, setHasPrevPage] = useState(false);
 
     const [busyId, setBusyId] = useState<string | null>(null);
     const [toast, setToast] = useState<Toast>(null);
@@ -97,19 +111,22 @@ const UserManagement = () => {
     const [disableSubmitting, setDisableSubmitting] = useState(false);
 
     // Detail slide-over
-    const [detailId, setDetailId] = useState<string | null>(null);
-    const [detail, setDetail] = useState<AdminUserDetail | null>(null);
-    const [detailLoading, setDetailLoading] = useState(false);
-    const [loginHistory, setLoginHistory] = useState<UserLoginEvent[]>([]);
-    const [securityLog, setSecurityLog] = useState<UserSecurityLogEntry[]>([]);
-    const [actionBusy, setActionBusy] = useState<string | null>(null);
+    const [selectedUser, setSelectedUser] = useState<AdminUserListItem | null>(null);
 
     const flash = (type: 'success' | 'error', text: string) => setToast({ type, text });
 
     useEffect(() => {
-        const t = setTimeout(() => setDebouncedSearch(search.trim()), 350);
+        const t = setTimeout(() => {
+            setDebouncedSearch(search.trim());
+            setPage(1); // reset page on search
+        }, 350);
         return () => clearTimeout(t);
     }, [search]);
+
+    // reset page on filter change
+    useEffect(() => {
+        setPage(1);
+    }, [statusFilter, providerFilter, ordering]);
 
     const buildParams = useCallback(
         (): ListUsersParams => ({
@@ -117,15 +134,20 @@ const UserManagement = () => {
             is_active: statusFilter === '' ? undefined : statusFilter === 'true',
             auth_provider: providerFilter || undefined,
             ordering,
+            page,
         }),
-        [debouncedSearch, statusFilter, providerFilter, ordering],
+        [debouncedSearch, statusFilter, providerFilter, ordering, page],
     );
 
     const loadUsers = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            setUsers(await listUsers(buildParams()));
+            const res = await listUsersPaginated(buildParams());
+            setUsers(res.results);
+            setTotalCount(res.count);
+            setHasNextPage(!!res.next);
+            setHasPrevPage(!!res.previous);
         } catch (err) {
             setError(err instanceof ApiError ? err.message : 'Failed to load users.');
         } finally {
@@ -134,49 +156,30 @@ const UserManagement = () => {
     }, [buildParams]);
 
     const loadMetrics = useCallback(async () => {
+        if (period === 'custom' && (!dateFrom || !dateTo)) return;
         try {
-            setMetrics(await getUserMetrics());
+            setMetrics(await getUserMetrics(resolvePeriodRange(period, dateFrom, dateTo)));
         } catch {
             /* non-critical */
         }
-    }, []);
+    }, [period, dateFrom, dateTo]);
 
     useEffect(() => { loadUsers(); }, [loadUsers]);
     useEffect(() => { loadMetrics(); }, [loadMetrics]);
 
     // --- Detail ---
-    const openDetail = useCallback(async (id: string) => {
-        setDetailId(id);
-        setDetail(null);
-        setLoginHistory([]);
-        setSecurityLog([]);
-        setDetailLoading(true);
-        try {
-            const [d, lh, sl] = await Promise.all([
-                getUser(id),
-                getUserLoginHistory(id).catch(() => []),
-                getUserSecurityLog(id).catch(() => []),
-            ]);
-            setDetail(d);
-            setLoginHistory(lh as UserLoginEvent[]);
-            setSecurityLog(sl as UserSecurityLogEntry[]);
-        } catch (err) {
-            flash('error', err instanceof ApiError ? err.message : 'Failed to load user.');
-            setDetailId(null);
-        } finally {
-            setDetailLoading(false);
-        }
-    }, []);
+    const openDetail = useCallback((id: string) => {
+        const u = users.find((x) => x.id === id);
+        if (u) setSelectedUser(u);
+    }, [users]);
 
     const closeDetail = () => {
-        setDetailId(null);
-        setDetail(null);
+        setSelectedUser(null);
     };
 
     const refreshAfter = async (id: string) => {
         loadUsers();
         loadMetrics();
-        if (detailId === id) await openDetail(id);
     };
 
     const submitDisable = async () => {
@@ -208,7 +211,6 @@ const UserManagement = () => {
         id: string,
     ) => {
         setBusyId(key);
-        setActionBusy(key);
         setToast(null);
         try {
             const res = await fn();
@@ -218,7 +220,6 @@ const UserManagement = () => {
             flash('error', err instanceof ApiError ? err.message : 'Action failed.');
         } finally {
             setBusyId(null);
-            setActionBusy(null);
         }
     };
 
@@ -253,27 +254,36 @@ const UserManagement = () => {
     };
 
     const metricTiles = metrics ? [
-        { label: 'Total Users', value: metrics.total_users, tone: 'text-gray-900' },
-        { label: 'Active', value: metrics.active_users, tone: 'text-green-600' },
-        { label: 'Inactive', value: metrics.inactive_users, tone: 'text-red-600' },
-        { label: 'New This Month', value: metrics.new_this_month, tone: 'text-blue-600' },
+        { label: 'Total Customers', value: metrics.total_users, tone: 'text-gray-900' },
+        { label: 'Active Customers (30d)', value: metrics.active_users, tone: 'text-green-600' },
+        { label: 'Inactive Customers (30d)', value: metrics.inactive_users, tone: 'text-red-600' },
+        { label: 'New Customers', value: metrics.new_this_month, tone: 'text-blue-600' },
     ] : [];
 
     return (
         <div className="space-y-6">
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
                     <p className="text-gray-500 text-sm">Customer accounts, activity and security</p>
                 </div>
-                <button
-                    onClick={handleExport}
-                    disabled={exporting}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all disabled:opacity-60"
-                >
-                    {exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-                    {exporting ? 'Exporting…' : 'Export CSV'}
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                    <PeriodFilter
+                        value={period}
+                        onChange={setPeriod}
+                        dateFrom={dateFrom}
+                        dateTo={dateTo}
+                        onDateChange={(from, to) => { setDateFrom(from); setDateTo(to); }}
+                    />
+                    <button
+                        onClick={handleExport}
+                        disabled={exporting}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all disabled:opacity-60"
+                    >
+                        {exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                        {exporting ? 'Exporting…' : 'Export CSV'}
+                    </button>
+                </div>
             </header>
 
             {/* Metrics */}
@@ -287,9 +297,11 @@ const UserManagement = () => {
                 {!metrics && <Card className="col-span-2 lg:col-span-4 text-center text-gray-400 text-sm py-6">Loading metrics…</Card>}
             </div>
             {metrics && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                     <MiniMetric label="New Today" value={metrics.new_today} />
                     <MiniMetric label="New This Week" value={metrics.new_this_week} />
+                    <MiniMetric label="Enabled Accounts" value={metrics.enabled_users} />
+                    <MiniMetric label="Disabled Accounts" value={metrics.disabled_users} />
                     <MiniMetric label="OTP Users" value={metrics.by_auth_provider?.otp ?? 0} />
                     <MiniMetric label="Google Users" value={metrics.by_auth_provider?.google ?? 0} />
                 </div>
@@ -318,23 +330,37 @@ const UserManagement = () => {
                     />
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                 </div>
-                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as '' | 'true' | 'false')} className="bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 appearance-none cursor-pointer">
-                    <option value="">All status</option>
-                    <option value="true">Active</option>
-                    <option value="false">Disabled</option>
-                </select>
-                <select value={providerFilter} onChange={(e) => setProviderFilter(e.target.value)} className="bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 appearance-none cursor-pointer">
-                    <option value="">Any provider</option>
-                    <option value="otp">OTP</option>
-                    <option value="google">Google</option>
-                </select>
-                <select value={ordering} onChange={(e) => setOrdering(e.target.value)} className="bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 appearance-none cursor-pointer">
-                    <option value="-created_at">Newest first</option>
-                    <option value="created_at">Oldest first</option>
-                    <option value="-last_login">Recently active</option>
-                    <option value="-total_bookings">Most bookings</option>
-                    <option value="email">Email A–Z</option>
-                </select>
+                <Select
+                    value={statusFilter}
+                    onChange={(v) => setStatusFilter(v as '' | 'true' | 'false')}
+                    placeholder="All status"
+                    options={[
+                        { value: '', label: 'All status' },
+                        { value: 'true', label: 'Active' },
+                        { value: 'false', label: 'Disabled' },
+                    ]}
+                />
+                <Select
+                    value={providerFilter}
+                    onChange={setProviderFilter}
+                    placeholder="Any provider"
+                    options={[
+                        { value: '', label: 'Any provider' },
+                        { value: 'otp', label: 'OTP' },
+                        { value: 'google', label: 'Google' },
+                    ]}
+                />
+                <Select
+                    value={ordering}
+                    onChange={setOrdering}
+                    options={[
+                        { value: '-created_at', label: 'Newest first' },
+                        { value: 'created_at', label: 'Oldest first' },
+                        { value: '-last_login', label: 'Recently active' },
+                        { value: '-total_bookings', label: 'Most bookings' },
+                        { value: 'email', label: 'Email A–Z' },
+                    ]}
+                />
             </div>
 
             {/* Table */}
@@ -342,7 +368,7 @@ const UserManagement = () => {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left whitespace-nowrap">
                         <thead>
-                            <tr className="bg-gray-50 border-b border-gray-100">
+                            <tr className="bg-gray-50 border-b border-gray-200">
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Customer</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Provider</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Bookings</th>
@@ -351,7 +377,7 @@ const UserManagement = () => {
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Action</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-50">
+                        <tbody className="divide-y divide-gray-100">
                             {loading ? (
                                 <tr><td colSpan={6}><div className="flex items-center justify-center py-16 text-gray-400"><Loader2 className="animate-spin" size={24} /></div></td></tr>
                             ) : error ? (
@@ -365,7 +391,10 @@ const UserManagement = () => {
                                         <tr key={u.id} className="hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => openDetail(u.id)}>
                                             <td className="px-6 py-4">
                                                 <p className="text-sm font-bold text-gray-900">{userDisplayName(u)}</p>
-                                                <p className="text-xs text-gray-500">{u.email}</p>
+                                                {userDisplayName(u) !== u.email && (
+                                                    <p className="text-xs text-gray-500">{u.email}</p>
+                                                )}
+                                                <p className="text-[10px] text-gray-400 font-mono mt-0.5">ID: {u.id}</p>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex flex-col gap-1.5">
@@ -404,6 +433,30 @@ const UserManagement = () => {
                         </tbody>
                     </table>
                 </div>
+                {!loading && !error && (
+                    <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-white">
+                        <div className="text-sm text-gray-500">
+                            Showing <span className="font-medium text-gray-900">{users.length}</span> of <span className="font-medium text-gray-900">{totalCount}</span> customers
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                disabled={!hasPrevPage}
+                                className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                            >
+                                <ChevronLeft size={16} /> Previous
+                            </button>
+                            <span className="text-sm font-medium text-gray-700 px-2">Page {page}</span>
+                            <button
+                                onClick={() => setPage((p) => p + 1)}
+                                disabled={!hasNextPage}
+                                className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                            >
+                                Next <ChevronRight size={16} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </Card>
 
             {/* Disable reason modal */}
@@ -412,9 +465,9 @@ const UserManagement = () => {
                     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => !disableSubmitting && setDisableTarget(null)} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
                         <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden">
-                            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
                                 <h2 className="text-xl font-bold text-gray-900">Disable Customer</h2>
-                                <button onClick={() => setDisableTarget(null)} disabled={disableSubmitting} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X size={20} className="text-gray-400" /></button>
+                                <button onClick={() => setDisableTarget(null)} disabled={disableSubmitting} className="p-2 hover:bg-gray-50 rounded-full transition-colors"><X size={20} className="text-gray-400" /></button>
                             </div>
                             <div className="p-6 space-y-4">
                                 <p className="text-sm text-gray-500">Disabling <span className="font-bold text-gray-900">{disableTarget.email}</span> immediately revokes their access. Provide a reason for the audit log.</p>
@@ -433,113 +486,11 @@ const UserManagement = () => {
             </AnimatePresence>
 
             {/* Detail slide-over */}
-            <AnimatePresence>
-                {detailId && (
-                    <>
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={closeDetail} className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" />
-                        <motion.div
-                            initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
-                            transition={{ type: 'spring', damping: 26, stiffness: 220 }}
-                            className="fixed inset-y-0 right-0 w-full max-w-lg bg-gray-50 shadow-2xl z-50 flex flex-col border-l border-gray-200"
-                        >
-                            <div className="px-6 py-4 border-b border-gray-100 bg-white flex items-center justify-between">
-                                <h2 className="text-lg font-bold text-gray-900 truncate">{detail ? userDisplayName(detail) : 'Customer'}</h2>
-                                <button onClick={closeDetail} className="p-2 hover:bg-gray-50 rounded-full transition-colors"><X size={20} className="text-gray-400" /></button>
-                            </div>
-
-                            <div className="flex-1 overflow-y-auto p-6 space-y-5">
-                                {detailLoading && !detail ? (
-                                    <div className="flex items-center justify-center py-16 text-gray-400"><Loader2 className="animate-spin" size={24} /></div>
-                                ) : detail ? (
-                                    <>
-                                        {/* Account */}
-                                        <SlideSection title="Account">
-                                            <div className="grid grid-cols-2 gap-3">
-                                                <KV label="Email" value={detail.email} icon={Mail} />
-                                                <KV label="Phone" value={detail.phone || '—'} icon={Phone} />
-                                                <KV label="Provider" value={detail.auth_provider} />
-                                                <KV label="Verified" value={detail.is_verified ? 'Yes' : 'No'} />
-                                                <KV label="Status" value={detail.is_active ? 'Active' : 'Disabled'} />
-                                                <KV label="Role" value={detail.role || 'customer'} />
-                                                <KV label="Last Login" value={formatDateTime(detail.last_login)} />
-                                                <KV label="Created" value={formatDateTime(detail.created_at)} />
-                                                {detail.forced_logout_at && <KV label="Forced Logout" value={formatDateTime(detail.forced_logout_at)} />}
-                                                {detail.disabled_at && <KV label="Disabled At" value={formatDateTime(detail.disabled_at)} />}
-                                                {detail.disabled_reason && <KV label="Disabled Reason" value={detail.disabled_reason} />}
-                                            </div>
-                                        </SlideSection>
-
-                                        {/* Customer profile */}
-                                        {detail.customer_profile && Object.keys(detail.customer_profile).length > 0 && (
-                                            <SlideSection title="Customer Profile">
-                                                <RecordGrid record={detail.customer_profile} />
-                                            </SlideSection>
-                                        )}
-
-                                        {/* Booking summary */}
-                                        {detail.booking_summary && Object.keys(detail.booking_summary).length > 0 && (
-                                            <SlideSection title="Booking Summary">
-                                                <RecordGrid record={detail.booking_summary} />
-                                            </SlideSection>
-                                        )}
-
-                                        {/* Security actions */}
-                                        {canManage && (
-                                            <SlideSection title="Security Actions">
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    {detail.is_active ? (
-                                                        <button onClick={() => { setDisableReason(''); setDisableTarget(detail); }} className="flex items-center justify-center gap-2 px-3 py-2.5 bg-red-50 text-red-600 text-xs font-bold rounded-xl hover:bg-red-100 transition-all"><Ban size={14} /> Disable</button>
-                                                    ) : (
-                                                        <button onClick={() => runRowAction('enable', () => enableUser(detail.id), 'Account re-enabled.', detail.id)} disabled={actionBusy === 'enable'} className="flex items-center justify-center gap-2 px-3 py-2.5 bg-green-50 text-green-700 text-xs font-bold rounded-xl hover:bg-green-100 transition-all disabled:opacity-60">{actionBusy === 'enable' ? <Loader2 size={14} className="animate-spin" /> : <CircleCheck size={14} />} Enable</button>
-                                                    )}
-                                                    <button onClick={() => runRowAction('logout', () => forceLogoutUser(detail.id), 'User force-logged out.', detail.id)} disabled={actionBusy === 'logout' || !detail.is_active} className="flex items-center justify-center gap-2 px-3 py-2.5 bg-amber-50 text-amber-700 text-xs font-bold rounded-xl hover:bg-amber-100 transition-all disabled:opacity-50"><LogOut size={14} /> Force Logout</button>
-                                                    <button onClick={() => runRowAction('otp', () => resetUserOtp(detail.id), 'OTP sent to the customer.', detail.id)} disabled={actionBusy === 'otp' || !detail.is_active} className="flex items-center justify-center gap-2 px-3 py-2.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-xl hover:bg-blue-100 transition-all disabled:opacity-50"><KeyRound size={14} /> Send OTP</button>
-                                                </div>
-                                            </SlideSection>
-                                        )}
-
-                                        {/* Login history */}
-                                        <SlideSection title="Login History" icon={History}>
-                                            {loginHistory.length ? (
-                                                <div className="space-y-2">
-                                                    {loginHistory.map((e) => (
-                                                        <div key={e.id} className="flex items-center justify-between text-xs bg-white rounded-lg px-3 py-2 border border-gray-100">
-                                                            <div className="min-w-0">
-                                                                <p className="font-bold text-gray-800 truncate">{e.ip_address || '—'} · <span className="font-normal text-gray-500">{e.auth_provider}</span></p>
-                                                                <p className="text-[10px] text-gray-400 truncate">{e.device_info || '—'}</p>
-                                                            </div>
-                                                            <span className="text-[10px] text-gray-400 shrink-0 ml-2">{formatDateTime(e.created_at)}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            ) : <p className="text-xs text-gray-400">No login history.</p>}
-                                        </SlideSection>
-
-                                        {/* Security log */}
-                                        <SlideSection title="Admin Security Log" icon={ShieldAlert}>
-                                            {securityLog.length ? (
-                                                <div className="space-y-2">
-                                                    {securityLog.map((s) => (
-                                                        <div key={s.id} className="text-xs bg-white rounded-lg px-3 py-2 border border-gray-100">
-                                                            <div className="flex items-center justify-between">
-                                                                <span className="font-bold text-gray-800 capitalize">{humanizeKey(s.action)}</span>
-                                                                <span className="text-[10px] text-gray-400">{formatDateTime(s.created_at)}</span>
-                                                            </div>
-                                                            <p className="text-[10px] text-gray-400 mt-0.5">by {s.admin_email || 'system'}{s.ip_address ? ` · ${s.ip_address}` : ''}</p>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            ) : <p className="text-xs text-gray-400">No admin actions recorded.</p>}
-                                        </SlideSection>
-                                    </>
-                                ) : (
-                                    <EmptyState icon={AlertCircle} title="Couldn't load user" />
-                                )}
-                            </div>
-                        </motion.div>
-                    </>
-                )}
-            </AnimatePresence>
+            <UserHistorySlideOut
+                user={selectedUser}
+                onClose={closeDetail}
+                onChanged={loadUsers}
+            />
         </div>
     );
 };
@@ -548,44 +499,13 @@ const UserManagement = () => {
 
 function MiniMetric({ label, value }: { label: string; value: number }) {
     return (
-        <div className="bg-white border border-gray-100 rounded-xl px-4 py-3">
+        <div className="bg-white border border-gray-200 rounded-xl px-4 py-3">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</p>
             <p className="text-lg font-bold text-gray-900">{value}</p>
         </div>
     );
 }
 
-function SlideSection({ title, icon: Icon, children }: { title: string; icon?: typeof Mail; children: ReactNode }) {
-    return (
-        <div className="bg-white rounded-2xl border border-gray-100 p-4">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                {Icon && <Icon size={13} />} {title}
-            </h3>
-            {children}
-        </div>
-    );
-}
 
-function KV({ label, value, icon: Icon }: { label: string; value: string; icon?: typeof Mail }) {
-    return (
-        <div className="flex flex-col gap-0.5">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1">{Icon && <Icon size={11} />}{label}</span>
-            <span className="text-sm text-gray-800 break-all">{value}</span>
-        </div>
-    );
-}
-
-function RecordGrid({ record }: { record: Record<string, unknown> }) {
-    return (
-        <div className="grid grid-cols-2 gap-3">
-            {Object.entries(record).map(([k, v]) => (
-                <div key={k} className="flex flex-col gap-0.5">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{humanizeKey(k)}</span>
-                    <span className="text-sm text-gray-800 break-all">{v === null || v === undefined || v === '' ? '—' : String(v)}</span>
-                </div>
-            ))}
-        </div>
-    );
-}
 
 export default UserManagement;

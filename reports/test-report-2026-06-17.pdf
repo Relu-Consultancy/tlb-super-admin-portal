@@ -1,0 +1,252 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier-Bold /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Length 8076 >>
+stream
+0.1 0.1 0.12 rg BT /F2 22 Tf 1 0 0 1 54 744 Tm (TLB Admin Portal) Tj ET
+0.45 0.45 0.5 rg BT /F1 14 Tf 1 0 0 1 54 718 Tm (Automated Test Report) Tj ET
+0.45 0.45 0.5 rg BT /F1 10 Tf 1 0 0 1 54 694 Tm (Generated: 2026-06-17    Branch: dev-vishesh) Tj ET
+0.85 0.85 0.88 RG 0.7 w 54 674 m 558 674 l S
+0.1 0.1 0.12 rg BT /F2 14 Tf 1 0 0 1 54 664 Tm (Result Summary) Tj ET
+0.1 0.55 0.25 rg BT /F2 12 Tf 1 0 0 1 54 642 Tm (OVERALL: PASS - all quality gates green) Tj ET
+0.1 0.1 0.12 rg BT /F3 10 Tf 1 0 0 1 54 620 Tm (Test files:        51 / 51 passed) Tj ET
+0.2 0.2 0.25 rg BT /F3 10 Tf 1 0 0 1 54 606 Tm (Test cases:        346 / 346 passed   \(0 failed\)) Tj ET
+0.1 0.1 0.12 rg BT /F3 10 Tf 1 0 0 1 54 592 Tm (Test runtime:      106.1s \(sum of file times\)) Tj ET
+0.1 0.55 0.25 rg BT /F3 10 Tf 1 0 0 1 54 578 Tm (TypeScript \(tsc\):  PASS  \(excluding legacy src/pages/UserSection\)) Tj ET
+0.1 0.55 0.25 rg BT /F3 10 Tf 1 0 0 1 54 564 Tm (Production build:  PASS  \(vite build\)) Tj ET
+0.85 0.85 0.88 RG 0.7 w 54 544 m 558 544 l S
+0.1 0.1 0.12 rg BT /F2 14 Tf 1 0 0 1 54 534 Tm (Scope of this run) Tj ET
+0.25 0.25 0.3 rg BT /F1 10 Tf 1 0 0 1 54 512 Tm (Full Vitest suite: API service unit tests \(paths, params, envelope, normalization,) Tj ET
+0.25 0.25 0.3 rg BT /F1 10 Tf 1 0 0 1 54 498 Tm (helpers\) plus per-screen component tests \(render, gating, flows, error states\).) Tj ET
+0.25 0.25 0.3 rg BT /F1 10 Tf 1 0 0 1 54 484 Tm (TypeScript type-check across the app \(legacy src/pages/UserSection excluded\).) Tj ET
+0.25 0.25 0.3 rg BT /F1 10 Tf 1 0 0 1 54 470 Tm (Production Vite build \(bundling + tree-shake verification\).) Tj ET
+0.85 0.85 0.88 RG 0.7 w 54 450 m 558 450 l S
+0.1 0.1 0.12 rg BT /F2 14 Tf 1 0 0 1 54 440 Tm (Per-file Results) Tj ET
+0.45 0.45 0.5 rg BT /F4 9 Tf 1 0 0 1 54 420 Tm (FILE) Tj ET
+0.45 0.45 0.5 rg BT /F4 9 Tf 1 0 0 1 430 420 Tm (TESTS) Tj ET
+0.45 0.45 0.5 rg BT /F4 9 Tf 1 0 0 1 505 420 Tm (STATUS) Tj ET
+0.85 0.85 0.88 RG 0.7 w 54 405 m 558 405 l S
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 395 Tm (src/App.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 395 Tm (9/9) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 395 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 382.5 Tm (src/modules/admin/AdminManagement.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 382.5 Tm (8/8) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 382.5 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 370 Tm (src/modules/analytics/Analytics.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 370 Tm (6/6) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 370 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 357.5 Tm (src/modules/auth/ForgotPasswordScreen.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 357.5 Tm (4/4) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 357.5 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 345 Tm (src/modules/auth/LandingPage.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 345 Tm (4/4) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 345 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 332.5 Tm (src/modules/auth/LoginScreen.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 332.5 Tm (10/10) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 332.5 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 320 Tm (src/modules/auth/ResetPasswordScreen.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 320 Tm (5/5) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 320 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 307.5 Tm (src/modules/broadcasts/Broadcasts.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 307.5 Tm (7/7) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 307.5 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 295 Tm (src/modules/dashboard/Dashboard.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 295 Tm (8/8) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 295 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 282.5 Tm (src/modules/events/EventApproval.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 282.5 Tm (14/14) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 282.5 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 270 Tm (src/modules/finance/FinanceDashboard.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 270 Tm (6/6) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 270 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 257.5 Tm (src/modules/finance/PaymentsFinance.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 257.5 Tm (6/6) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 257.5 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 245 Tm (src/modules/marketing/CouponsMarketing.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 245 Tm (6/6) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 245 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 232.5 Tm (src/modules/marketing/CreateCoupon.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 232.5 Tm (6/6) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 232.5 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 220 Tm (src/modules/partners/PartnerManagement.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 220 Tm (8/8) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 220 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 207.5 Tm (src/modules/settings/Settings.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 207.5 Tm (10/10) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 207.5 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 195 Tm (src/modules/support/SupportSystem.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 195 Tm (9/9) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 195 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 182.5 Tm (src/modules/tlb/CreateTlbSignature.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 182.5 Tm (4/4) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 182.5 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 170 Tm (src/modules/tlb/TlbSignature.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 170 Tm (5/5) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 170 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 157.5 Tm (src/modules/userapp/UserAppAlignment.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 157.5 Tm (11/11) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 157.5 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 145 Tm (src/modules/users/UserManagement.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 145 Tm (6/6) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 145 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 132.5 Tm (src/modules/users/UserSection/GlobalHealthMetrics.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 132.5 Tm (4/4) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 132.5 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 120 Tm (src/modules/users/UserSection/UserDirectoryGrid.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 120 Tm (5/5) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 120 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 107.5 Tm (src/modules/users/UserSection/UserHistorySlideOut.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 107.5 Tm (8/8) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 107.5 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 95 Tm (src/modules/users/UserSection/UserSection.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 95 Tm (7/7) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 95 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 82.5 Tm (src/shared/auth/AuthContext.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 82.5 Tm (8/8) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 82.5 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 70 Tm (src/shared/components/ErrorBoundary.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 70 Tm (5/5) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 70 Tm (pass) Tj ET
+endstream
+endobj
+6 0 obj
+<< /Length 7992 >>
+stream
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 744 Tm (src/shared/components/layout/Sidebar.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 744 Tm (5/5) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 744 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 731.5 Tm (src/shared/components/ui/Card.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 731.5 Tm (4/4) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 731.5 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 719 Tm (src/shared/components/ui/EmptyState.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 719 Tm (4/4) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 719 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 706.5 Tm (src/shared/components/ui/SidebarItem.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 706.5 Tm (5/5) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 706.5 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 694 Tm (src/shared/components/ui/StatCard.test.tsx) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 694 Tm (5/5) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 694 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 681.5 Tm (src/shared/lib/api/admins.test.ts) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 681.5 Tm (8/8) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 681.5 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 669 Tm (src/shared/lib/api/auditLogs.test.ts) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 669 Tm (6/6) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 669 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 656.5 Tm (src/shared/lib/api/auth.test.ts) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 656.5 Tm (7/7) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 656.5 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 644 Tm (src/shared/lib/api/broadcasts.test.ts) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 644 Tm (8/8) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 644 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 631.5 Tm (src/shared/lib/api/client.test.ts) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 631.5 Tm (9/9) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 631.5 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 619 Tm (src/shared/lib/api/config.test.ts) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 619 Tm (7/7) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 619 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 606.5 Tm (src/shared/lib/api/coupons.test.ts) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 606.5 Tm (4/4) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 606.5 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 594 Tm (src/shared/lib/api/finance.test.ts) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 594 Tm (7/7) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 594 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 581.5 Tm (src/shared/lib/api/listings.test.ts) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 581.5 Tm (12/12) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 581.5 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 569 Tm (src/shared/lib/api/listingSections.test.ts) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 569 Tm (7/7) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 569 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 556.5 Tm (src/shared/lib/api/partners.test.ts) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 556.5 Tm (9/9) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 556.5 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 544 Tm (src/shared/lib/api/profile.test.ts) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 544 Tm (2/2) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 544 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 531.5 Tm (src/shared/lib/api/roles.test.ts) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 531.5 Tm (6/6) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 531.5 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 519 Tm (src/shared/lib/api/stats.test.ts) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 519 Tm (4/4) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 519 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 506.5 Tm (src/shared/lib/api/support.test.ts) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 506.5 Tm (12/12) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 506.5 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 494 Tm (src/shared/lib/api/tlbSignature.test.ts) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 494 Tm (7/7) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 494 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 481.5 Tm (src/shared/lib/api/token.test.ts) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 481.5 Tm (4/4) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 481.5 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 469 Tm (src/shared/lib/api/users.test.ts) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 469 Tm (8/8) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 469 Tm (pass) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 54 456.5 Tm (src/shared/lib/utils.test.ts) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 430 456.5 Tm (7/7) Tj ET
+0.2 0.2 0.25 rg BT /F3 8.5 Tf 1 0 0 1 505 456.5 Tm (pass) Tj ET
+0.85 0.85 0.88 RG 0.7 w 54 436 m 558 436 l S
+0.1 0.1 0.12 rg BT /F2 14 Tf 1 0 0 1 54 426 Tm (Issues & Observations) Tj ET
+0.1 0.55 0.25 rg BT /F1 10 Tf 1 0 0 1 54 404 Tm (No open defects. No skipped, only-d, or pending tests. No stray debug code.) Tj ET
+0.1 0.1 0.12 rg BT /F2 10 Tf 1 0 0 1 54 384 Tm (Known limitations \(by design, not defects\):) Tj ET
+0.3 0.3 0.35 rg BT /F1 9.5 Tf 1 0 0 1 54 370 Tm (1. Finance dashboard/summary: the /finance/dashboard/ response shape is not pinned in) Tj ET
+0.3 0.3 0.35 rg BT /F1 9.5 Tf 1 0 0 1 54 356.5 Tm (   the API docs, so trend & breakdowns are parsed defensively; KPIs come from the) Tj ET
+0.3 0.3 0.35 rg BT /F1 9.5 Tf 1 0 0 1 54 343 Tm (   documented /finance/summary/ endpoint. Counts are coerced safely \(live API may omit) Tj ET
+0.3 0.3 0.35 rg BT /F1 9.5 Tf 1 0 0 1 54 329.5 Tm (   transaction_count / refund_count\).) Tj ET
+0.3 0.3 0.35 rg BT /F1 9.5 Tf 1 0 0 1 54 316 Tm (2. TLB Signature create: mode / booking-type dropdowns assume standard tokens) Tj ET
+0.3 0.3 0.35 rg BT /F1 9.5 Tf 1 0 0 1 54 302.5 Tm (   \(online|offline|hybrid, enquiry|booking\); format / price_type / program_format /) Tj ET
+0.3 0.3 0.35 rg BT /F1 9.5 Tf 1 0 0 1 54 289 Tm (   location_type stay free-text \(values not documented\).) Tj ET
+0.3 0.3 0.35 rg BT /F1 9.5 Tf 1 0 0 1 54 275.5 Tm (3. No categories API under /admin/listings/ - category_id / subcategory_id are numeric) Tj ET
+0.3 0.3 0.35 rg BT /F1 9.5 Tf 1 0 0 1 54 262 Tm (   inputs rather than pickers.) Tj ET
+0.3 0.3 0.35 rg BT /F1 9.5 Tf 1 0 0 1 54 248.5 Tm (4. Finance Payouts / Refunds / Reconciliation endpoints exist but are out of scope for) Tj ET
+0.3 0.3 0.35 rg BT /F1 9.5 Tf 1 0 0 1 54 235 Tm (   the current Dashboard + Transactions work \(Phase 2 screens\).) Tj ET
+0.85 0.85 0.88 RG 0.7 w 54 215.5 m 558 215.5 l S
+0.1 0.1 0.12 rg BT /F2 14 Tf 1 0 0 1 54 205.5 Tm (Recently Fixed \(verified this cycle\)) Tj ET
+0.3 0.3 0.35 rg BT /F1 9.5 Tf 1 0 0 1 54 183.5 Tm (Finance Dashboard crash: .toLocaleString\(\) on undefined counts -> safe coercion.) Tj ET
+0.3 0.3 0.35 rg BT /F1 9.5 Tf 1 0 0 1 54 170 Tm (Finance export button: errors no longer blank the dashboard \(separate banner\); poll now) Tj ET
+0.3 0.3 0.35 rg BT /F1 9.5 Tf 1 0 0 1 54 156.5 Tm (accepts any terminal status \(complete|success|done|ready|finish\).) Tj ET
+0.3 0.3 0.35 rg BT /F1 9.5 Tf 1 0 0 1 54 143 Tm (UserApp Alignment page-switch race: loadedBase guard prevents stale-base fetches.) Tj ET
+0.3 0.3 0.35 rg BT /F1 9.5 Tf 1 0 0 1 54 129.5 Tm (TLB Signature path: corrected to /admin/listings/tlb-signature/.) Tj ET
+0.3 0.3 0.35 rg BT /F1 9.5 Tf 1 0 0 1 54 116 Tm (Homepage/discovery sections: wrapped-object responses unwrapped \(results/listings/items\).) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 9 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R /F4 4 0 R >> >> /Contents 5 0 R >>
+endobj
+8 0 obj
+<< /Type /Page /Parent 9 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R /F4 4 0 R >> >> /Contents 6 0 R >>
+endobj
+9 0 obj
+<< /Type /Pages /Count 2 /Kids [7 0 R 8 0 R] >>
+endobj
+10 0 obj
+<< /Type /Catalog /Pages 9 0 R >>
+endobj
+xref
+0 11
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000303 00000 n 
+0000000403 00000 n 
+0000008531 00000 n 
+0000016575 00000 n 
+0000016731 00000 n 
+0000016887 00000 n 
+0000016950 00000 n 
+trailer
+<< /Size 11 /Root 10 0 R >>
+startxref
+17000
+%%EOF

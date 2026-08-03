@@ -28,6 +28,7 @@ vi.mock('../../shared/auth/AuthContext', () => ({
 }));
 
 vi.mock('../../shared/lib/api', () => ({
+    listUsersPaginated: vi.fn(),
     listUsers: vi.fn(),
     getUser: vi.fn((id: string) => Promise.resolve({
         id, email: 'active@tlb.com', phone: '999', role: 'customer', auth_provider: 'otp',
@@ -37,6 +38,7 @@ vi.mock('../../shared/lib/api', () => ({
     })),
     getUserMetrics: vi.fn(() => Promise.resolve({
         total_users: 8, active_users: 5, inactive_users: 3, deleted_users: 0,
+        enabled_users: 9, disabled_users: 10,
         new_today: 1, new_this_week: 2, new_this_month: 4, by_auth_provider: { otp: 6, google: 2 },
     })),
     getUserLoginHistory: vi.fn(() => Promise.resolve([])),
@@ -54,7 +56,7 @@ vi.mock('../../shared/lib/api', () => ({
     humanizeKey: (k: string) => k,
     ApiError: class ApiError extends Error { code: string | null = null; },
 }));
-import { listUsers, disableUser } from '../../shared/lib/api';
+import { listUsersPaginated, disableUser } from '../../shared/lib/api';
 
 const USERS = [
     { id: 'u-1', email: 'active@tlb.com', first_name: 'Ann', last_name: 'A', phone: '1', auth_provider: 'otp', is_active: true, is_verified: true, is_profile_complete: true, disabled_at: null, last_login: '2026-06-01T10:00:00Z', created_at: '2026-01-01T00:00:00Z', booking_stats: { total_bookings: 7, total_spend: 1500 } },
@@ -65,13 +67,13 @@ describe('UserManagement', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         authState.canManage = true;
-        (listUsers as any).mockResolvedValue(USERS);
+        (listUsersPaginated as any).mockResolvedValue({ count: 2, next: null, previous: null, results: USERS });
     });
 
     it('renders heading and metrics', async () => {
         render(<UserManagement />);
-        expect(screen.getByText('User Management')).toBeInTheDocument();
-        expect(await screen.findByText('Total Users')).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'Customers' })).toBeInTheDocument();
+        expect(await screen.findByText('Total Customers')).toBeInTheDocument();
         expect(await screen.findByText('8')).toBeInTheDocument();
     });
 
@@ -83,7 +85,7 @@ describe('UserManagement', () => {
     });
 
     it('shows an empty state when no users match', async () => {
-        (listUsers as any).mockResolvedValue([]);
+        (listUsersPaginated as any).mockResolvedValue({ count: 0, next: null, previous: null, results: [] });
         render(<UserManagement />);
         expect(await screen.findByText('No users found')).toBeInTheDocument();
     });

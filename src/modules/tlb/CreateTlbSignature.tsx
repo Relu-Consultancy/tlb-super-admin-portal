@@ -14,6 +14,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import Card from '../../shared/components/ui/Card';
+import Select, { type SelectOption } from '../../shared/components/ui/Select';
 import { cn } from '../../shared/lib/utils';
 import { useAuth } from '../../shared/auth/AuthContext';
 import {
@@ -273,10 +274,10 @@ const CreateTlbSignature = ({ onBack, onCreated }: Props) => {
               <button
                 key={t}
                 onClick={() => pickType(t)}
-                className="text-left rounded-2xl border border-gray-100 bg-white p-5 hover:border-yellow-300 hover:shadow-sm transition-all"
+                className="text-left rounded-2xl border border-gray-200 bg-white p-5 hover:border-yellow-300 hover:shadow-sm transition-all"
               >
                 <div className={cn('w-11 h-11 rounded-xl bg-gradient-to-br flex items-center justify-center mb-3', m.grad)}>
-                  <m.Icon size={22} className="text-white" />
+                  <m.Icon size={22} className="text-gray-900" />
                 </div>
                 <p className="font-bold text-gray-900">{m.label}</p>
                 <p className="text-xs text-gray-400 mt-0.5">{m.blurb}</p>
@@ -289,7 +290,7 @@ const CreateTlbSignature = ({ onBack, onCreated }: Props) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className={cn('w-9 h-9 rounded-xl bg-gradient-to-br flex items-center justify-center', TYPE_META[type].grad)}>
-                {(() => { const I = TYPE_META[type].Icon; return <I size={18} className="text-white" />; })()}
+                {(() => { const I = TYPE_META[type].Icon; return <I size={18} className="text-gray-900" />; })()}
               </span>
               <span className="font-bold text-gray-900">New {TYPE_META[type].label}</span>
             </div>
@@ -346,8 +347,8 @@ const CreateTlbSignature = ({ onBack, onCreated }: Props) => {
             ) : (
               <div className="space-y-3">
                 {rows.map((r, i) => (
-                  <div key={i} className="rounded-xl border border-gray-100 p-3 relative">
-                    <button onClick={() => removeRow(i)} aria-label="Remove row" className="absolute top-2 right-2 p-1 text-gray-300 hover:text-red-500">
+                  <div key={i} className="rounded-xl border border-gray-200 p-3 relative">
+                    <button onClick={() => removeRow(i)} aria-label="Remove row" className="absolute top-2 right-2 p-1 text-gray-700 hover:text-red-500">
                       <Trash2 size={14} />
                     </button>
                     {type === 'event' && <TicketRow r={r} on={(k, v) => setRow(i, k, v)} />}
@@ -396,34 +397,24 @@ function Field({ label, required, children }: { label: string; required?: boolea
     </label>
   );
 }
-const inputCls = 'w-full px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40';
+const inputCls = 'w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40';
 function Text({ value, onChange, placeholder, type = 'text' }: { value?: string; onChange: (v: string) => void; placeholder?: string; type?: string }) {
   return <input type={type} value={value ?? ''} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className={inputCls} />;
 }
 function Area({ value, onChange, placeholder }: { value?: string; onChange: (v: string) => void; placeholder?: string }) {
   return <textarea value={value ?? ''} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} rows={3} className={inputCls} />;
 }
-interface Option { value: string; label: string }
-function Select({ value, onChange, options, placeholder = 'Select…' }: { value?: string; onChange: (v: string) => void; options: Option[]; placeholder?: string }) {
-  return (
-    <select value={value ?? ''} onChange={(e) => onChange(e.target.value)} className={inputCls}>
-      <option value="">{placeholder}</option>
-      {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-    </select>
-  );
-}
 
-// Fixed-option value sets surfaced as dropdowns.
-const MODE_OPTIONS: Option[] = [
+const MODE_OPTIONS: SelectOption[] = [
   { value: 'online', label: 'Online' },
   { value: 'offline', label: 'Offline' },
   { value: 'hybrid', label: 'Hybrid' },
 ];
-const BOOKING_TYPE_OPTIONS: Option[] = [
+const BOOKING_TYPE_OPTIONS: SelectOption[] = [
   { value: 'enquiry', label: 'Enquiry' },
   { value: 'booking', label: 'Booking' },
 ];
-const YES_NO: Option[] = [
+const YES_NO: SelectOption[] = [
   { value: 'true', label: 'Yes' },
   { value: 'false', label: 'No' },
 ];

@@ -3,21 +3,13 @@ import { Inbox } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 interface EmptyStateProps {
-  /** Icon shown above the message. Defaults to an inbox. */
   icon?: LucideIcon;
-  /** Short headline, e.g. "No partners yet". */
   title?: string;
-  /** Optional supporting line. */
   description?: string;
-  /** Optional action (e.g. a button) rendered below the text. */
   action?: React.ReactNode;
   className?: string;
 }
 
-/**
- * Neutral placeholder for screens/sections whose data source is not yet
- * connected. Keeps the surrounding layout intact while signalling "no data".
- */
 const EmptyState = ({
   icon: Icon = Inbox,
   title = 'No data yet',

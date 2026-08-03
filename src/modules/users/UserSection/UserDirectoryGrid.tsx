@@ -13,6 +13,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import Card from '../../../shared/components/ui/Card';
 import EmptyState from '../../../shared/components/ui/EmptyState';
+import Select from '../../../shared/components/ui/Select';
 import { cn } from '../../../shared/lib/utils';
 import { useAuth } from '../../../shared/auth/AuthContext';
 import { listUsers, disableUser, enableUser, userDisplayName, ApiError, type AdminUserListItem } from '../../../shared/lib/api';
@@ -142,15 +143,16 @@ const UserDirectoryGrid = ({ onOpenHistory, refreshSignal }: UserDirectoryGridPr
                     />
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                 </div>
-                <select
+                <Select
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value as '' | 'active' | 'disabled')}
-                    className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 appearance-none cursor-pointer"
-                >
-                    <option value="">All Account Status</option>
-                    <option value="active">Active</option>
-                    <option value="disabled">Disabled</option>
-                </select>
+                    onChange={(v) => setStatusFilter(v as '' | 'active' | 'disabled')}
+                    placeholder="All Account Status"
+                    options={[
+                        { value: '', label: 'All Account Status' },
+                        { value: 'active', label: 'Active' },
+                        { value: 'disabled', label: 'Disabled' },
+                    ]}
+                />
             </div>
 
             {toast && (
@@ -172,7 +174,7 @@ const UserDirectoryGrid = ({ onOpenHistory, refreshSignal }: UserDirectoryGridPr
                 <div className="overflow-x-auto">
                     <table className="w-full text-left whitespace-nowrap">
                         <thead>
-                            <tr className="bg-gray-50 border-b border-gray-100">
+                            <tr className="bg-gray-50 border-b border-gray-200">
                                 <th className="px-5 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Customer</th>
                                 <th className="px-5 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Provider &amp; Verified</th>
                                 <th className="px-5 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Last Login</th>
@@ -180,7 +182,7 @@ const UserDirectoryGrid = ({ onOpenHistory, refreshSignal }: UserDirectoryGridPr
                                 <th className="px-5 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Action</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-50">
+                        <tbody className="divide-y divide-gray-100">
                             {loading ? (
                                 <tr><td colSpan={5}><div className="flex items-center justify-center py-16 text-gray-400"><Loader2 className="animate-spin" size={24} /></div></td></tr>
                             ) : error ? (
@@ -192,7 +194,7 @@ const UserDirectoryGrid = ({ onOpenHistory, refreshSignal }: UserDirectoryGridPr
                                     <tr key={c.id} className="hover:bg-yellow-50/30 transition-colors">
                                         <td className="px-5 py-4">
                                             <div className="flex items-center gap-3">
-                                                <img src={`https://picsum.photos/seed/${c.email}/100/100`} className="w-10 h-10 rounded-xl object-cover border border-gray-100" alt="" />
+                                                <img src={`https://picsum.photos/seed/${c.email}/100/100`} className="w-10 h-10 rounded-xl object-cover border border-gray-200" alt="" />
                                                 <div>
                                                     <p className="text-sm font-bold text-gray-900">{userDisplayName(c)}</p>
                                                     <p className="text-xs text-gray-500">{c.email}</p>
@@ -203,7 +205,7 @@ const UserDirectoryGrid = ({ onOpenHistory, refreshSignal }: UserDirectoryGridPr
                                         <td className="px-5 py-4">
                                             <div className="flex flex-col gap-1.5">
                                                 <span className="w-fit px-2 py-1 bg-gray-100 text-gray-600 text-[10px] font-bold rounded-md uppercase tracking-wider">{c.auth_provider || '—'}</span>
-                                                <span className={cn('w-fit px-2 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider', c.is_verified ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500')}>
+                                                <span className={cn('w-fit px-2 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider', c.is_verified ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400')}>
                                                     {c.is_verified ? 'Verified' : 'Unverified'}
                                                 </span>
                                             </div>
@@ -244,7 +246,7 @@ const UserDirectoryGrid = ({ onOpenHistory, refreshSignal }: UserDirectoryGridPr
                     </table>
                 </div>
                 {!loading && !error && customers.length > 0 && (
-                    <div className="p-3 bg-gray-50 border-t border-gray-100 text-xs text-gray-500">{customers.length} users</div>
+                    <div className="p-3 bg-gray-50 border-t border-gray-200 text-xs text-gray-500">{customers.length} users</div>
                 )}
             </Card>
 
@@ -254,9 +256,9 @@ const UserDirectoryGrid = ({ onOpenHistory, refreshSignal }: UserDirectoryGridPr
                     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => !disableSubmitting && setDisableTarget(null)} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
                         <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden">
-                            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
                                 <h2 className="text-xl font-bold text-gray-900">Disable Customer</h2>
-                                <button onClick={() => setDisableTarget(null)} disabled={disableSubmitting} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X size={20} className="text-gray-400" /></button>
+                                <button onClick={() => setDisableTarget(null)} disabled={disableSubmitting} className="p-2 hover:bg-gray-50 rounded-full transition-colors"><X size={20} className="text-gray-400" /></button>
                             </div>
                             <div className="p-6 space-y-4">
                                 <p className="text-sm text-gray-500">Disabling <span className="font-bold text-gray-900">{disableTarget.email}</span> immediately revokes their access. Provide a reason for the audit log.</p>

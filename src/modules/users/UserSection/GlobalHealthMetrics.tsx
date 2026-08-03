@@ -24,9 +24,9 @@ const GlobalHealthMetrics = ({ onBroadcast }: { onBroadcast?: () => void }) => {
                     </div>
                     <div>
                         <h3 className="text-2xl font-bold text-gray-900">{n(metrics?.active_users)}</h3>
-                        <p className="text-sm font-medium text-gray-500">Active Users</p>
+                        <p className="text-sm font-medium text-gray-500">Active Users (30d)</p>
                     </div>
-                    <div className="pt-3 border-t border-gray-100">
+                    <div className="pt-3 border-t border-gray-200">
                         <p className="text-xs text-gray-500"><span className="font-bold text-gray-700">New today:</span> {n(metrics?.new_today)}</p>
                         <p className="text-xs text-gray-500 mt-1"><span className="font-bold text-gray-700">New this month:</span> {n(metrics?.new_this_month)}</p>
                     </div>
@@ -41,7 +41,7 @@ const GlobalHealthMetrics = ({ onBroadcast }: { onBroadcast?: () => void }) => {
                         <h3 className="text-2xl font-bold text-gray-900">{n(metrics?.total_users)}</h3>
                         <p className="text-sm font-medium text-gray-500">Total Registered Users</p>
                     </div>
-                    <div className="pt-3 border-t border-gray-100">
+                    <div className="pt-3 border-t border-gray-200">
                         <p className="text-xs text-gray-500"><span className="font-bold text-gray-700">OTP:</span> {n(metrics?.by_auth_provider?.otp)}</p>
                         <p className="text-xs text-gray-500 mt-1"><span className="font-bold text-gray-700">Google:</span> {n(metrics?.by_auth_provider?.google)}</p>
                     </div>
@@ -54,11 +54,11 @@ const GlobalHealthMetrics = ({ onBroadcast }: { onBroadcast?: () => void }) => {
                     </div>
                     <div>
                         <h3 className="text-2xl font-bold text-gray-900">{n(metrics?.inactive_users)}</h3>
-                        <p className="text-sm font-medium text-gray-500">Inactive Accounts</p>
+                        <p className="text-sm font-medium text-gray-500">Inactive Users (30d)</p>
                     </div>
-                    <div className="pt-3 border-t border-gray-100">
-                        <p className="text-xs text-gray-500"><span className="font-bold text-gray-700">Deleted:</span> {n(metrics?.deleted_users)}</p>
-                        <p className="text-xs text-gray-500 mt-1"><span className="font-bold text-gray-700">Total:</span> {n(metrics?.total_users)}</p>
+                    <div className="pt-3 border-t border-gray-200">
+                        <p className="text-xs text-gray-500"><span className="font-bold text-gray-700">Disabled accounts:</span> {n(metrics?.disabled_users)}</p>
+                        <p className="text-xs text-gray-500 mt-1"><span className="font-bold text-gray-700">Deleted:</span> {n(metrics?.deleted_users)}</p>
                     </div>
                 </Card>
             </div>
@@ -71,7 +71,7 @@ const GlobalHealthMetrics = ({ onBroadcast }: { onBroadcast?: () => void }) => {
                 <button
                     onClick={onBroadcast}
                     disabled={!onBroadcast}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-yellow-400 text-gray-900 font-bold rounded-xl shadow-md shadow-yellow-400/20 hover:bg-yellow-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 px-6 py-2.5 bg-yellow-400 text-gray-900 font-bold rounded-xl shadow-lg shadow-yellow-400/20 hover:bg-yellow-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <Megaphone size={16} /> New Broadcast
                 </button>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, type ReactNode } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
     Search,
     Eye,
@@ -27,6 +27,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import Card from '../../shared/components/ui/Card';
 import EmptyState from '../../shared/components/ui/EmptyState';
+import Select from '../../shared/components/ui/Select';
 import { cn } from '../../shared/lib/utils';
 import { useAuth } from '../../shared/auth/AuthContext';
 import {
@@ -36,6 +37,7 @@ import {
     getListingHistory,
     approveListing,
     rejectListing,
+    getListingRejectionReasons,
     setListingVisibility,
     listingStatusLabel,
     listingStatusTone,
@@ -51,6 +53,7 @@ import {
     type ListingReviewLog,
     type ListingStats,
     type ListListingsParams,
+    type RejectionReason,
 } from '../../shared/lib/api';
 
 function formatDateTime(iso: string | null | undefined): string {
@@ -114,7 +117,7 @@ function SmartValue({ value }: { value: unknown }) {
                 <Check size={11} /> Yes
             </span>
         ) : (
-            <span className="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-500 text-[11px] font-bold rounded-full">No</span>
+            <span className="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-400 text-[11px] font-bold rounded-full">No</span>
         );
     }
     if (typeof value === 'number') return <>{value.toLocaleString()}</>;
@@ -130,7 +133,12 @@ function SmartValue({ value }: { value: unknown }) {
 
 type Toast = { type: 'success' | 'error'; text: string } | null;
 
-const EventApproval = () => {
+interface EventApprovalProps {
+    /** Pre-select a listing vertical (from the Partners sidebar sub-item). */
+    listingType?: string;
+}
+
+const EventApproval = ({ listingType = '' }: EventApprovalProps) => {
     const { hasPermission } = useAuth();
     const canManage = hasPermission('MANAGE_LISTINGS');
 
@@ -144,7 +152,8 @@ const EventApproval = () => {
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
-    const [typeFilter, setTypeFilter] = useState('');
+    // Seeded from the Partners sub-item; the dropdown can still change it within the tab.
+    const [typeFilter, setTypeFilter] = useState(listingType);
 
     // Review (detail) view
     const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -156,6 +165,7 @@ const EventApproval = () => {
     const [directBusy, setDirectBusy] = useState<string | null>(null);
     const [rejectOpen, setRejectOpen] = useState(false);
     const [rejectReason, setRejectReason] = useState('');
+    const [rejectReasonCodes, setRejectReasonCodes] = useState<string[]>([]);
     const [rejectSubmitting, setRejectSubmitting] = useState(false);
     const [lightbox, setLightbox] = useState<string | null>(null);
 
@@ -255,14 +265,15 @@ const EventApproval = () => {
 
     const submitReject = async () => {
         if (!selectedId) return;
-        const reason = rejectReason.trim();
-        if (!reason) return;
+        const comment = rejectReason.trim();
+        if (!comment) return;
         setRejectSubmitting(true);
         try {
-            await rejectListing(selectedId, reason);
+            await rejectListing(selectedId, comment, rejectReasonCodes.length ? rejectReasonCodes : undefined);
             flash('success', 'Listing rejected. The partner has been notified.');
             setRejectOpen(false);
             setRejectReason('');
+            setRejectReasonCodes([]);
             await refreshAfterAction(selectedId);
         } catch (err) {
             flash('error', err instanceof ApiError ? err.message : 'Could not reject the listing.');
@@ -369,7 +380,7 @@ const EventApproval = () => {
                                         </div>
                                     )}
                                     {complexEntries.map(([key, value]) => (
-                                        <div key={key} className="mt-5 pt-5 border-t border-gray-50">
+                                        <div key={key} className="mt-5 pt-5 border-t border-gray-100">
                                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2.5">{humanizeKey(key)}</p>
                                             <ComplexValue value={value} />
                                         </div>
@@ -383,24 +394,57 @@ const EventApproval = () => {
                                 {detail.media?.length ? (
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                         {detail.media.map((m, i) => {
-                                            const isImage = (m.media_type ?? '').startsWith('image') && !!m.file;
-                                            return isImage ? (
-                                                <button
+                                            const fileUrl = m.file ? mediaUrl(m.file) : null;
+                                            const mt = (m.media_type ?? '').toLowerCase();
+                                            const isImage = fileUrl && (
+                                                /\.(jpg|jpeg|png|webp|gif|svg|bmp)(\?.*)?$/i.test(fileUrl) ||
+                                                mt.startsWith('image') ||
+                                                mt === 'cover' ||
+                                                mt === 'gallery' ||
+                                                mt === 'photo' ||
+                                                mt === 'thumbnail'
+                                            );
+                                            const label = m.media_type || 'file';
+
+                                            if (isImage) {
+                                                return (
+                                                    <button
+                                                        key={m.id ?? i}
+                                                        type="button"
+                                                        onClick={() => setLightbox(fileUrl!)}
+                                                        aria-label={`Preview ${label}`}
+                                                        className="group relative block rounded-xl overflow-hidden border border-gray-200 hover:border-yellow-300 transition-all"
+                                                    >
+                                                        <img src={fileUrl!} alt={label} className="w-full h-24 object-cover transition-transform duration-300 group-hover:scale-105" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                                        <span className="absolute inset-0 bg-black/0 group-hover:bg-black/30 flex items-center justify-center transition-all">
+                                                            <EyeIcon size={18} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                        </span>
+                                                        <span className="absolute bottom-0 inset-x-0 bg-black/40 text-white text-[9px] font-bold uppercase tracking-wider text-center py-0.5">{label}</span>
+                                                    </button>
+                                                );
+                                            }
+
+                                            // Document / unknown type
+                                            return fileUrl ? (
+                                                <a
                                                     key={m.id ?? i}
-                                                    onClick={() => setLightbox(mediaUrl(m.file))}
-                                                    aria-label="Preview image"
-                                                    className="group relative block rounded-xl overflow-hidden border border-gray-100 hover:border-yellow-300 transition-all"
+                                                    href={fileUrl}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="group flex flex-col items-center justify-center h-24 rounded-xl border border-gray-200 bg-gray-50 text-gray-400 hover:border-yellow-300 hover:text-yellow-500 transition-all"
                                                 >
-                                                    <img src={mediaUrl(m.file)} alt="" className="w-full h-24 object-cover transition-transform duration-300 group-hover:scale-105" />
-                                                    <span className="absolute inset-0 bg-black/0 group-hover:bg-black/30 flex items-center justify-center transition-all">
-                                                        <EyeIcon size={18} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                    </span>
-                                                </button>
-                                            ) : (
-                                                <a key={m.id ?? i} href={mediaUrl(m.file)} target="_blank" rel="noreferrer" className="group flex flex-col items-center justify-center h-24 rounded-xl border border-gray-100 bg-gray-50 text-gray-400 hover:border-yellow-300 hover:text-yellow-500 transition-all">
                                                     <FileText size={24} />
-                                                    <span className="text-[10px] mt-1 uppercase font-bold flex items-center gap-1">{m.media_type || 'file'} <ExternalLink size={10} /></span>
+                                                    <span className="text-[10px] mt-1 uppercase font-bold flex items-center gap-1">{label} <ExternalLink size={10} /></span>
                                                 </a>
+                                            ) : (
+                                                <div
+                                                    key={m.id ?? i}
+                                                    className="flex flex-col items-center justify-center h-24 rounded-xl border border-dashed border-gray-200 bg-gray-50 text-gray-300"
+                                                >
+                                                    <FileText size={24} />
+                                                    <span className="text-[10px] mt-1 uppercase font-bold">{label}</span>
+                                                    <span className="text-[9px] text-gray-400">No file</span>
+                                                </div>
                                             );
                                         })}
                                     </div>
@@ -415,7 +459,7 @@ const EventApproval = () => {
                                 {logs.length ? (
                                     <div className="space-y-3">
                                         {logs.map((log) => (
-                                            <div key={log.id} className="flex gap-3 pb-3 border-b border-gray-50 last:border-0">
+                                            <div key={log.id} className="flex gap-3 pb-3 border-b border-gray-100 last:border-0">
                                                 <div className="w-2 h-2 rounded-full bg-yellow-400 mt-1.5 flex-shrink-0" />
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center justify-between gap-2">
@@ -445,27 +489,27 @@ const EventApproval = () => {
                                     <SummaryRow label="Visibility" value={detail.is_paused ? 'Paused' : isPublished ? 'Public' : '—'} />
                                     <SummaryRow label="Published" value={formatDate(detail.published_at)} />
                                     <SummaryRow label="Created" value={formatDate(detail.created_at)} />
-                                    <div className="flex items-center justify-between text-xs pt-2 border-t border-gray-50">
+                                    <div className="flex items-center justify-between text-xs pt-2 border-t border-gray-100">
                                         <span className="text-gray-500 flex items-center gap-1.5"><Hash size={12} /> Listing ID</span>
                                         <CopyButton text={detail.id} />
                                     </div>
                                 </div>
 
                                 {!canManage ? (
-                                    <p className="text-xs text-gray-400 flex items-center gap-1.5 pt-4 border-t border-gray-100"><AlertCircle size={14} /> You have read-only access to listings.</p>
+                                    <p className="text-xs text-gray-400 flex items-center gap-1.5 pt-4 border-t border-gray-200"><AlertCircle size={14} /> You have read-only access to listings.</p>
                                 ) : (
-                                    <div className="space-y-2 pt-4 border-t border-gray-100">
+                                    <div className="space-y-2 pt-4 border-t border-gray-200">
                                         {isPending && (
                                             <>
                                                 <button
                                                     onClick={() => runDirect('approve', () => approveListing(detail.id), 'Listing approved & published.', detail.id)}
                                                     disabled={directBusy === 'approve'}
-                                                    className="w-full flex items-center justify-center gap-2 py-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition-all disabled:opacity-60"
+                                                    className="w-full flex items-center justify-center gap-2 py-3 bg-green-500 text-gray-900 font-bold rounded-xl hover:bg-green-600 transition-all disabled:opacity-60"
                                                 >
                                                     {directBusy === 'approve' ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />} Approve & Publish
                                                 </button>
                                                 <button
-                                                    onClick={() => { setRejectReason(''); setRejectOpen(true); }}
+                                                    onClick={() => { setRejectReason(''); setRejectReasonCodes([]); setRejectOpen(true); }}
                                                     className="w-full flex items-center justify-center gap-2 py-3 bg-red-50 text-red-600 font-bold rounded-xl hover:bg-red-100 transition-all"
                                                 >
                                                     <XCircle size={16} /> Reject Listing
@@ -494,7 +538,7 @@ const EventApproval = () => {
                                         )}
 
                                         {!isPending && !isPublished && (
-                                            <p className="text-xs text-gray-400">No moderation action available for status “{listingStatusLabel(status)}”.</p>
+                                            <p className="text-xs text-gray-400">No moderation action available for status "{listingStatusLabel(status)}".</p>
                                         )}
                                     </div>
                                 )}
@@ -509,6 +553,8 @@ const EventApproval = () => {
                         <RejectModal
                             reason={rejectReason}
                             setReason={setRejectReason}
+                            reasonCodes={rejectReasonCodes}
+                            setReasonCodes={setRejectReasonCodes}
                             submitting={rejectSubmitting}
                             onClose={() => !rejectSubmitting && setRejectOpen(false)}
                             onConfirm={submitReject}
@@ -530,7 +576,7 @@ const EventApproval = () => {
     const statTiles = stats
         ? [
               { label: 'Pending', value: stats.pending, tone: 'text-amber-600' },
-              { label: 'Published', value: stats.published, tone: 'text-green-600' },
+              { label: 'Live', value: stats.published, tone: 'text-green-600' },
               { label: 'Rejected', value: stats.rejected, tone: 'text-red-600' },
               { label: 'Total', value: stats.total, tone: 'text-gray-900' },
           ]
@@ -541,8 +587,14 @@ const EventApproval = () => {
         <div className="space-y-6">
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Listings Approval</h1>
-                    <p className="text-gray-500 text-sm">Review and moderate partner listings of every type</p>
+                    <h1 className="text-2xl font-bold text-gray-900">
+                        {typeFilter ? `${listingTypeLabel(typeFilter)} Approval` : 'Listings Approval'}
+                    </h1>
+                    <p className="text-gray-500 text-sm">
+                        {typeFilter
+                            ? `Review and moderate partner ${listingTypeLabel(typeFilter).toLowerCase()} listings`
+                            : 'Review and moderate partner listings of every type'}
+                    </p>
                 </div>
             </header>
 
@@ -580,12 +632,18 @@ const EventApproval = () => {
                     />
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                 </div>
-                <FilterSelect value={typeFilter} onChange={setTypeFilter} allLabel="All types">
-                    {LISTING_TYPES.map((t) => <option key={t} value={t}>{listingTypeLabel(t)}</option>)}
-                </FilterSelect>
-                <FilterSelect value={statusFilter} onChange={setStatusFilter} allLabel="All statuses">
-                    {LISTING_STATUSES.map((s) => <option key={s} value={s}>{listingStatusLabel(s)}</option>)}
-                </FilterSelect>
+                <Select
+                    value={typeFilter}
+                    onChange={setTypeFilter}
+                    placeholder="All types"
+                    options={[{ value: '', label: 'All types' }, ...LISTING_TYPES.map((t) => ({ value: t, label: listingTypeLabel(t) }))]}
+                />
+                <Select
+                    value={statusFilter}
+                    onChange={setStatusFilter}
+                    placeholder="All statuses"
+                    options={[{ value: '', label: 'All statuses' }, ...LISTING_STATUSES.map((s) => ({ value: s, label: listingStatusLabel(s) }))]}
+                />
             </div>
 
             {/* Table */}
@@ -593,8 +651,9 @@ const EventApproval = () => {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left whitespace-nowrap">
                         <thead>
-                            <tr className="bg-gray-50 border-b border-gray-100">
+                            <tr className="bg-gray-50 border-b border-gray-200">
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Listing</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Listing Owner</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Type</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Category</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">City</th>
@@ -602,13 +661,13 @@ const EventApproval = () => {
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Action</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-50">
+                        <tbody className="divide-y divide-gray-100">
                             {loading ? (
-                                <tr><td colSpan={6}><div className="flex items-center justify-center py-16 text-gray-400"><Loader2 className="animate-spin" size={24} /></div></td></tr>
+                                <tr><td colSpan={7}><div className="flex items-center justify-center py-16 text-gray-400"><Loader2 className="animate-spin" size={24} /></div></td></tr>
                             ) : error ? (
-                                <tr><td colSpan={6}><EmptyState icon={AlertCircle} title="Couldn't load listings" description={error} /></td></tr>
+                                <tr><td colSpan={7}><EmptyState icon={AlertCircle} title="Couldn't load listings" description={error} /></td></tr>
                             ) : listings.length === 0 ? (
-                                <tr><td colSpan={6}><EmptyState icon={Calendar} title="No listings found" description="No listings match the current filters." /></td></tr>
+                                <tr><td colSpan={7}><EmptyState icon={Calendar} title="No listings found" description="No listings match the current filters." /></td></tr>
                             ) : (
                                 listings.map((l) => (
                                     <tr key={l.id} className="hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => openReview(l)}>
@@ -623,7 +682,10 @@ const EventApproval = () => {
                                                     </span>
                                                 )}
                                             </div>
-                                            <p className="text-xs text-gray-500">{l.partner_name || l.partner_email || '—'}</p>
+                                            <p className="text-[11px] text-gray-400 font-mono mt-0.5">{l.id}</p>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <p className="text-xs text-gray-600">{l.partner_name || l.partner_email || '—'}</p>
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={cn('px-2 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider', listingTypeTone(l.listing_type))}>
@@ -706,18 +768,18 @@ function ObjectTable({ rows }: { rows: Record<string, unknown>[] }) {
     );
     if (cols.length === 0) return null;
     return (
-        <div className="overflow-x-auto rounded-xl border border-gray-100">
+        <div className="overflow-x-auto rounded-xl border border-gray-200">
             <table className="w-full text-left text-xs whitespace-nowrap">
                 <thead>
-                    <tr className="bg-gray-50 border-b border-gray-100">
+                    <tr className="bg-gray-50 border-b border-gray-200">
                         {cols.map((c) => (
                             <th key={c} className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">{humanizeKey(c)}</th>
                         ))}
                     </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-gray-100">
                     {rows.map((row, i) => (
-                        <tr key={i} className="hover:bg-gray-50/60 transition-colors">
+                        <tr key={i} className="hover:bg-gray-50 transition-colors">
                             {cols.map((c) => (
                                 <td key={c} className="px-3 py-2 text-gray-700"><SmartValue value={row[c]} /></td>
                             ))}
@@ -807,7 +869,7 @@ function Lightbox({ src, onClose }: { src: string; onClose: () => void }) {
                 exit={{ opacity: 0, scale: 0.92 }}
                 className="relative max-w-full max-h-full rounded-2xl shadow-2xl object-contain"
             />
-            <button onClick={onClose} aria-label="Close preview" className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors">
+            <button onClick={onClose} aria-label="Close preview" className="absolute top-6 right-6 p-2 bg-gray-200 hover:bg-white/20 rounded-full text-gray-900 transition-colors">
                 <X size={22} />
             </button>
         </div>
@@ -825,50 +887,64 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 
 function MiniMetric({ label, value }: { label: string; value: number }) {
     return (
-        <div className="bg-white border border-gray-100 rounded-xl px-4 py-3">
+        <div className="bg-white border border-gray-200 rounded-xl px-4 py-3">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</p>
             <p className="text-lg font-bold text-gray-900">{value}</p>
         </div>
     );
 }
 
-function FilterSelect({
-    value,
-    onChange,
-    allLabel,
-    children,
-}: {
-    value: string;
-    onChange: (v: string) => void;
-    allLabel: string;
-    children: ReactNode;
-}) {
-    return (
-        <select
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 appearance-none cursor-pointer"
-        >
-            <option value="">{allLabel}</option>
-            {children}
-        </select>
-    );
-}
 
 function RejectModal({
     reason,
     setReason,
+    reasonCodes,
+    setReasonCodes,
     submitting,
     onClose,
     onConfirm,
 }: {
     reason: string;
     setReason: (v: string) => void;
+    reasonCodes: string[];
+    setReasonCodes: (v: string[]) => void;
     submitting: boolean;
     onClose: () => void;
     onConfirm: () => void;
 }) {
+    const [presetReasons, setPresetReasons] = useState<RejectionReason[]>([]);
+    const [reasonsLoading, setReasonsLoading] = useState(true);
+    const [reasonsError, setReasonsError] = useState(false);
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const reasons = await getListingRejectionReasons();
+                if (!cancelled) setPresetReasons(reasons);
+            } catch {
+                if (!cancelled) setReasonsError(true);
+            } finally {
+                if (!cancelled) setReasonsLoading(false);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, []);
+
+    const toggleCode = (code: string, label: string) => {
+        const selected = reasonCodes.includes(code);
+        const nextCodes = selected ? reasonCodes.filter((c) => c !== code) : [...reasonCodes, code];
+        setReasonCodes(nextCodes);
+
+        const template = nextCodes
+            .map((c) => presetReasons.find((r) => r.code === c)?.label)
+            .filter(Boolean)
+            .join('; ');
+        setReason(template ? `${template}.` : '');
+    };
+
     const disabled = submitting || !reason.trim();
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
@@ -876,26 +952,80 @@ function RejectModal({
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden"
+                className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden"
             >
-                <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                <div className="p-6 border-b border-gray-200 flex justify-between items-center">
                     <h2 className="text-xl font-bold text-gray-900">Reject Listing</h2>
-                    <button onClick={onClose} disabled={submitting} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X size={20} className="text-gray-400" /></button>
+                    <button onClick={onClose} disabled={submitting} className="p-2 hover:bg-gray-50 rounded-full transition-colors"><X size={20} className="text-gray-400" /></button>
                 </div>
-                <div className="p-6 space-y-4">
-                    <p className="text-sm text-gray-500">Rejecting sets the listing to “Rejected”. The comment is stored and emailed to the partner.</p>
+                <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+                    <p className="text-sm text-gray-500">Select the reasons for rejection. The comment is stored and emailed to the partner.</p>
+
+                    {/* Preset reason checkboxes */}
                     <div>
-                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Reason for rejection</label>
+                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Rejection Reasons</label>
+                        {reasonsLoading ? (
+                            <div className="flex items-center gap-2 text-gray-400 text-sm py-3">
+                                <Loader2 size={14} className="animate-spin" /> Loading reasons…
+                            </div>
+                        ) : reasonsError ? (
+                            <p className="text-xs text-amber-600 py-2">Could not load preset reasons. You can still type a custom comment below.</p>
+                        ) : presetReasons.length === 0 ? (
+                            <p className="text-xs text-gray-400 py-2">No preset reasons configured. Enter a custom comment below.</p>
+                        ) : (
+                            <div className="space-y-2">
+                                {presetReasons.map((r) => {
+                                    const checked = reasonCodes.includes(r.code);
+                                    return (
+                                        <label
+                                            key={r.code}
+                                            className={cn(
+                                                'flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all',
+                                                checked
+                                                    ? 'border-red-200 bg-red-50/60'
+                                                    : 'border-gray-200 bg-gray-50/50 hover:border-gray-200',
+                                                submitting && 'opacity-60 pointer-events-none',
+                                            )}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={checked}
+                                                onChange={() => toggleCode(r.code, r.label)}
+                                                disabled={submitting}
+                                                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500 accent-red-600"
+                                            />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-semibold text-gray-900">{r.label}</p>
+                                                {r.description && <p className="text-xs text-gray-500 mt-0.5">{r.description}</p>}
+                                            </div>
+                                        </label>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Comment textarea */}
+                    <div>
+                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">
+                            Comment for partner
+                            <span className="text-red-400 ml-1">*</span>
+                        </label>
                         <textarea
                             value={reason}
                             onChange={(e) => setReason(e.target.value)}
-                            placeholder="e.g. The cover image is low quality and the description is incomplete."
+                            placeholder="Describe the issues or add additional context…"
                             disabled={submitting}
                             className="w-full h-28 bg-gray-50 border border-gray-200 rounded-2xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all resize-none disabled:opacity-60"
                         />
+                        <p className="text-[11px] text-gray-400 mt-1">
+                            {reasonCodes.length > 0
+                                ? `${reasonCodes.length} reason${reasonCodes.length > 1 ? 's' : ''} selected — comment auto-filled. Edit freely.`
+                                : 'A comment is required even without preset reasons.'}
+                        </p>
                     </div>
                 </div>
-                <div className="p-6 bg-gray-50 flex justify-end gap-3">
+                <div className="p-6 bg-gray-50 flex justify-end gap-3 border-t border-gray-200">
                     <button onClick={onClose} disabled={submitting} className="px-6 py-3 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-all disabled:opacity-60">Cancel</button>
                     <button
                         onClick={onConfirm}
@@ -903,7 +1033,7 @@ function RejectModal({
                         className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                         {submitting && <Loader2 size={16} className="animate-spin" />}
-                        {submitting ? 'Working…' : 'Reject Listing'}
+                        {submitting ? 'Rejecting…' : 'Reject Listing'}
                     </button>
                 </div>
             </motion.div>

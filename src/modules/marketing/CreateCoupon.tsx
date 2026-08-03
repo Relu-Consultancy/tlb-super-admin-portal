@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import Card from '../../shared/components/ui/Card';
+import Select from '../../shared/components/ui/Select';
 import { cn } from '../../shared/lib/utils';
 import {
     createCoupon,
@@ -159,10 +160,13 @@ const CreateCoupon = ({ onBack, onCreated }: CreateCouponProps) => {
                         </div>
                         {couponType === 'partner' && (
                             <Labeled label="Partner" required>
-                                <select value={partnerId} onChange={(e) => setPartnerId(e.target.value)} className={inputCls}>
-                                    <option value="">Select a partner…</option>
-                                    {partners.map((p) => <option key={p.id} value={p.id}>{p.business_name || p.email}</option>)}
-                                </select>
+                                <Select
+                                    value={partnerId}
+                                    onChange={setPartnerId}
+                                    placeholder="Select a partner…"
+                                    variant="form"
+                                    options={partners.map((p) => ({ value: p.id, label: p.business_name || p.email }))}
+                                />
                             </Labeled>
                         )}
                     </Card>
@@ -228,13 +232,13 @@ const CreateCoupon = ({ onBack, onCreated }: CreateCouponProps) => {
                         <Labeled label="Total usage limit"><input type="number" value={usageLimit} onChange={(e) => setUsageLimit(e.target.value)} placeholder="Unlimited" className={inputCls} /></Labeled>
                         <Labeled label="Per-user limit"><input type="number" value={perUserLimit} onChange={(e) => setPerUserLimit(e.target.value)} placeholder="Unlimited" className={inputCls} /></Labeled>
                         <button type="button" onClick={() => setIsActive((v) => !v)} className={cn('w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all text-sm font-medium', isActive ? 'bg-green-50 border-green-200 text-gray-900' : 'bg-white border-gray-200 text-gray-500')}>
-                            <CheckCircle2 size={16} className={isActive ? 'text-green-500' : 'text-gray-300'} />
+                            <CheckCircle2 size={16} className={isActive ? 'text-green-500' : 'text-gray-700'} />
                             <span className="flex-1 text-left">Active immediately</span>
                             <span className={cn('w-9 h-5 rounded-full relative transition-colors', isActive ? 'bg-green-500' : 'bg-gray-200')}>
                                 <span className={cn('absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all', isActive ? 'left-4.5' : 'left-0.5')} />
                             </span>
                         </button>
-                        <button onClick={submit} disabled={submitting} className="w-full flex items-center justify-center gap-2 py-3 bg-yellow-400 text-gray-900 font-bold rounded-xl hover:bg-yellow-500 shadow-md shadow-yellow-400/20 transition-all disabled:opacity-60">
+                        <button onClick={submit} disabled={submitting} className="w-full flex items-center justify-center gap-2 py-3 bg-yellow-400 text-gray-900 font-bold rounded-xl hover:bg-yellow-500 shadow-lg shadow-yellow-400/20 transition-all disabled:opacity-60">
                             {submitting ? <Loader2 size={16} className="animate-spin" /> : <Tag size={16} />} Generate Coupon
                         </button>
                     </Card>

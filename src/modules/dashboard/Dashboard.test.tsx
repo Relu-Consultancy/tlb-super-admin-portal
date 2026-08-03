@@ -4,26 +4,37 @@ import userEvent from '@testing-library/user-event';
 import Dashboard from './Dashboard';
 import { Screen } from '../../types';
 
-vi.mock('recharts', () => ({
-    ResponsiveContainer: ({ children }: any) => <div data-testid="responsive-container">{children}</div>,
-    AreaChart: ({ children }: any) => <div data-testid="area-chart">{children}</div>,
-    Area: () => null,
-    XAxis: () => null,
-    YAxis: () => null,
-    CartesianGrid: () => null,
-    Tooltip: () => null,
-}));
-
 vi.mock('../../shared/lib/api', () => ({
     getOverviewStats: vi.fn(),
+    getCustomerStats: vi.fn(),
+    getPartnerStats: vi.fn(),
+    getListingStats: vi.fn(),
     parseAmount: (v: any) => (v == null || v === '' || v === '-' ? null : (Number.isNaN(Number(v)) ? null : Number(v))),
     safeCurrency: () => 'INR',
     formatMoney: (n: any) => `₹${Number(n).toLocaleString()}`,
-    STATS_PERIODS: ['today', 'yesterday', 'this_week', 'last_week', 'this_month', 'custom'],
-    STATS_PERIOD_LABELS: { today: 'Today', yesterday: 'Yesterday', this_week: 'This Week', last_week: 'Last Week', this_month: 'This Month', custom: 'Custom Range' },
     ApiError: class ApiError extends Error { code: string | null = null; },
 }));
-import { getOverviewStats } from '../../shared/lib/api';
+import { getOverviewStats, getCustomerStats, getPartnerStats, getListingStats } from '../../shared/lib/api';
+
+const CUSTOMER_STATS = {
+    summary: { total: 1200, new_in_period: 45, active: 900, inactive: 300, disabled: 5 },
+};
+const PARTNER_STATS = {
+    summary: { total: 80, new_in_period: 6, active: 60, inactive: 20, disabled: 2 },
+    pending_actions: { awaiting_approval: 4, awaiting_verification: 7 },
+    by_category: [
+        { category: 'Events', partner_count: 54 },
+        { category: 'Programs', partner_count: 38 },
+        { category: 'Classes', partner_count: 62 },
+        { category: 'Venues', partner_count: 12 },
+    ],
+};
+const LISTING_STATS_BY_TYPE: Record<string, any> = {
+    event: { draft: 1, pending: 2, published: 86, rejected: 0, archived: 0, total: 89 },
+    program: { draft: 1, pending: 2, published: 94, rejected: 0, archived: 0, total: 97 },
+    class: { draft: 1, pending: 2, published: 211, rejected: 0, archived: 0, total: 214 },
+    venue: { draft: 1, pending: 2, published: 49, rejected: 0, archived: 0, total: 52 },
+};
 
 const OVERVIEW = {
     period: { type: 'this_month', date_from: '2026-06-01', date_to: '2026-06-30', label: 'This Month' },
@@ -48,63 +59,105 @@ describe('Dashboard', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         (getOverviewStats as any).mockResolvedValue(OVERVIEW);
+        (getCustomerStats as any).mockResolvedValue(CUSTOMER_STATS);
+        (getPartnerStats as any).mockResolvedValue(PARTNER_STATS);
+        (getListingStats as any).mockImplementation((type: string) => Promise.resolve(LISTING_STATS_BY_TYPE[type]));
     });
 
-    it('renders the heading and loads overview stats', async () => {
+    it('renders the heading and loads overview stats for this month', async () => {
         render(<Dashboard setScreen={setScreen} />);
-        expect(screen.getByText('Super Admin Dashboard')).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
         await waitFor(() => expect(getOverviewStats).toHaveBeenCalledWith({ period: 'this_month' }));
     });
 
-    it('renders KPI cards from the API', async () => {
+    it('renders KPI tiles from the API', async () => {
         render(<Dashboard setScreen={setScreen} />);
-        expect(await screen.findByText('1,200')).toBeInTheDocument(); // customers
-        expect(screen.getByText('Customers')).toBeInTheDocument();
-        expect(screen.getByText('Partners')).toBeInTheDocument();
-        expect(screen.getByText('540')).toBeInTheDocument(); // bookings total
+        expect(await screen.findByText('540')).toBeInTheDocument(); // bookings total (unique)
+        expect(screen.getAllByText('1,200').length).toBeGreaterThanOrEqual(1); // total customers
+        expect(screen.getByText('Total Partners')).toBeInTheDocument();
+        expect(screen.getByText('Total Customers')).toBeInTheDocument();
     });
 
-    it('renders the trend chart and breakdown sections', async () => {
+    it('renders the guide-grouped metric sections with wired Active/Inactive/Pending-KYC', async () => {
         render(<Dashboard setScreen={setScreen} />);
-        await screen.findByText('1,200');
-        expect(screen.getByTestId('area-chart')).toBeInTheDocument();
-        expect(screen.getByText('Activity Trend')).toBeInTheDocument();
-        expect(screen.getByText('Revenue')).toBeInTheDocument();
-        expect(screen.getByText('Recent Activity')).toBeInTheDocument();
+        await screen.findByText('Activity summary');
+        // Section headings
+        ['Customers', 'Partners', 'Listings', 'Bookings & Enquiries'].forEach((h) =>
+            expect(screen.getByRole('heading', { name: h })).toBeInTheDocument());
+        // Backed metrics from getCustomerStats / getPartnerStats
+        expect(screen.getByText('Active Customers')).toBeInTheDocument();
+        expect(screen.getByText('900')).toBeInTheDocument();   // active customers (unique)
+        expect(screen.getByText('300')).toBeInTheDocument();   // inactive customers (unique)
+        expect(screen.getByText('Pending KYC')).toBeInTheDocument();
+        // Listings vocab: Live tile
+        expect(screen.getByText('Live')).toBeInTheDocument();
     });
 
-    it('shows recent activity items', async () => {
+    it('shows an em-dash when the customer/partner stats endpoints are unavailable', async () => {
+        (getCustomerStats as any).mockResolvedValue(null);
+        (getPartnerStats as any).mockResolvedValue(null);
         render(<Dashboard setScreen={setScreen} />);
-        expect(await screen.findByText('BK-001')).toBeInTheDocument();
+        await screen.findByText('Active Customers');
+        expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('renders per-vertical partner and active-listing counts from the stats endpoints', async () => {
+        render(<Dashboard setScreen={setScreen} />);
+        await screen.findByText('At-a-glance: Listings by Vertical');
+        expect(screen.getByText('54')).toBeInTheDocument(); // Events partners
+        expect(screen.getByText('86')).toBeInTheDocument(); // Events active listings
+        expect(screen.getByText('38')).toBeInTheDocument(); // Programs partners
+        expect(screen.getByText('94')).toBeInTheDocument(); // Programs active listings
+        expect(screen.getByText('62')).toBeInTheDocument(); // Classes partners
+        expect(screen.getByText('211')).toBeInTheDocument(); // Classes active listings
+        expect(screen.getByText('12')).toBeInTheDocument(); // Venues partners
+        expect(screen.getByText('49')).toBeInTheDocument(); // Venues active listings
+    });
+
+    it('falls back to an em-dash per vertical when the listing/partner stats are unavailable', async () => {
+        (getPartnerStats as any).mockResolvedValue(null);
+        (getListingStats as any).mockResolvedValue(null);
+        render(<Dashboard setScreen={setScreen} />);
+        await screen.findByText('At-a-glance: Listings by Vertical');
+        expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(4);
+    });
+
+    it('renders the Activity summary from period aggregates', async () => {
+        render(<Dashboard setScreen={setScreen} />);
+        await screen.findByText('Activity summary');
+        expect(screen.getByText(/45 new customers signed up on the app/)).toBeInTheDocument();
+        expect(screen.getByText(/6 new partners registered/)).toBeInTheDocument();
+        expect(screen.getByText(/240 listings published across verticals/)).toBeInTheDocument();
+        expect(screen.getByText(/platform revenue collected/)).toBeInTheDocument();
+        // refunded > 0 → the refund row appears
+        expect(screen.getByText(/refunds? awaiting review/)).toBeInTheDocument();
+    });
+
+    it('renders the Recent activity feed merged from bookings, signups and tickets', async () => {
+        render(<Dashboard setScreen={setScreen} />);
+        await screen.findByText('Recent activity');
+        expect(screen.getByText(/New booking — BK-001/)).toBeInTheDocument();
         expect(screen.getByText('newbie@x.com')).toBeInTheDocument();
-        expect(screen.getByText('Refund please')).toBeInTheDocument();
+        expect(screen.getByText(/Enquiry received — Refund please/)).toBeInTheDocument();
     });
 
-    it('re-fetches when the period changes', async () => {
+    it('shows an empty recent-activity state when there is nothing to show', async () => {
+        (getOverviewStats as any).mockResolvedValue({
+            ...OVERVIEW,
+            recent_activity: { bookings: [], signups: [], tickets: [] },
+        });
         render(<Dashboard setScreen={setScreen} />);
-        await screen.findByText('1,200');
-        await userEvent.click(screen.getByRole('button', { name: 'Today' }));
-        await waitFor(() => expect(getOverviewStats).toHaveBeenCalledWith({ period: 'today' }));
-    });
-
-    it('reveals custom date inputs and waits for both ends', async () => {
-        render(<Dashboard setScreen={setScreen} />);
-        await screen.findByText('1,200');
-        (getOverviewStats as any).mockClear();
-        await userEvent.click(screen.getByRole('button', { name: 'Custom Range' }));
-        // No fetch until both dates are set.
-        expect(getOverviewStats).not.toHaveBeenCalled();
+        await screen.findByText('Activity summary');
+        expect(screen.getByText('No recent activity yet.')).toBeInTheDocument();
     });
 
     it('quick actions navigate to the right screens', async () => {
         render(<Dashboard setScreen={setScreen} />);
-        await screen.findByText('1,200');
-        await userEvent.click(screen.getByText('Approve Partners'));
+        await screen.findByText('Activity summary');
+        await userEvent.click(screen.getByText('Review partner registrations'));
         expect(setScreen).toHaveBeenCalledWith(Screen.PARTNER_MANAGEMENT);
-        await userEvent.click(screen.getByText('Approve Listings'));
+        await userEvent.click(screen.getByText('Pending listings'));
         expect(setScreen).toHaveBeenCalledWith(Screen.EVENT_APPROVAL);
-        await userEvent.click(screen.getByText('Send a Broadcast'));
-        expect(setScreen).toHaveBeenCalledWith(Screen.BROADCASTS);
     });
 
     it('shows an error state when the API fails', async () => {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, type ReactNode } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
     Plus,
     Search,
@@ -21,6 +21,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import Card from '../../shared/components/ui/Card';
 import EmptyState from '../../shared/components/ui/EmptyState';
+import Select from '../../shared/components/ui/Select';
 import { cn } from '../../shared/lib/utils';
 import { useAuth } from '../../shared/auth/AuthContext';
 import {
@@ -222,7 +223,7 @@ const CouponsMarketing = ({ onCreateCoupon }: { onCreateCoupon?: () => void }) =
                         {exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />} Export CSV
                     </button>
                     {canManage && (
-                        <button onClick={() => onCreateCoupon?.()} className="flex items-center gap-2 px-5 py-2.5 bg-yellow-400 text-gray-900 font-bold rounded-xl hover:bg-yellow-500 shadow-md shadow-yellow-400/20 transition-all">
+                        <button onClick={() => onCreateCoupon?.()} className="flex items-center gap-2 px-5 py-2.5 bg-yellow-400 text-gray-900 font-bold rounded-xl hover:bg-yellow-500 shadow-lg shadow-yellow-400/20 transition-all">
                             <Plus size={18} /> Create Coupon
                         </button>
                     )}
@@ -254,16 +255,28 @@ const CouponsMarketing = ({ onCreateCoupon }: { onCreateCoupon?: () => void }) =
                     <input type="text" placeholder="Search by code or partner…" value={search} onChange={(e) => setSearch(e.target.value)} className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 pl-11 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                 </div>
-                <FilterSelect value={typeFilter} onChange={setTypeFilter} allLabel="All types">
-                    {COUPON_TYPES.map((t) => <option key={t} value={t}>{couponTypeLabel(t)}</option>)}
-                </FilterSelect>
-                <FilterSelect value={discountFilter} onChange={setDiscountFilter} allLabel="Any discount">
-                    {DISCOUNT_TYPES.map((d) => <option key={d} value={d}>{d === 'percent' ? 'Percentage' : 'Fixed'}</option>)}
-                </FilterSelect>
-                <FilterSelect value={activeFilter} onChange={(v) => setActiveFilter(v as '' | 'true' | 'false')} allLabel="Any status">
-                    <option value="true">Active</option>
-                    <option value="false">Inactive</option>
-                </FilterSelect>
+                <Select
+                    value={typeFilter}
+                    onChange={setTypeFilter}
+                    placeholder="All types"
+                    options={[{ value: '', label: 'All types' }, ...COUPON_TYPES.map((t) => ({ value: t, label: couponTypeLabel(t) }))]}
+                />
+                <Select
+                    value={discountFilter}
+                    onChange={setDiscountFilter}
+                    placeholder="Any discount"
+                    options={[{ value: '', label: 'Any discount' }, ...DISCOUNT_TYPES.map((d) => ({ value: d, label: d === 'percent' ? 'Percentage' : 'Fixed' }))]}
+                />
+                <Select
+                    value={activeFilter}
+                    onChange={(v) => setActiveFilter(v as '' | 'true' | 'false')}
+                    placeholder="Any status"
+                    options={[
+                        { value: '', label: 'Any status' },
+                        { value: 'true', label: 'Active' },
+                        { value: 'false', label: 'Inactive' },
+                    ]}
+                />
             </div>
 
             {/* Table */}
@@ -271,7 +284,7 @@ const CouponsMarketing = ({ onCreateCoupon }: { onCreateCoupon?: () => void }) =
                 <div className="overflow-x-auto">
                     <table className="w-full text-left whitespace-nowrap">
                         <thead>
-                            <tr className="bg-gray-50 border-b border-gray-100">
+                            <tr className="bg-gray-50 border-b border-gray-200">
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Code</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Type</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Discount</th>
@@ -281,7 +294,7 @@ const CouponsMarketing = ({ onCreateCoupon }: { onCreateCoupon?: () => void }) =
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Action</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-50">
+                        <tbody className="divide-y divide-gray-100">
                             {loading ? (
                                 <tr><td colSpan={7}><div className="flex items-center justify-center py-16 text-gray-400"><Loader2 className="animate-spin" size={24} /></div></td></tr>
                             ) : error ? (
@@ -305,7 +318,7 @@ const CouponsMarketing = ({ onCreateCoupon }: { onCreateCoupon?: () => void }) =
                                             <td className="px-6 py-4 text-xs text-gray-500">{formatDate(c.expires_at)}</td>
                                             <td className="px-6 py-4">
                                                 {expired ? (
-                                                    <span className="px-2 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider bg-gray-100 text-gray-500">Expired</span>
+                                                    <span className="px-2 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider bg-gray-100 text-gray-400">Expired</span>
                                                 ) : c.is_active ? (
                                                     <span className="px-2 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider bg-green-50 text-green-600">Active</span>
                                                 ) : (
@@ -367,9 +380,9 @@ function CouponDetailPanel({ loading, detail, usages, canManage, busy, onToggle,
         <div className="fixed inset-0 z-50 flex justify-end">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
             <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'tween', duration: 0.25 }} className="relative w-full max-w-md bg-white h-full overflow-y-auto shadow-2xl">
-                <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between z-10">
+                <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
                     <h2 className="text-lg font-bold text-gray-900">Coupon Detail</h2>
-                    <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full"><X size={20} className="text-gray-400" /></button>
+                    <button onClick={onClose} className="p-2 hover:bg-gray-50 rounded-full"><X size={20} className="text-gray-400" /></button>
                 </div>
 
                 {loading && !detail ? (
@@ -383,7 +396,7 @@ function CouponDetailPanel({ loading, detail, usages, canManage, busy, onToggle,
                                 <span className="font-mono text-xl font-bold text-gray-900 tracking-wider uppercase">{detail.code}</span>
                                 <span className={cn('px-2 py-0.5 text-[10px] font-bold rounded-full uppercase tracking-wider', couponTypeTone(detail.coupon_type))}>{couponTypeLabel(detail.coupon_type)}</span>
                                 {isCouponExpired(detail.expires_at) ? (
-                                    <span className="px-2 py-0.5 text-[10px] font-bold rounded-full uppercase tracking-wider bg-gray-100 text-gray-500">Expired</span>
+                                    <span className="px-2 py-0.5 text-[10px] font-bold rounded-full uppercase tracking-wider bg-gray-100 text-gray-400">Expired</span>
                                 ) : (
                                     <span className={cn('px-2 py-0.5 text-[10px] font-bold rounded-full uppercase tracking-wider', detail.is_active ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600')}>{detail.is_active ? 'Active' : 'Inactive'}</span>
                                 )}
@@ -437,7 +450,7 @@ function CouponDetailPanel({ loading, detail, usages, canManage, busy, onToggle,
                             ) : (
                                 <div className="space-y-2">
                                     {usages.map((u) => (
-                                        <div key={u.id} className="flex items-center justify-between gap-2 p-3 rounded-xl border border-gray-100">
+                                        <div key={u.id} className="flex items-center justify-between gap-2 p-3 rounded-xl border border-gray-200">
                                             <div className="min-w-0">
                                                 <p className="text-xs font-bold text-gray-800 truncate">{u.customer_email}</p>
                                                 <p className="text-[11px] text-gray-400 truncate flex items-center gap-1"><Calendar size={10} /> {formatDateTime(u.used_at)}{u.booking_reference ? ` · ${u.booking_reference}` : ''}</p>
@@ -478,7 +491,7 @@ function ToastBar({ toast, onClose }: { toast: { type: 'success' | 'error'; text
 
 function MiniMetric({ icon: Icon, label, value, sub }: { icon: typeof Store; label: string; value: number; sub: string }) {
     return (
-        <div className="bg-white border border-gray-100 rounded-xl px-4 py-3 flex items-center gap-3">
+        <div className="bg-white border border-gray-200 rounded-xl px-4 py-3 flex items-center gap-3">
             <div className="p-2 rounded-xl bg-gray-50 text-gray-500"><Icon size={18} /></div>
             <div>
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</p>
@@ -505,15 +518,6 @@ function Chips({ label, items }: { label: string; items: string[] }) {
                 {items.map((it, i) => <span key={i} className="px-2 py-0.5 bg-gray-100 text-gray-600 text-[11px] font-medium rounded-md capitalize">{it}</span>)}
             </div>
         </div>
-    );
-}
-
-function FilterSelect({ value, onChange, allLabel, children }: { value: string; onChange: (v: string) => void; allLabel: string; children: ReactNode }) {
-    return (
-        <select value={value} onChange={(e) => onChange(e.target.value)} className="bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 appearance-none cursor-pointer">
-            <option value="">{allLabel}</option>
-            {children}
-        </select>
     );
 }
 

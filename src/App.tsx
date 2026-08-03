@@ -5,7 +5,7 @@ import { cn } from './shared/lib/utils';
 import { useAuth } from './shared/auth/AuthContext';
 import { roleLabel } from './shared/lib/api';
 import { Screen } from './types';
-import { sectionOfScreen, firstScreenOfSection, type SectionId } from './shared/nav/sections';
+import type { ListingVertical } from './shared/nav/sections';
 
 // Layout
 import Sidebar from './shared/components/layout/Sidebar';
@@ -32,6 +32,7 @@ const TlbSignature = lazy(() => import('./modules/tlb/TlbSignature'));
 const CreateTlbSignature = lazy(() => import('./modules/tlb/CreateTlbSignature'));
 const Settings = lazy(() => import('./modules/settings/Settings'));
 const Analytics = lazy(() => import('./modules/analytics/Analytics'));
+const TrafficEngagement = lazy(() => import('./modules/traffic/TrafficEngagement'));
 const UserSection = lazy(() => import('./modules/users/UserSection/UserSection'));
 const Hub = lazy(() => import('./modules/home/Hub'));
 
@@ -42,7 +43,7 @@ const LoadingFallback = () => (
 );
 
 const FullScreenLoader = () => (
-  <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+  <div className="min-h-screen bg-[#f5f3ee] flex items-center justify-center">
     <div className="loader" />
   </div>
 );
@@ -59,12 +60,30 @@ function getResetToken(): string | null {
   );
 }
 
+/** Placeholder screen for unreleased features. */
+function ComingSoon({ title, onBack }: { title: string; onBack: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center h-[60vh] text-gray-500">
+      <BarChart3 size={64} className="mb-4 opacity-20" />
+      <h2 className="text-xl font-bold text-gray-900">{title}</h2>
+      <p className="text-sm mt-1">This module is coming soon in the next update.</p>
+      <button
+        onClick={onBack}
+        className="mt-6 px-6 py-2 bg-amber-400 text-gray-900 font-bold rounded-xl hover:bg-amber-300 transition-colors"
+      >
+        Back to Dashboard
+      </button>
+    </div>
+  );
+}
+
 export default function App() {
   const { status, admin, logout, sessionMessage, clearSessionMessage } = useAuth();
   const [authView, setAuthView] = useState<AuthView>('landing');
-  const [currentScreen, setCurrentScreen] = useState<Screen>(Screen.HOME);
-  // Which top-level workspace (Customer/Partner/Admin) is active; null = Home hub.
-  const [activeSection, setActiveSection] = useState<SectionId | null>(null);
+  // Default to Dashboard (was HOME in the hub-and-spoke layout)
+  const [currentScreen, setCurrentScreen] = useState<Screen>(Screen.DASHBOARD);
+  // Which Partners listing vertical is active (event/program/class/venue). Empty = none/all.
+  const [partnerType, setPartnerType] = useState<ListingVertical | ''>('');
   // Open by default on desktop; collapsed on mobile so content isn't pushed off-screen.
   const [sidebarOpen, setSidebarOpen] = useState(() =>
     typeof window === 'undefined' ? true : window.innerWidth >= 1024,
@@ -87,12 +106,10 @@ export default function App() {
     return () => document.removeEventListener('mousedown', onDocClick);
   }, []);
 
-  // Always land on the Home hub whenever a session becomes authenticated
-  // (fresh login or a logout -> login cycle, since App stays mounted).
+  // Always land on Dashboard whenever a session becomes authenticated
   useEffect(() => {
     if (status === 'authenticated') {
-      setCurrentScreen(Screen.HOME);
-      setActiveSection(null);
+      setCurrentScreen(Screen.DASHBOARD);
     }
   }, [status]);
 
@@ -103,7 +120,6 @@ export default function App() {
         <ResetPasswordScreen
           token={resetToken}
           onDone={() => {
-            // Strip the token from the URL and return to login.
             if (typeof window !== 'undefined') {
               window.history.replaceState({}, '', window.location.pathname);
             }
@@ -120,7 +136,6 @@ export default function App() {
   }
 
   if (status !== 'authenticated') {
-    // A forced logout / expiry should drop the user straight to the login form.
     const view: AuthView = sessionMessage ? 'login' : authView;
     return (
       <Suspense fallback={<FullScreenLoader />}>
@@ -150,34 +165,25 @@ export default function App() {
     if (typeof window !== 'undefined' && window.innerWidth < 1024) setSidebarOpen(false);
   };
 
-  // Navigate to a screen, keeping the active workspace in sync with it.
-  const selectScreen = (s: Screen) => {
+  // Navigate to a screen. Partners sub-items pass a listing vertical so the
+  // Listings screen pre-filters to that type (and the sidebar highlights only it).
+  const selectScreen = (s: Screen, listingType?: ListingVertical) => {
     setCurrentScreen(s);
-    if (s === Screen.HOME) setActiveSection(null);
-    else setActiveSection((prev) => sectionOfScreen(s)?.id ?? prev);
+    if (listingType !== undefined) setPartnerType(listingType);
     closeMobileSidebar();
   };
 
-  // Enter a workspace from the hub — land on its first feature.
-  const enterSection = (id: SectionId) => {
-    setActiveSection(id);
-    setCurrentScreen(firstScreenOfSection(id));
-    closeMobileSidebar();
-  };
-
-  // Back to the Home hub.
-  const goHome = () => {
-    setCurrentScreen(Screen.HOME);
-    setActiveSection(null);
+  const goToDashboard = () => {
+    setCurrentScreen(Screen.DASHBOARD);
     closeMobileSidebar();
   };
 
   const renderScreen = () => {
     switch (currentScreen) {
-      case Screen.HOME: return <Hub onEnterSection={enterSection} onSelectScreen={selectScreen} />;
+      case Screen.HOME: return <Hub onEnterSection={() => {}} onSelectScreen={selectScreen} />;
       case Screen.DASHBOARD: return <Dashboard setScreen={selectScreen} />;
       case Screen.PARTNER_MANAGEMENT: return <PartnerManagement />;
-      case Screen.EVENT_APPROVAL: return <EventApproval />;
+      case Screen.EVENT_APPROVAL: return <EventApproval listingType={partnerType} />;
       case Screen.ADMIN_MANAGEMENT: return <AdminManagement />;
       case Screen.PAYMENTS_FINANCE: return <PaymentsFinance />;
       case Screen.FINANCE_DASHBOARD: return <FinanceDashboard />;
@@ -202,36 +208,30 @@ export default function App() {
       case Screen.SETTINGS: return <Settings />;
       case Screen.ANALYTICS: return <Analytics />;
       case Screen.USER_SECTION: return <UserSection setScreen={selectScreen} />;
+      case Screen.TRAFFIC_ENGAGEMENT: return <TrafficEngagement />;
+      case Screen.APP_CONTENT: return <ComingSoon title="App Content" onBack={goToDashboard} />;
       default: return (
-        <div className="flex flex-col items-center justify-center h-[60vh] text-gray-400">
-          <BarChart3 size={64} className="mb-4 opacity-20" />
-          <h2 className="text-xl font-bold">Screen Under Development</h2>
-          <p className="text-sm">This module is coming soon in the next update.</p>
-          <button
-            onClick={goHome}
-            className="mt-6 px-6 py-2 bg-yellow-400 text-gray-900 font-bold rounded-xl"
-          >
-            Back to Home
-          </button>
-        </div>
+        <ComingSoon title="Screen Under Development" onBack={goToDashboard} />
       );
     }
   };
 
   const displayName = admin?.full_name || admin?.email || 'Admin';
   const displayRole = admin ? roleLabel(admin.role) : '';
+  // Remount the Listings screen when the Partners vertical changes so each tab
+  // loads its own type-filtered data (the screen is otherwise a single mount).
+  const viewKey =
+    currentScreen === Screen.EVENT_APPROVAL ? `${currentScreen}:${partnerType}` : String(currentScreen);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-[#f5f3ee] flex">
       {/* Sidebar */}
       <Sidebar
         currentScreen={currentScreen}
-        activeSection={activeSection}
         onSelectScreen={selectScreen}
-        onEnterSection={enterSection}
-        onHome={goHome}
+        activeListingType={partnerType}
         sidebarOpen={sidebarOpen}
-        setIsLoggedIn={(v) => { if (!v) logout(); }}
+        onLogout={logout}
       />
 
       {/* Mobile backdrop — closes the drawer when tapped (desktop pushes content instead) */}
@@ -244,11 +244,11 @@ export default function App() {
       )}
 
       {/* Main Content */}
-      <main className={cn("flex-1 min-w-0 transition-all duration-300", sidebarOpen ? "lg:ml-[280px]" : "ml-0")}>
-        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+      <main className={cn("flex-1 min-w-0 transition-all duration-300", sidebarOpen ? "lg:ml-[260px]" : "ml-0")}>
+        <header className="sticky top-0 z-30 bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 hover:bg-gray-50 rounded-xl text-gray-500 transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors"
           >
             <Menu size={20} />
           </button>
@@ -259,13 +259,13 @@ export default function App() {
               <button
                 onClick={() => { setNotifOpen((o) => !o); setProfileOpen(false); }}
                 aria-label="Notifications"
-                className={cn('p-2 rounded-xl transition-colors', notifOpen ? 'text-gray-900 bg-gray-100' : 'text-gray-400 hover:text-gray-900 hover:bg-gray-50')}
+                className={cn('p-2 rounded-lg transition-colors', notifOpen ? 'text-amber-600 bg-amber-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100')}
               >
                 <Bell size={20} />
               </button>
               {notifOpen && (
-                <div className="absolute right-0 mt-2 w-72 bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden z-50">
-                  <div className="px-4 py-3 border-b border-gray-50">
+                <div className="absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden z-50">
+                  <div className="px-4 py-3 border-b border-gray-100">
                     <p className="text-sm font-bold text-gray-900">Notifications</p>
                   </div>
                   <div className="px-4 py-8 text-center">
@@ -274,45 +274,45 @@ export default function App() {
                   </div>
                   <button
                     onClick={() => { setNotifOpen(false); selectScreen(Screen.BROADCASTS); }}
-                    className="w-full flex items-center gap-2 px-4 py-3 border-t border-gray-50 text-xs font-bold text-gray-700 hover:bg-gray-50 transition-colors"
+                    className="w-full flex items-center gap-2 px-4 py-3 border-t border-gray-100 text-xs font-bold text-gray-500 hover:bg-gray-50 hover:text-amber-600 transition-colors"
                   >
-                    <Megaphone size={14} className="text-yellow-500" /> Send a broadcast
+                    <Megaphone size={14} className="text-amber-500" /> Send a broadcast
                   </button>
                 </div>
               )}
             </div>
 
             {/* Profile menu */}
-            <div className="relative pl-4 border-l border-gray-100" ref={profileRef}>
+            <div className="relative pl-4 border-l border-gray-200" ref={profileRef}>
               <button
                 onClick={() => { setProfileOpen((o) => !o); setNotifOpen(false); }}
                 className="flex items-center gap-2.5 group"
               >
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-bold text-gray-900">{displayName}</p>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{displayRole}</p>
+                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{displayRole}</p>
                 </div>
-                <div className="w-10 h-10 rounded-xl bg-yellow-400 flex items-center justify-center font-bold text-gray-900">
+                <div className="w-9 h-9 rounded-full bg-amber-400 flex items-center justify-center font-bold text-gray-900 text-sm shadow-sm">
                   {(displayName || 'A').slice(0, 1).toUpperCase()}
                 </div>
-                <ChevronDown size={16} className={cn('text-gray-400 transition-transform', profileOpen && 'rotate-180')} />
+                <ChevronDown size={16} className={cn('text-gray-500 transition-transform', profileOpen && 'rotate-180')} />
               </button>
               {profileOpen && (
-                <div className="absolute right-0 mt-2 w-60 bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden z-50">
-                  <div className="px-4 py-3 border-b border-gray-50">
+                <div className="absolute right-0 mt-2 w-60 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden z-50">
+                  <div className="px-4 py-3 border-b border-gray-100">
                     <p className="text-sm font-bold text-gray-900 truncate">{displayName}</p>
                     {admin?.email && <p className="text-xs text-gray-500 truncate">{admin.email}</p>}
-                    <span className="inline-block mt-1.5 px-2 py-0.5 bg-yellow-50 text-yellow-700 text-[10px] font-bold rounded-full uppercase tracking-wider">{displayRole}</span>
+                    <span className="inline-block mt-1.5 px-2 py-0.5 bg-amber-50 text-amber-700 text-[10px] font-bold rounded-full uppercase tracking-wider">{displayRole}</span>
                   </div>
                   <button
                     onClick={() => { setProfileOpen(false); selectScreen(Screen.SETTINGS); }}
-                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                   >
                     <SettingsIcon size={16} className="text-gray-400" /> Settings
                   </button>
                   <button
                     onClick={() => { setProfileOpen(false); logout(); }}
-                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors border-t border-gray-50"
+                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-red-500 hover:bg-red-50 transition-colors border-t border-gray-100"
                   >
                     <LogOut size={16} /> Log out
                   </button>
@@ -323,11 +323,11 @@ export default function App() {
         </header>
 
         <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-          <ErrorBoundary label="screen" resetKey={currentScreen}>
+          <ErrorBoundary label="screen" resetKey={viewKey}>
             <Suspense fallback={<LoadingFallback />}>
               <AnimatePresence mode="wait">
                 <motion.div
-                  key={currentScreen}
+                  key={viewKey}
                   initial={{ opacity: 0, x: 10 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -10 }}

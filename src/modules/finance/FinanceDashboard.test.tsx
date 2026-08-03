@@ -77,7 +77,7 @@ describe('FinanceDashboard', () => {
     it('re-fetches when the period changes', async () => {
         render(<FinanceDashboard />);
         await screen.findByText('Gross Revenue');
-        await userEvent.click(screen.getByRole('button', { name: 'Today' }));
+        await userEvent.click(screen.getByRole('button', { name: 'As of Today' }));
         await waitFor(() => expect(getFinanceSummary).toHaveBeenCalledWith({ period: 'today' }));
     });
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, type ReactNode } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
     Search,
     Eye,
@@ -30,7 +30,10 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import Card from '../../shared/components/ui/Card';
 import EmptyState from '../../shared/components/ui/EmptyState';
+import Select from '../../shared/components/ui/Select';
 import { cn } from '../../shared/lib/utils';
+import PeriodFilter from '../../shared/components/ui/PeriodFilter';
+import { resolvePeriodRange, type StandardPeriod } from '../../shared/lib/period';
 import { useAuth } from '../../shared/auth/AuthContext';
 import {
     listPartners,
@@ -161,6 +164,9 @@ const PartnerManagement = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [metrics, setMetrics] = useState<PartnerMetrics | null>(null);
+    const [period, setPeriod] = useState<StandardPeriod>('this_month');
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
 
     // Filters
     const [search, setSearch] = useState('');
@@ -217,12 +223,13 @@ const PartnerManagement = () => {
     }, [buildParams]);
 
     const loadMetrics = useCallback(async () => {
+        if (period === 'custom' && (!dateFrom || !dateTo)) return;
         try {
-            setMetrics(await getPartnerMetrics());
+            setMetrics(await getPartnerMetrics(resolvePeriodRange(period, dateFrom, dateTo)));
         } catch {
             /* metrics are non-critical */
         }
-    }, []);
+    }, [period, dateFrom, dateTo]);
 
     useEffect(() => {
         loadPartners();
@@ -393,7 +400,7 @@ const PartnerManagement = () => {
                             <Card>
                                 <div className="flex items-start gap-4">
                                     {detail.extended_profile?.logo ? (
-                                        <img src={mediaUrl(detail.extended_profile.logo)} alt="" className="w-16 h-16 rounded-2xl object-cover border border-gray-100" />
+                                        <img src={mediaUrl(detail.extended_profile.logo)} alt="" className="w-16 h-16 rounded-2xl object-cover border border-gray-200" />
                                     ) : (
                                         <div className="w-16 h-16 rounded-2xl bg-yellow-50 flex items-center justify-center">
                                             <Building2 className="text-yellow-500" size={28} />
@@ -412,7 +419,10 @@ const PartnerManagement = () => {
                                             )}
                                             {identityVerified && <BadgeCheck size={16} className="text-green-500" />}
                                         </div>
-                                        <p className="text-sm text-gray-500 mt-0.5">{detail.email}</p>
+                                        {detail.profile?.business_name && detail.profile.business_name !== detail.email && (
+                                            <p className="text-sm text-gray-500 mt-0.5">{detail.email}</p>
+                                        )}
+                                        <p className="text-[10px] text-gray-400 font-mono mt-0.5">ID: {detail.id}</p>
                                         <div className="flex items-center gap-3 mt-2 text-xs text-gray-400 flex-wrap">
                                             <span className="flex items-center gap-1"><Building2 size={12} /> {detail.profile?.business_type || '—'}</span>
                                             <span className="flex items-center gap-1"><MapPin size={12} /> {detail.profile?.base_city || '—'}</span>
@@ -431,7 +441,7 @@ const PartnerManagement = () => {
                                 </div>
 
                                 {detail.extended_profile?.bio && (
-                                    <p className="text-sm text-gray-600 leading-relaxed mt-4 pt-4 border-t border-gray-50">{detail.extended_profile.bio}</p>
+                                    <p className="text-sm text-gray-600 leading-relaxed mt-4 pt-4 border-t border-gray-100">{detail.extended_profile.bio}</p>
                                 )}
 
                                 <div className="flex items-center gap-2 mt-4">
@@ -445,7 +455,7 @@ const PartnerManagement = () => {
                                     </p>
                                 )}
 
-                                <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-50">
+                                <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-100">
                                     {detail.profile?.instagram_url && <SocialLink href={detail.profile.instagram_url} icon={Instagram} label="Instagram" />}
                                     {detail.profile?.facebook_url && <SocialLink href={detail.profile.facebook_url} icon={Facebook} label="Facebook" />}
                                     {detail.profile?.website_url && <SocialLink href={detail.profile.website_url} icon={Globe} label="Website" />}
@@ -464,7 +474,7 @@ const PartnerManagement = () => {
                                     <Field label="PAN Verified" value={detail.verification?.is_pan_verified ? 'Yes' : 'No'} />
                                 </div>
                                 {canManage && (
-                                    <div className="flex gap-2 mt-4 pt-4 border-t border-gray-50">
+                                    <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
                                         {!identityVerified ? (
                                             <button
                                                 onClick={() => runDirect('verify', () => verifyPartner(detail.id), 'Partner marked as verified.', detail.id)}
@@ -499,7 +509,7 @@ const PartnerManagement = () => {
                                             <Field label="IFSC Code" value={detail.bank_detail.ifsc_code} />
                                         </div>
                                         {canManage && !bankVerified && (
-                                            <div className="mt-4 pt-4 border-t border-gray-50">
+                                            <div className="mt-4 pt-4 border-t border-gray-100">
                                                 <button
                                                     onClick={() => runDirect('verify-bank', () => verifyPartnerBank(detail.id), 'Bank details verified.', detail.id)}
                                                     disabled={directBusy === 'verify-bank'}
@@ -520,18 +530,28 @@ const PartnerManagement = () => {
                                 <h3 className="font-bold text-gray-900 flex items-center gap-2 mb-4"><FileText size={18} className="text-yellow-500" /> Uploaded Media & Documents</h3>
                                 {detail.media?.length ? (
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                        {detail.media.map((m) => (
-                                            <a key={m.id} href={mediaUrl(m.file)} target="_blank" rel="noreferrer" className="group block rounded-xl overflow-hidden border border-gray-100 hover:border-yellow-300 transition-all">
-                                                {m.media_type === 'image' ? (
-                                                    <img src={mediaUrl(m.file)} alt="" className="w-full h-24 object-cover" />
-                                                ) : (
-                                                    <div className="w-full h-24 bg-gray-50 flex flex-col items-center justify-center text-gray-400 group-hover:text-yellow-500">
-                                                        <FileText size={24} />
-                                                        <span className="text-[10px] mt-1 uppercase font-bold">{m.media_type}</span>
-                                                    </div>
-                                                )}
-                                            </a>
-                                        ))}
+                                        {detail.media.map((m) => {
+                                            const isImage = m.file && /\.(jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i.test(m.file);
+                                            return (
+                                                <a
+                                                    key={m.id}
+                                                    href={m.file ? mediaUrl(m.file) : '#'}
+                                                    target={m.file ? "_blank" : undefined}
+                                                    rel="noreferrer"
+                                                    onClick={(e) => { if (!m.file) e.preventDefault(); }}
+                                                    className="group block rounded-xl overflow-hidden border border-gray-200 hover:border-yellow-300 transition-all"
+                                                >
+                                                    {isImage ? (
+                                                        <img src={mediaUrl(m.file)} alt="" className="w-full h-24 object-cover" />
+                                                    ) : (
+                                                        <div className="w-full h-24 bg-gray-50 flex flex-col items-center justify-center text-gray-400 group-hover:text-yellow-500">
+                                                            <FileText size={24} />
+                                                            <span className="text-[10px] mt-1 uppercase font-bold text-center px-1">{m.media_type || 'file'}</span>
+                                                        </div>
+                                                    )}
+                                                </a>
+                                            );
+                                        })}
                                     </div>
                                 ) : (
                                     <p className="text-sm text-gray-400">No media uploaded.</p>
@@ -544,7 +564,7 @@ const PartnerManagement = () => {
                                 {logs.length ? (
                                     <div className="space-y-3">
                                         {logs.map((log) => (
-                                            <div key={log.id} className="flex gap-3 pb-3 border-b border-gray-50 last:border-0">
+                                            <div key={log.id} className="flex gap-3 pb-3 border-b border-gray-100 last:border-0">
                                                 <div className="w-2 h-2 rounded-full bg-yellow-400 mt-1.5 flex-shrink-0" />
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center justify-between gap-2">
@@ -583,7 +603,7 @@ const PartnerManagement = () => {
                                 {!canApprove && !canManage ? (
                                     <p className="text-xs text-gray-400 flex items-center gap-1.5"><AlertCircle size={14} /> You have read-only access to partners.</p>
                                 ) : (
-                                    <div className="space-y-2 pt-4 border-t border-gray-100">
+                                    <div className="space-y-2 pt-4 border-t border-gray-200">
                                         {/* Stage 2 — decisions */}
                                         {canApprove && canDecide && (
                                             <>
@@ -592,7 +612,7 @@ const PartnerManagement = () => {
                                                         onClick={() => openAction('approve')}
                                                         disabled={!identityVerified || !bankVerified}
                                                         title={!identityVerified || !bankVerified ? 'Verify identity and bank details first' : undefined}
-                                                        className="w-full flex items-center justify-center gap-2 py-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        className="w-full flex items-center justify-center gap-2 py-3 bg-green-500 text-gray-900 font-bold rounded-xl hover:bg-green-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                                     >
                                                         <CheckCircle size={16} /> Approve Partner
                                                     </button>
@@ -678,17 +698,26 @@ const PartnerManagement = () => {
         <div className="space-y-6">
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Partner Management</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">Partners</h1>
                     <p className="text-gray-500 text-sm">Review documents & banking, then approve partners</p>
                 </div>
-                <button
-                    onClick={handleExport}
-                    disabled={exporting}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all disabled:opacity-60"
-                >
-                    {exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-                    {exporting ? 'Exporting…' : 'Export CSV'}
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                    <PeriodFilter
+                        value={period}
+                        onChange={setPeriod}
+                        dateFrom={dateFrom}
+                        dateTo={dateTo}
+                        onDateChange={(from, to) => { setDateFrom(from); setDateTo(to); }}
+                    />
+                    <button
+                        onClick={handleExport}
+                        disabled={exporting}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all disabled:opacity-60"
+                    >
+                        {exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                        {exporting ? 'Exporting…' : 'Export CSV'}
+                    </button>
+                </div>
             </header>
 
             {/* Metrics */}
@@ -702,11 +731,12 @@ const PartnerManagement = () => {
                 {!metrics && <Card className="col-span-2 lg:col-span-4 text-center text-gray-400 text-sm py-6">Loading metrics…</Card>}
             </div>
             {metrics && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                     <MiniMetric label="Activated Limited" value={metrics.activated_limited} />
                     <MiniMetric label="Verified" value={metrics.is_verified_count} />
-                    <MiniMetric label="Active" value={metrics.is_active_count} />
-                    <MiniMetric label="New This Month" value={metrics.new_this_month} />
+                    <MiniMetric label="Enabled Partners" value={metrics.is_active_count} />
+                    <MiniMetric label="Active Partners (30d)" value={metrics.active_partners_30d} />
+                    <MiniMetric label="New Partners" value={metrics.new_this_month} />
                 </div>
             )}
 
@@ -736,20 +766,38 @@ const PartnerManagement = () => {
                     />
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                 </div>
-                <FilterSelect value={statusFilter} onChange={setStatusFilter} allLabel="All statuses">
-                    {PARTNER_STATUSES.map((s) => <option key={s} value={s}>{partnerStatusLabel(s)}</option>)}
-                </FilterSelect>
-                <FilterSelect value={categoryFilter} onChange={setCategoryFilter} allLabel="All categories">
-                    {PARTNER_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                </FilterSelect>
-                <FilterSelect value={verifiedFilter} onChange={(v) => setVerifiedFilter(v as '' | 'true' | 'false')} allLabel="Any verification">
-                    <option value="true">Verified</option>
-                    <option value="false">Unverified</option>
-                </FilterSelect>
-                <FilterSelect value={activeFilter} onChange={(v) => setActiveFilter(v as '' | 'true' | 'false')} allLabel="Any account">
-                    <option value="true">Active</option>
-                    <option value="false">Inactive</option>
-                </FilterSelect>
+                <Select
+                    value={statusFilter}
+                    onChange={setStatusFilter}
+                    placeholder="All statuses"
+                    options={[{ value: '', label: 'All statuses' }, ...PARTNER_STATUSES.map((s) => ({ value: s, label: partnerStatusLabel(s) }))]}
+                />
+                <Select
+                    value={categoryFilter}
+                    onChange={setCategoryFilter}
+                    placeholder="All categories"
+                    options={[{ value: '', label: 'All categories' }, ...PARTNER_CATEGORIES.map((c) => ({ value: c, label: c }))]}
+                />
+                <Select
+                    value={verifiedFilter}
+                    onChange={(v) => setVerifiedFilter(v as '' | 'true' | 'false')}
+                    placeholder="Any verification"
+                    options={[
+                        { value: '', label: 'Any verification' },
+                        { value: 'true', label: 'Verified' },
+                        { value: 'false', label: 'Unverified' },
+                    ]}
+                />
+                <Select
+                    value={activeFilter}
+                    onChange={(v) => setActiveFilter(v as '' | 'true' | 'false')}
+                    placeholder="Any account"
+                    options={[
+                        { value: '', label: 'Any account' },
+                        { value: 'true', label: 'Active' },
+                        { value: 'false', label: 'Inactive' },
+                    ]}
+                />
             </div>
 
             {/* Table */}
@@ -757,7 +805,7 @@ const PartnerManagement = () => {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left whitespace-nowrap">
                         <thead>
-                            <tr className="bg-gray-50 border-b border-gray-100">
+                            <tr className="bg-gray-50 border-b border-gray-200">
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Partner</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Category</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">City</th>
@@ -767,7 +815,7 @@ const PartnerManagement = () => {
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Action</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-50">
+                        <tbody className="divide-y divide-gray-100">
                             {loading ? (
                                 <tr><td colSpan={7}><div className="flex items-center justify-center py-16 text-gray-400"><Loader2 className="animate-spin" size={24} /></div></td></tr>
                             ) : error ? (
@@ -794,12 +842,13 @@ const PartnerManagement = () => {
                                                 )}
                                             </div>
                                             <p className="text-xs text-gray-500">{p.email}</p>
+                                            <p className="text-[10px] text-gray-400 font-mono mt-0.5">ID: {p.id}</p>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex gap-1 flex-wrap max-w-[180px]">
                                                 {p.categories?.length ? p.categories.map((c) => (
                                                     <span key={c} className="px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] font-bold rounded-md">{c}</span>
-                                                )) : <span className="text-gray-300">—</span>}
+                                                )) : <span className="text-gray-700">—</span>}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-xs text-gray-500">{p.base_city || '—'}</td>
@@ -869,7 +918,7 @@ function Step({ n, title, done, active }: { n: number; title: string; done: bool
         <div className="flex items-center gap-3">
             <div className={cn(
                 'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0',
-                done ? 'bg-green-500 text-white' : active ? 'bg-yellow-400 text-gray-900' : 'bg-gray-100 text-gray-400',
+                done ? 'bg-green-500 text-gray-900' : active ? 'bg-yellow-400 text-gray-900' : 'bg-gray-100 text-gray-400',
             )}>
                 {done ? <CheckCircle size={15} /> : n}
             </div>
@@ -882,42 +931,20 @@ function SummaryRow({ label, ok }: { label: string; ok: boolean }) {
     return (
         <div className="flex items-center justify-between text-xs">
             <span className="text-gray-500">{label}</span>
-            {ok ? <CheckCircle size={14} className="text-green-500" /> : <XCircle size={14} className="text-gray-300" />}
+            {ok ? <CheckCircle size={14} className="text-green-500" /> : <XCircle size={14} className="text-gray-700" />}
         </div>
     );
 }
 
 function MiniMetric({ label, value }: { label: string; value: number }) {
     return (
-        <div className="bg-white border border-gray-100 rounded-xl px-4 py-3">
+        <div className="bg-white border border-gray-200 rounded-xl px-4 py-3">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</p>
             <p className="text-lg font-bold text-gray-900">{value}</p>
         </div>
     );
 }
 
-function FilterSelect({
-    value,
-    onChange,
-    allLabel,
-    children,
-}: {
-    value: string;
-    onChange: (v: string) => void;
-    allLabel: string;
-    children: ReactNode;
-}) {
-    return (
-        <select
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 appearance-none cursor-pointer"
-        >
-            <option value="">{allLabel}</option>
-            {children}
-        </select>
-    );
-}
 
 function ActionModal({
     kind,
@@ -945,9 +972,9 @@ function ActionModal({
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden"
             >
-                <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                <div className="p-6 border-b border-gray-200 flex justify-between items-center">
                     <h2 className="text-xl font-bold text-gray-900">{cfg.title}</h2>
-                    <button onClick={onClose} disabled={submitting} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X size={20} className="text-gray-400" /></button>
+                    <button onClick={onClose} disabled={submitting} className="p-2 hover:bg-gray-50 rounded-full transition-colors"><X size={20} className="text-gray-400" /></button>
                 </div>
                 <div className="p-6 space-y-4">
                     <p className="text-sm text-gray-500">{cfg.blurb}</p>
@@ -968,7 +995,7 @@ function ActionModal({
                         onClick={onConfirm}
                         disabled={disabled}
                         className={cn(
-                            'flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-all disabled:opacity-60 disabled:cursor-not-allowed',
+                            'flex items-center gap-2 px-6 py-3 text-gray-900 font-bold rounded-xl transition-all disabled:opacity-60 disabled:cursor-not-allowed',
                             cfg.danger ? 'bg-red-600 hover:bg-red-700' : 'bg-green-500 hover:bg-green-600',
                         )}
                     >

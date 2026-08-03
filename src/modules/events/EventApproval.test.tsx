@@ -36,6 +36,7 @@ vi.mock('../../shared/lib/api', () => ({
     getListingHistory: vi.fn(() => Promise.resolve([])),
     approveListing: vi.fn(() => Promise.resolve({})),
     rejectListing: vi.fn(() => Promise.resolve({})),
+    getListingRejectionReasons: vi.fn(() => Promise.resolve([])),
     setListingVisibility: vi.fn(() => Promise.resolve({})),
     listingStatusLabel: (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '—'),
     listingStatusTone: () => 'bg-gray-100 text-gray-600',
@@ -85,7 +86,8 @@ describe('Listings Approval', () => {
     it('renders the heading and stats', async () => {
         render(<EventApproval />);
         expect(screen.getByText('Listings Approval')).toBeInTheDocument();
-        expect(await screen.findByText('Pending')).toBeInTheDocument();
+        // "Live" is the guide term for a published listing (unique stat tile).
+        expect(await screen.findByText('Live')).toBeInTheDocument();
         expect(await screen.findByText('11')).toBeInTheDocument();
     });
 
@@ -111,10 +113,21 @@ describe('Listings Approval', () => {
     it('sends listing_type and search filters to the API', async () => {
         render(<EventApproval />);
         await screen.findByText('Summer Jam');
-        await userEvent.selectOptions(screen.getByDisplayValue('All types'), 'venue');
+        // The type filter is a custom dropdown: open the "All types" trigger, pick the option.
+        await userEvent.click(screen.getByText('All types'));
+        await userEvent.click(screen.getByRole('button', { name: 'Venue' }));
         await waitFor(() =>
             expect(listListings).toHaveBeenCalledWith(expect.objectContaining({ listing_type: 'venue' })),
         );
+    });
+
+    it('pre-filters to the listing vertical passed via props', async () => {
+        render(<EventApproval listingType="class" />);
+        await waitFor(() =>
+            expect(listListings).toHaveBeenCalledWith(expect.objectContaining({ listing_type: 'class' })),
+        );
+        // Header reflects the scoped vertical.
+        expect(screen.getByRole('heading', { name: /Class Approval/i })).toBeInTheDocument();
     });
 
     it('shows an empty state when no listings match', async () => {
@@ -172,10 +185,10 @@ describe('Listings Approval', () => {
         const buttons = await screen.findAllByRole('button', { name: 'Reject Listing' });
         const confirm = buttons[buttons.length - 1];
         expect(confirm).toBeDisabled();
-        await userEvent.type(screen.getByPlaceholderText(/cover image is low quality/i), 'Incomplete details');
+        await userEvent.type(screen.getByPlaceholderText(/describe the issues/i), 'Incomplete details');
         expect(confirm).not.toBeDisabled();
         await userEvent.click(confirm);
-        await waitFor(() => expect(rejectListing).toHaveBeenCalledWith('l-1', 'Incomplete details'));
+        await waitFor(() => expect(rejectListing).toHaveBeenCalledWith('l-1', 'Incomplete details', undefined));
     });
 
     it('shows an unpause action for a paused published listing', async () => {
