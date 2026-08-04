@@ -87,7 +87,9 @@ describe('TlbSignature', () => {
   it('filters by type', async () => {
     render(<TlbSignature />);
     await screen.findByText('Sunset Gala');
-    await userEvent.selectOptions(screen.getAllByRole('combobox')[0], 'event');
+    const filterBar = screen.getByText('All types').closest('.relative') as HTMLElement;
+    await userEvent.click(screen.getByText('All types'));
+    await userEvent.click(await within(filterBar).findByText('event'));
     await waitFor(() => expect(listTlbSignature).toHaveBeenCalledWith(expect.objectContaining({ type: 'event' })));
   });
 });

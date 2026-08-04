@@ -78,27 +78,26 @@ describe('Dashboard', () => {
         expect(screen.getByText('Total Customers')).toBeInTheDocument();
     });
 
-    it('renders the guide-grouped metric sections with wired Active/Inactive/Pending-KYC', async () => {
+    it('renders the Cross-vertical health check metric tiles', async () => {
         render(<Dashboard setScreen={setScreen} />);
         await screen.findByText('Activity summary');
         // Section headings
-        ['Customers', 'Partners', 'Listings', 'Bookings & Enquiries'].forEach((h) =>
-            expect(screen.getByRole('heading', { name: h })).toBeInTheDocument());
-        // Backed metrics from getCustomerStats / getPartnerStats
-        expect(screen.getByText('Active Customers')).toBeInTheDocument();
-        expect(screen.getByText('900')).toBeInTheDocument();   // active customers (unique)
-        expect(screen.getByText('300')).toBeInTheDocument();   // inactive customers (unique)
-        expect(screen.getByText('Pending KYC')).toBeInTheDocument();
-        // Listings vocab: Live tile
-        expect(screen.getByText('Live')).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'Cross-vertical health check' })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'At-a-glance: Listings by Vertical' })).toBeInTheDocument();
+        // Backed metrics from getOverviewStats
+        expect(screen.getByText('Total Customers')).toBeInTheDocument();
+        expect(screen.getByText('Total Partners')).toBeInTheDocument();
+        expect(screen.getByText('Total Listings')).toBeInTheDocument();
+        expect(screen.getByText('Bookings / Tickets Sold')).toBeInTheDocument();
+        expect(screen.getByText('Enquiries')).toBeInTheDocument();
     });
 
-    it('shows an em-dash when the customer/partner stats endpoints are unavailable', async () => {
-        (getCustomerStats as any).mockResolvedValue(null);
+    it('shows an em-dash for per-vertical partner counts when the partner stats endpoint is unavailable', async () => {
         (getPartnerStats as any).mockResolvedValue(null);
         render(<Dashboard setScreen={setScreen} />);
-        await screen.findByText('Active Customers');
-        expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(1);
+        await screen.findByText('At-a-glance: Listings by Vertical');
+        // partnerCountFor() falls back to null → show() renders '—' for every vertical's partner tile.
+        expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(4);
     });
 
     it('renders per-vertical partner and active-listing counts from the stats endpoints', async () => {
@@ -127,10 +126,10 @@ describe('Dashboard', () => {
         await screen.findByText('Activity summary');
         expect(screen.getByText(/45 new customers signed up on the app/)).toBeInTheDocument();
         expect(screen.getByText(/6 new partners registered/)).toBeInTheDocument();
-        expect(screen.getByText(/240 listings published across verticals/)).toBeInTheDocument();
+        expect(screen.getByText(/240 new listings published across verticals/)).toBeInTheDocument();
         expect(screen.getByText(/platform revenue collected/)).toBeInTheDocument();
         // refunded > 0 → the refund row appears
-        expect(screen.getByText(/refunds? awaiting review/)).toBeInTheDocument();
+        expect(screen.getByText(/refund requests? awaiting review/)).toBeInTheDocument();
     });
 
     it('renders the Recent activity feed merged from bookings, signups and tickets', async () => {
