@@ -25,6 +25,7 @@ import EmptyState from '../../shared/components/ui/EmptyState';
 import PeriodFilter from '../../shared/components/ui/PeriodFilter';
 import { cn } from '../../shared/lib/utils';
 import { resolvePeriodParams, STANDARD_PERIOD_LABELS, type StandardPeriod } from '../../shared/lib/period';
+import { VERTICALS as VERTICAL_TYPES, VERTICAL_CONFIG } from '../../shared/nav/verticals';
 import { Screen } from '../../types';
 import {
     getOverviewStats,
@@ -48,12 +49,8 @@ import {
 // ---------------------------------------------------------------------------
 
 /** The 4 moderated listing verticals, in display order, with their static blurb and matching partner category. */
-const VERTICALS: { type: ListingType; label: string; subtitle: string; category: string }[] = [
-    { type: 'event', label: 'Events', subtitle: 'Ticketing · commission', category: 'Events' },
-    { type: 'program', label: 'Programs', subtitle: 'Enquiry credits', category: 'Programs' },
-    { type: 'class', label: 'Classes', subtitle: 'Enquiry credits', category: 'Classes' },
-    { type: 'venue', label: 'Venues', subtitle: 'Hybrid model', category: 'Venues' },
-];
+const VERTICALS: { type: ListingType; label: string; subtitle: string; category: string }[] =
+    VERTICAL_TYPES.map((type) => ({ type, ...VERTICAL_CONFIG[type] }));
 
 function formatLakhsCrores(value: number): string {
     if (value >= 10000000) return `Rs ${(value / 10000000).toFixed(2)}Cr`;

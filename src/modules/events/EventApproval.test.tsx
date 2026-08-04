@@ -207,4 +207,66 @@ describe('Listings Approval', () => {
         expect(await screen.findByText(/read-only access to listings/i)).toBeInTheDocument();
         expect(screen.queryByRole('button', { name: /Approve & Publish/i })).not.toBeInTheDocument();
     });
+
+    it('hides the header and type filter when lockType is set (embedded in a vertical dashboard)', async () => {
+        render(<EventApproval listingType="event" lockType />);
+        await screen.findByText('Summer Jam');
+        expect(screen.queryByText('Listings Approval')).not.toBeInTheDocument();
+        expect(screen.queryByText('Event Approval')).not.toBeInTheDocument();
+        expect(screen.queryByText('All types')).not.toBeInTheDocument();
+        // Still scopes the query to the given type.
+        expect(listListings).toHaveBeenCalledWith(expect.objectContaining({ listing_type: 'event' }));
+    });
+
+    it('shows the header and type filter when not locked', async () => {
+        render(<EventApproval />);
+        await screen.findByText('Summer Jam');
+        expect(screen.getByText('Listings Approval')).toBeInTheDocument();
+        expect(screen.getByText('All types')).toBeInTheDocument();
+    });
+
+    it('paginates the table 10 rows per page and pages with Prev/Next', async () => {
+        const many = Array.from({ length: 15 }, (_, i) => ({
+            id: `l-${i}`, title: `Listing ${i}`, listing_type: 'event', status: 'pending', is_paused: false,
+            partner_name: 'Alpha Events', partner_email: 'alpha@tlb.dev', category: 'Music', city: 'Mumbai',
+            created_at: '2026-06-01T00:00:00Z', updated_at: '2026-06-01T00:00:00Z',
+        }));
+        (listListings as any).mockResolvedValue(many);
+        render(<EventApproval />);
+
+        await screen.findByText('Listing 0');
+        expect(screen.getByText('Listing 9')).toBeInTheDocument();
+        expect(screen.queryByText('Listing 10')).not.toBeInTheDocument();
+        expect(screen.getByText('15 listings · page 1 of 2')).toBeInTheDocument();
+
+        const prev = screen.getByRole('button', { name: /Prev/i });
+        const next = screen.getByRole('button', { name: /Next/i });
+        expect(prev).toBeDisabled();
+
+        await userEvent.click(next);
+        expect(screen.getByText('Listing 10')).toBeInTheDocument();
+        expect(screen.queryByText('Listing 0')).not.toBeInTheDocument();
+        expect(screen.getByText('15 listings · page 2 of 2')).toBeInTheDocument();
+        expect(next).toBeDisabled();
+
+        await userEvent.click(prev);
+        expect(screen.getByText('Listing 0')).toBeInTheDocument();
+    });
+
+    it('resets to page 1 when the search filter changes', async () => {
+        const many = Array.from({ length: 15 }, (_, i) => ({
+            id: `l-${i}`, title: `Listing ${i}`, listing_type: 'event', status: 'pending', is_paused: false,
+            partner_name: 'Alpha Events', partner_email: 'alpha@tlb.dev', category: 'Music', city: 'Mumbai',
+            created_at: '2026-06-01T00:00:00Z', updated_at: '2026-06-01T00:00:00Z',
+        }));
+        (listListings as any).mockResolvedValue(many);
+        render(<EventApproval />);
+
+        await screen.findByText('Listing 0');
+        await userEvent.click(screen.getByRole('button', { name: /Next/i }));
+        expect(await screen.findByText(/page 2 of 2/)).toBeInTheDocument();
+
+        await userEvent.type(screen.getByPlaceholderText('Search by title…'), 'x');
+        await waitFor(() => expect(screen.getByText(/page 1 of/)).toBeInTheDocument());
+    });
 });

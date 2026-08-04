@@ -18,7 +18,7 @@ const ForgotPasswordScreen = lazy(() => import('./modules/auth/ForgotPasswordScr
 const ResetPasswordScreen = lazy(() => import('./modules/auth/ResetPasswordScreen'));
 const Dashboard = lazy(() => import('./modules/dashboard/Dashboard'));
 const PartnerManagement = lazy(() => import('./modules/partners/PartnerManagement'));
-const EventApproval = lazy(() => import('./modules/events/EventApproval'));
+const VerticalDashboard = lazy(() => import('./modules/events/VerticalDashboard'));
 const AdminManagement = lazy(() => import('./modules/admin/AdminManagement'));
 const PaymentsFinance = lazy(() => import('./modules/finance/PaymentsFinance'));
 const FinanceDashboard = lazy(() => import('./modules/finance/FinanceDashboard'));
@@ -183,7 +183,7 @@ export default function App() {
       case Screen.HOME: return <Hub onEnterSection={() => {}} onSelectScreen={selectScreen} />;
       case Screen.DASHBOARD: return <Dashboard setScreen={selectScreen} />;
       case Screen.PARTNER_MANAGEMENT: return <PartnerManagement />;
-      case Screen.EVENT_APPROVAL: return <EventApproval listingType={partnerType} />;
+      case Screen.EVENT_APPROVAL: return <VerticalDashboard vertical={(partnerType || 'event') as ListingVertical} />;
       case Screen.ADMIN_MANAGEMENT: return <AdminManagement />;
       case Screen.PAYMENTS_FINANCE: return <PaymentsFinance />;
       case Screen.FINANCE_DASHBOARD: return <FinanceDashboard />;
