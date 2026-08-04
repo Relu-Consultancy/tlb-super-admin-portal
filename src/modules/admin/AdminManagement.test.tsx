@@ -87,17 +87,17 @@ describe('AdminManagement', () => {
     it('shows Unlock for a locked admin and Force Logout for other admins (not self)', async () => {
         render(<AdminManagement />);
         await screen.findByText('Bob Jones');
-        expect(screen.getByText('Unlock')).toBeInTheDocument();
-        expect(screen.getAllByText('Force Logout')).toHaveLength(1);
+        expect(screen.getByTitle('Unlock')).toBeInTheDocument();
+        expect(screen.getAllByTitle('Force Logout')).toHaveLength(1);
     });
 
     it('force-logout requires confirmation before calling the API', async () => {
         render(<AdminManagement />);
         await screen.findByText('Bob Jones');
-        await userEvent.click(screen.getByText('Force Logout'));
-        expect(screen.getByText('Confirm')).toBeInTheDocument();
+        await userEvent.click(screen.getByTitle('Force Logout'));
+        expect(screen.getByText('Cancel')).toBeInTheDocument();
         expect(forceLogoutAdmin).not.toHaveBeenCalled();
-        await userEvent.click(screen.getByText('Confirm'));
+        await userEvent.click(screen.getByText('Logout'));
         await waitFor(() => expect(forceLogoutAdmin).toHaveBeenCalledWith('other-2'));
     });
 
@@ -112,8 +112,8 @@ describe('AdminManagement', () => {
         authState.canManage = false;
         render(<AdminManagement />);
         await screen.findByText('Bob Jones');
-        expect(screen.queryByText('Force Logout')).not.toBeInTheDocument();
-        expect(screen.queryByText('Unlock')).not.toBeInTheDocument();
+        expect(screen.queryByTitle('Force Logout')).not.toBeInTheDocument();
+        expect(screen.queryByTitle('Unlock')).not.toBeInTheDocument();
         expect(screen.queryByText('Add New Admin')).not.toBeInTheDocument();
     });
 

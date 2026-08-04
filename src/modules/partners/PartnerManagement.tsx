@@ -33,7 +33,7 @@ import EmptyState from '../../shared/components/ui/EmptyState';
 import Select from '../../shared/components/ui/Select';
 import { cn } from '../../shared/lib/utils';
 import PeriodFilter from '../../shared/components/ui/PeriodFilter';
-import { resolvePeriodRange, type StandardPeriod } from '../../shared/lib/period';
+import { resolvePeriodRange, STANDARD_PERIOD_LABELS, type StandardPeriod } from '../../shared/lib/period';
 import { useAuth } from '../../shared/auth/AuthContext';
 import {
     listPartners,
@@ -154,7 +154,14 @@ const ACTION_CONFIG: Record<
     },
 };
 
-const PartnerManagement = () => {
+interface PartnerManagementProps {
+    /** Pre-select (and, with `lockCategory`, fix) a partner category — used as the Partner Directory tab of a vertical dashboard. */
+    category?: string;
+    /** When true (with `category` set), hide the category filter and derive the metric tiles from the category-scoped partner list instead of the platform-wide metrics endpoint. */
+    lockCategory?: boolean;
+}
+
+const PartnerManagement = ({ category = '', lockCategory = false }: PartnerManagementProps = {}) => {
     const { hasPermission } = useAuth();
     const canManage = hasPermission('MANAGE_PARTNERS');
     const canApprove = hasPermission('APPROVE_PARTNERS') || canManage;
@@ -172,7 +179,7 @@ const PartnerManagement = () => {
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
-    const [categoryFilter, setCategoryFilter] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState(category);
     const [verifiedFilter, setVerifiedFilter] = useState<'' | 'true' | 'false'>('');
     const [activeFilter, setActiveFilter] = useState<'' | 'true' | 'false'>('');
 
@@ -223,13 +230,16 @@ const PartnerManagement = () => {
     }, [buildParams]);
 
     const loadMetrics = useCallback(async () => {
+        // getPartnerMetrics() has no category param (platform-wide only) — when locked to one
+        // category, the tiles are derived from the category-scoped `partners` list instead (below).
+        if (lockCategory) return;
         if (period === 'custom' && (!dateFrom || !dateTo)) return;
         try {
             setMetrics(await getPartnerMetrics(resolvePeriodRange(period, dateFrom, dateTo)));
         } catch {
             /* metrics are non-critical */
         }
-    }, [period, dateFrom, dateTo]);
+    }, [period, dateFrom, dateTo, lockCategory]);
 
     useEffect(() => {
         loadPartners();
@@ -238,6 +248,24 @@ const PartnerManagement = () => {
     useEffect(() => {
         loadMetrics();
     }, [loadMetrics]);
+
+    /** Metric tiles derived client-side from the category-scoped partner list (used only when `lockCategory`). */
+    const scopedMetrics = (() => {
+        if (!lockCategory) return null;
+        const { date_from, date_to } = resolvePeriodRange(period, dateFrom, dateTo);
+        const inPeriod = (createdAt: string) => {
+            const d = createdAt.slice(0, 10);
+            return (!date_from || d >= date_from) && (!date_to || d <= date_to);
+        };
+        return {
+            total: partners.length,
+            active: partners.filter((p) => p.is_active).length,
+            inactive: partners.filter((p) => !p.is_active).length,
+            profileIncomplete: partners.filter((p) => isPartnerOnboarding(p.status)).length,
+            reviewPending: partners.filter((p) => p.status === 'under_review').length,
+            newInPeriod: partners.filter((p) => inPeriod(p.created_at)).length,
+        };
+    })();
 
     // --- Review view ---
     const loadDetail = useCallback(async (id: string) => {
@@ -685,7 +713,14 @@ const PartnerManagement = () => {
     // =====================================================================
     // List view
     // =====================================================================
-    const metricTiles = metrics
+    const metricTiles = scopedMetrics
+        ? [
+              { label: 'Total Partners', value: scopedMetrics.total, tone: 'text-gray-900' },
+              { label: 'Review Pending', value: scopedMetrics.reviewPending, tone: 'text-blue-600' },
+              { label: 'Active', value: scopedMetrics.active, tone: 'text-green-600' },
+              { label: 'Inactive', value: scopedMetrics.inactive, tone: 'text-red-600' },
+          ]
+        : metrics
         ? [
               { label: 'Total Partners', value: metrics.total_partners, tone: 'text-gray-900' },
               { label: 'Under Review', value: metrics.under_review, tone: 'text-blue-600' },
@@ -693,14 +728,17 @@ const PartnerManagement = () => {
               { label: 'Rejected', value: metrics.rejected, tone: 'text-red-600' },
           ]
         : [];
+    const metricsReady = lockCategory ? !loading : !!metrics;
 
     return (
         <div className="space-y-6">
-            <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Partners</h1>
-                    <p className="text-gray-500 text-sm">Review documents & banking, then approve partners</p>
-                </div>
+            <header className={cn('flex flex-col md:flex-row md:items-center gap-4', lockCategory ? 'justify-end' : 'justify-between')}>
+                {!lockCategory && (
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900">Partners</h1>
+                        <p className="text-gray-500 text-sm">Review documents & banking, then approve partners</p>
+                    </div>
+                )}
                 <div className="flex flex-wrap items-center gap-2">
                     <PeriodFilter
                         value={period}
@@ -728,9 +766,14 @@ const PartnerManagement = () => {
                         <p className={cn('text-3xl font-bold mt-1', m.tone)}>{m.value}</p>
                     </Card>
                 ))}
-                {!metrics && <Card className="col-span-2 lg:col-span-4 text-center text-gray-400 text-sm py-6">Loading metrics…</Card>}
+                {!metricsReady && <Card className="col-span-2 lg:col-span-4 text-center text-gray-400 text-sm py-6">Loading metrics…</Card>}
             </div>
-            {metrics && (
+            {scopedMetrics ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <MiniMetric label="Profile Incomplete" value={scopedMetrics.profileIncomplete} />
+                    <MiniMetric label={`New (${STANDARD_PERIOD_LABELS[period]})`} value={scopedMetrics.newInPeriod} />
+                </div>
+            ) : metrics ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                     <MiniMetric label="Activated Limited" value={metrics.activated_limited} />
                     <MiniMetric label="Verified" value={metrics.is_verified_count} />
@@ -738,7 +781,7 @@ const PartnerManagement = () => {
                     <MiniMetric label="Active Partners (30d)" value={metrics.active_partners_30d} />
                     <MiniMetric label="New Partners" value={metrics.new_this_month} />
                 </div>
-            )}
+            ) : null}
 
             {toast && (
                 <div
@@ -772,12 +815,14 @@ const PartnerManagement = () => {
                     placeholder="All statuses"
                     options={[{ value: '', label: 'All statuses' }, ...PARTNER_STATUSES.map((s) => ({ value: s, label: partnerStatusLabel(s) }))]}
                 />
-                <Select
-                    value={categoryFilter}
-                    onChange={setCategoryFilter}
-                    placeholder="All categories"
-                    options={[{ value: '', label: 'All categories' }, ...PARTNER_CATEGORIES.map((c) => ({ value: c, label: c }))]}
-                />
+                {!lockCategory && (
+                    <Select
+                        value={categoryFilter}
+                        onChange={setCategoryFilter}
+                        placeholder="All categories"
+                        options={[{ value: '', label: 'All categories' }, ...PARTNER_CATEGORIES.map((c) => ({ value: c, label: c }))]}
+                    />
+                )}
                 <Select
                     value={verifiedFilter}
                     onChange={(v) => setVerifiedFilter(v as '' | 'true' | 'false')}

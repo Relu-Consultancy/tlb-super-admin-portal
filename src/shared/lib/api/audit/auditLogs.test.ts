@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('./client', () => ({
+vi.mock('../core/client', () => ({
     api: { get: vi.fn(() => Promise.resolve({ count: 0, results: [] })) },
     ApiError: class ApiError extends Error {},
 }));

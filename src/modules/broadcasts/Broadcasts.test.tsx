@@ -97,7 +97,8 @@ describe('Broadcasts', () => {
         render(<Broadcasts />);
         await userEvent.click(await screen.findByRole('button', { name: /New Broadcast/i }));
         await screen.findByText('New Broadcast');
-        await userEvent.selectOptions(screen.getByDisplayValue('Everyone'), 'partners');
+        await userEvent.click(screen.getByText('Everyone'));
+        await userEvent.click(await screen.findByText('Partners (Partner Portal)'));
         await waitFor(() => expect(estimateAudience).toHaveBeenCalledWith({ roles: ['partner'] }));
     });
 

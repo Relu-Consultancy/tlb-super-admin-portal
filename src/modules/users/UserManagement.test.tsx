@@ -111,7 +111,7 @@ describe('UserManagement', () => {
     it('opens the detail slide-over with account info', async () => {
         render(<UserManagement />);
         await userEvent.click(await screen.findByText('active@tlb.com'));
-        expect(await screen.findByText('Account')).toBeInTheDocument();
-        expect(screen.getByText('Login History')).toBeInTheDocument();
+        expect(await screen.findByText('Account & Security')).toBeInTheDocument();
+        expect(screen.getByText('Recent Logins')).toBeInTheDocument();
     });
 });

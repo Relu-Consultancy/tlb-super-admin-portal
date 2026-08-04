@@ -157,4 +157,26 @@ describe('PartnerManagement', () => {
         await userEvent.click(all[all.length - 1]);
         await waitFor(() => expect(approvePartner).toHaveBeenCalledWith('p-1', ''));
     });
+
+    it('locks to a category, hides the header/category filter, and derives tiles from the scoped list', async () => {
+        (listPartners as any).mockResolvedValue(PARTNERS);
+        render(<PartnerManagement category="Events" lockCategory />);
+        await screen.findByText('Alpha Events');
+        expect(listPartners).toHaveBeenCalledWith(expect.objectContaining({ category: 'Events' }));
+        expect(screen.queryByRole('heading', { name: 'Partners' })).not.toBeInTheDocument();
+        expect(screen.queryByText('All categories')).not.toBeInTheDocument();
+        // getPartnerMetrics() is platform-wide only — not called when locked; tiles come from the list instead.
+        expect(getPartnerMetrics).not.toHaveBeenCalled();
+        expect(screen.getByText('Total Partners').nextSibling?.textContent).toBe('2');
+        expect(screen.getByText('Active').nextSibling?.textContent).toBe('1');
+        expect(screen.getByText('Inactive').nextSibling?.textContent).toBe('1');
+    });
+
+    it('shows the header, category filter, and platform-wide metrics when not locked', async () => {
+        render(<PartnerManagement />);
+        await screen.findByText('Alpha Events');
+        expect(screen.getByRole('heading', { name: 'Partners' })).toBeInTheDocument();
+        expect(screen.getByText('All categories')).toBeInTheDocument();
+        await waitFor(() => expect(getPartnerMetrics).toHaveBeenCalled());
+    });
 });

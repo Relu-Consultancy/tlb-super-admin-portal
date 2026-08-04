@@ -156,7 +156,7 @@ export const SECTIONS: SectionDef[] = [
     items: [
       { screen: Screen.USER_MANAGEMENT, label: 'User Management', icon: Users },
       { screen: Screen.USER_SECTION, label: 'User Section', icon: Users },
-      { screen: Screen.USERAPP_ALIGNMENT, label: 'UserApp Alignment', icon: Smartphone },
+      { screen: Screen.USERAPP_ALIGNMENT, label: 'UserApp Alignment', icon: Smartphone, match: [Screen.APP_CONTENT] },
     ],
   },
   {
@@ -178,6 +178,7 @@ export const SECTIONS: SectionDef[] = [
     accent: { icon: 'bg-yellow-50 text-yellow-600', bar: 'bg-yellow-400', soft: 'bg-yellow-50', hover: 'hover:border-yellow-300', text: 'text-yellow-600' },
     items: [
       { screen: Screen.DASHBOARD, label: 'Overview', icon: LayoutDashboard },
+      { screen: Screen.TRAFFIC_ENGAGEMENT, label: 'Traffic & Engagement', icon: TrendingUp },
       { screen: Screen.ADMIN_MANAGEMENT, label: 'Employee Admins', icon: UserCog },
       { screen: Screen.FINANCE_DASHBOARD, label: 'Finance Dashboard', icon: BarChart3 },
       { screen: Screen.PAYMENTS_FINANCE, label: 'Payments & Transactions', icon: CreditCard },

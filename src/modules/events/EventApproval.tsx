@@ -23,6 +23,8 @@ import {
     ExternalLink,
     Mail,
     Hash,
+    ChevronLeft,
+    ChevronRight,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Card from '../../shared/components/ui/Card';
@@ -133,12 +135,16 @@ function SmartValue({ value }: { value: unknown }) {
 
 type Toast = { type: 'success' | 'error'; text: string } | null;
 
+const PAGE_SIZE = 10;
+
 interface EventApprovalProps {
     /** Pre-select a listing vertical (from the Partners sidebar sub-item). */
     listingType?: string;
+    /** When true (with `listingType` set), hide the type filter — used as the Listing Directory tab of a vertical dashboard. */
+    lockType?: boolean;
 }
 
-const EventApproval = ({ listingType = '' }: EventApprovalProps) => {
+const EventApproval = ({ listingType = '', lockType = false }: EventApprovalProps) => {
     const { hasPermission } = useAuth();
     const canManage = hasPermission('MANAGE_LISTINGS');
 
@@ -154,6 +160,7 @@ const EventApproval = ({ listingType = '' }: EventApprovalProps) => {
     const [statusFilter, setStatusFilter] = useState('');
     // Seeded from the Partners sub-item; the dropdown can still change it within the tab.
     const [typeFilter, setTypeFilter] = useState(listingType);
+    const [page, setPage] = useState(1);
 
     // Review (detail) view
     const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -176,6 +183,10 @@ const EventApproval = ({ listingType = '' }: EventApprovalProps) => {
         const t = setTimeout(() => setDebouncedSearch(search.trim()), 350);
         return () => clearTimeout(t);
     }, [search]);
+
+    useEffect(() => {
+        setPage(1);
+    }, [debouncedSearch, statusFilter, typeFilter]);
 
     const buildParams = useCallback(
         (): ListListingsParams => ({
@@ -582,21 +593,25 @@ const EventApproval = ({ listingType = '' }: EventApprovalProps) => {
           ]
         : [];
     const byType = stats?.by_type ? Object.entries(stats.by_type) : [];
+    const totalPages = Math.max(1, Math.ceil(listings.length / PAGE_SIZE));
+    const pagedListings = listings.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
     return (
         <div className="space-y-6">
-            <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">
-                        {typeFilter ? `${listingTypeLabel(typeFilter)} Approval` : 'Listings Approval'}
-                    </h1>
-                    <p className="text-gray-500 text-sm">
-                        {typeFilter
-                            ? `Review and moderate partner ${listingTypeLabel(typeFilter).toLowerCase()} listings`
-                            : 'Review and moderate partner listings of every type'}
-                    </p>
-                </div>
-            </header>
+            {!lockType && (
+                <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900">
+                            {typeFilter ? `${listingTypeLabel(typeFilter)} Approval` : 'Listings Approval'}
+                        </h1>
+                        <p className="text-gray-500 text-sm">
+                            {typeFilter
+                                ? `Review and moderate partner ${listingTypeLabel(typeFilter).toLowerCase()} listings`
+                                : 'Review and moderate partner listings of every type'}
+                        </p>
+                    </div>
+                </header>
+            )}
 
             {/* Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -632,12 +647,14 @@ const EventApproval = ({ listingType = '' }: EventApprovalProps) => {
                     />
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                 </div>
-                <Select
-                    value={typeFilter}
-                    onChange={setTypeFilter}
-                    placeholder="All types"
-                    options={[{ value: '', label: 'All types' }, ...LISTING_TYPES.map((t) => ({ value: t, label: listingTypeLabel(t) }))]}
-                />
+                {!lockType && (
+                    <Select
+                        value={typeFilter}
+                        onChange={setTypeFilter}
+                        placeholder="All types"
+                        options={[{ value: '', label: 'All types' }, ...LISTING_TYPES.map((t) => ({ value: t, label: listingTypeLabel(t) }))]}
+                    />
+                )}
                 <Select
                     value={statusFilter}
                     onChange={setStatusFilter}
@@ -669,7 +686,7 @@ const EventApproval = ({ listingType = '' }: EventApprovalProps) => {
                             ) : listings.length === 0 ? (
                                 <tr><td colSpan={7}><EmptyState icon={Calendar} title="No listings found" description="No listings match the current filters." /></td></tr>
                             ) : (
-                                listings.map((l) => (
+                                pagedListings.map((l) => (
                                     <tr key={l.id} className="hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => openReview(l)}>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2 flex-wrap">
@@ -713,6 +730,29 @@ const EventApproval = ({ listingType = '' }: EventApprovalProps) => {
                         </tbody>
                     </table>
                 </div>
+                {!loading && !error && listings.length > 0 && (
+                    <div className="p-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+                        <span className="text-xs text-gray-500">
+                            {listings.length.toLocaleString()} listing{listings.length === 1 ? '' : 's'} · page {page} of {totalPages}
+                        </span>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                disabled={page <= 1}
+                                className="flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-600 disabled:opacity-50"
+                            >
+                                <ChevronLeft size={14} /> Prev
+                            </button>
+                            <button
+                                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                                disabled={page >= totalPages}
+                                className="flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-600 disabled:opacity-50"
+                            >
+                                Next <ChevronRight size={14} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </Card>
         </div>
     );

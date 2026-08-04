@@ -25,7 +25,7 @@ describe('Hub', () => {
 
   it('greets the admin and renders the four workspaces', () => {
     render(<Hub onEnterSection={vi.fn()} onSelectScreen={vi.fn()} />);
-    expect(screen.getByText(/Welcome back, Vishesh/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Welcome back, Vishesh/ })).toBeInTheDocument();
     expect(screen.getByText('User / Customer')).toBeInTheDocument();
     expect(screen.getByText('Partner')).toBeInTheDocument();
     expect(screen.getByText('Admin')).toBeInTheDocument();
