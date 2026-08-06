@@ -78,6 +78,9 @@ function bookingSpend(stats: Record<string, unknown> | null): string | null {
 
 type Toast = { type: 'success' | 'error'; text: string } | null;
 
+const DEFAULT_PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+
 const UserManagement = () => {
     const { hasPermission } = useAuth();
     const canManage = hasPermission('MANAGE_CUSTOMERS');
@@ -97,6 +100,7 @@ const UserManagement = () => {
     const [ordering, setOrdering] = useState('-created_at');
 
     const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
     const [totalCount, setTotalCount] = useState(0);
     const [hasNextPage, setHasNextPage] = useState(false);
     const [hasPrevPage, setHasPrevPage] = useState(false);
@@ -126,7 +130,7 @@ const UserManagement = () => {
     // reset page on filter change
     useEffect(() => {
         setPage(1);
-    }, [statusFilter, providerFilter, ordering]);
+    }, [statusFilter, providerFilter, ordering, pageSize]);
 
     const buildParams = useCallback(
         (): ListUsersParams => ({
@@ -135,8 +139,9 @@ const UserManagement = () => {
             auth_provider: providerFilter || undefined,
             ordering,
             page,
+            page_size: pageSize,
         }),
-        [debouncedSearch, statusFilter, providerFilter, ordering, page],
+        [debouncedSearch, statusFilter, providerFilter, ordering, page, pageSize],
     );
 
     const loadUsers = useCallback(async () => {
@@ -364,7 +369,7 @@ const UserManagement = () => {
             </div>
 
             {/* Table */}
-            <Card className="p-0 overflow-hidden">
+            <Card className={cn('p-0 overflow-hidden', !loading && !error && 'rounded-b-none')}>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left whitespace-nowrap">
                         <thead>
@@ -433,31 +438,43 @@ const UserManagement = () => {
                         </tbody>
                     </table>
                 </div>
-                {!loading && !error && (
-                    <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-white">
+            </Card>
+            {!loading && !error && (
+                <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 border border-t-0 border-gray-200 rounded-b-xl bg-white">
+                    <div className="flex flex-wrap items-center gap-4">
                         <div className="text-sm text-gray-500">
                             Showing <span className="font-medium text-gray-900">{users.length}</span> of <span className="font-medium text-gray-900">{totalCount}</span> customers
                         </div>
                         <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                                disabled={!hasPrevPage}
-                                className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                            >
-                                <ChevronLeft size={16} /> Previous
-                            </button>
-                            <span className="text-sm font-medium text-gray-700 px-2">Page {page}</span>
-                            <button
-                                onClick={() => setPage((p) => p + 1)}
-                                disabled={!hasNextPage}
-                                className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                            >
-                                Next <ChevronRight size={16} />
-                            </button>
+                            <span className="text-sm text-gray-500">Show</span>
+                            <Select
+                                value={String(pageSize)}
+                                onChange={(v) => setPageSize(Number(v))}
+                                options={PAGE_SIZE_OPTIONS.map((n) => ({ value: String(n), label: String(n) }))}
+                                placement="top"
+                                className="min-w-[70px]"
+                            />
                         </div>
                     </div>
-                )}
-            </Card>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setPage((p) => Math.max(1, p - 1))}
+                            disabled={!hasPrevPage}
+                            className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        >
+                            <ChevronLeft size={16} /> Previous
+                        </button>
+                        <span className="text-sm font-medium text-gray-700 px-2">Page {page}</span>
+                        <button
+                            onClick={() => setPage((p) => p + 1)}
+                            disabled={!hasNextPage}
+                            className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        >
+                            Next <ChevronRight size={16} />
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Disable reason modal */}
             <AnimatePresence>

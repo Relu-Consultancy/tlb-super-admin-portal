@@ -159,6 +159,7 @@ export interface ListUsersParams {
   date_to?: string;
   ordering?: string;
   page?: number;
+  page_size?: number;
 }
 
 export interface PaginatedResponse<T> {

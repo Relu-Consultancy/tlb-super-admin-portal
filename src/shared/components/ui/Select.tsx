@@ -16,6 +16,8 @@ interface SelectProps {
     className?: string;
     /** 'filter' = compact toolbar style (default), 'form' = taller form-field style */
     variant?: 'filter' | 'form';
+    /** Which side the dropdown opens on. Use 'top' for controls pinned near the bottom of the page. */
+    placement?: 'bottom' | 'top';
 }
 
 export default function Select({
@@ -26,6 +28,7 @@ export default function Select({
     disabled = false,
     className,
     variant = 'filter',
+    placement = 'bottom',
 }: SelectProps) {
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
@@ -95,9 +98,10 @@ export default function Select({
             {open && (
                 <div
                     className={cn(
-                        'absolute z-50 mt-1.5 w-full min-w-[160px] bg-white border border-gray-200 rounded-xl shadow-lg',
+                        'absolute z-50 w-full min-w-[160px] bg-white border border-gray-200 rounded-xl shadow-lg',
                         'py-1 max-h-[240px] overflow-y-auto',
                         'animate-in fade-in-0 zoom-in-95 duration-150',
+                        placement === 'top' ? 'bottom-full mb-1.5' : 'mt-1.5',
                     )}
                     style={{ animationFillMode: 'forwards' }}
                 >

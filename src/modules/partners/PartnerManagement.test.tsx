@@ -179,4 +179,70 @@ describe('PartnerManagement', () => {
         expect(screen.getByText('All categories')).toBeInTheDocument();
         await waitFor(() => expect(getPartnerMetrics).toHaveBeenCalled());
     });
+
+    it('paginates the table 10 rows per page and pages with Prev/Next', async () => {
+        const many = Array.from({ length: 15 }, (_, i) => ({
+            id: `p-${i}`, email: `partner${i}@tlb.dev`, business_name: `Partner ${i}`, business_type: 'Company',
+            contact_person_name: 'X', base_city: 'Mumbai', categories: ['Events'], status: 'approved',
+            is_active: true, is_verified: true, created_at: '2026-06-01T00:00:00Z',
+        }));
+        (listPartners as any).mockResolvedValue(many);
+        render(<PartnerManagement />);
+
+        await screen.findByText('Partner 0');
+        expect(screen.getByText('Partner 9')).toBeInTheDocument();
+        expect(screen.queryByText('Partner 10')).not.toBeInTheDocument();
+        expect(screen.getByText('15 partners · page 1 of 2')).toBeInTheDocument();
+
+        const prev = screen.getByRole('button', { name: /Prev/i });
+        const next = screen.getByRole('button', { name: /Next/i });
+        expect(prev).toBeDisabled();
+
+        await userEvent.click(next);
+        expect(screen.getByText('Partner 10')).toBeInTheDocument();
+        expect(screen.queryByText('Partner 0')).not.toBeInTheDocument();
+        expect(screen.getByText('15 partners · page 2 of 2')).toBeInTheDocument();
+        expect(next).toBeDisabled();
+
+        await userEvent.click(prev);
+        expect(screen.getByText('Partner 0')).toBeInTheDocument();
+    });
+
+    it('changes page size via the Show selector and resets to page 1', async () => {
+        const many = Array.from({ length: 15 }, (_, i) => ({
+            id: `p-${i}`, email: `partner${i}@tlb.dev`, business_name: `Partner ${i}`, business_type: 'Company',
+            contact_person_name: 'X', base_city: 'Mumbai', categories: ['Events'], status: 'approved',
+            is_active: true, is_verified: true, created_at: '2026-06-01T00:00:00Z',
+        }));
+        (listPartners as any).mockResolvedValue(many);
+        render(<PartnerManagement />);
+
+        await screen.findByText('Partner 0');
+        await userEvent.click(screen.getByRole('button', { name: /Next/i }));
+        expect(await screen.findByText(/page 2 of 2/)).toBeInTheDocument();
+
+        await userEvent.click(screen.getByText('10'));
+        await userEvent.click(await screen.findByText('25'));
+
+        expect(await screen.findByText('Partner 0')).toBeInTheDocument();
+        expect(screen.getByText('Partner 14')).toBeInTheDocument();
+        expect(screen.getByText('15 partners · page 1 of 1')).toBeInTheDocument();
+    });
+
+    it('resets to page 1 when the search filter changes', async () => {
+        const many = Array.from({ length: 15 }, (_, i) => ({
+            id: `p-${i}`, email: `partner${i}@tlb.dev`, business_name: `Partner ${i}`, business_type: 'Company',
+            contact_person_name: 'X', base_city: 'Mumbai', categories: ['Events'], status: 'approved',
+            is_active: true, is_verified: true, created_at: '2026-06-01T00:00:00Z',
+        }));
+        (listPartners as any).mockResolvedValue(many);
+        render(<PartnerManagement />);
+
+        await screen.findByText('Partner 0');
+        await userEvent.click(screen.getByRole('button', { name: /Next/i }));
+        expect(await screen.findByText(/page 2 of 2/)).toBeInTheDocument();
+
+        await userEvent.type(screen.getByPlaceholderText('Search by email, business, or contact…'), 'x');
+        await waitFor(() => expect(screen.getByText(/page 1 of/)).toBeInTheDocument());
+    });
 });

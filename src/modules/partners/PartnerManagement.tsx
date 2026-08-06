@@ -26,6 +26,8 @@ import {
     UserCheck,
     BadgeCheck,
     Sparkles,
+    ChevronLeft,
+    ChevronRight,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Card from '../../shared/components/ui/Card';
@@ -86,6 +88,9 @@ function formatDate(iso: string | null | undefined): string {
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 type Toast = { type: 'success' | 'error'; text: string } | null;
+
+const DEFAULT_PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
 /** Text-input actions (reason/comment) configured in one place. */
 type ActionKind = 'approve' | 'reject' | 'request-changes' | 'deactivate' | 'unverify';
@@ -182,6 +187,8 @@ const PartnerManagement = ({ category = '', lockCategory = false }: PartnerManag
     const [categoryFilter, setCategoryFilter] = useState(category);
     const [verifiedFilter, setVerifiedFilter] = useState<'' | 'true' | 'false'>('');
     const [activeFilter, setActiveFilter] = useState<'' | 'true' | 'false'>('');
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
     // Review (detail) view
     const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -204,6 +211,10 @@ const PartnerManagement = ({ category = '', lockCategory = false }: PartnerManag
         const t = setTimeout(() => setDebouncedSearch(search.trim()), 350);
         return () => clearTimeout(t);
     }, [search]);
+
+    useEffect(() => {
+        setPage(1);
+    }, [debouncedSearch, statusFilter, categoryFilter, verifiedFilter, activeFilter, pageSize]);
 
     const buildParams = useCallback(
         (): ListPartnersParams => ({
@@ -729,6 +740,8 @@ const PartnerManagement = ({ category = '', lockCategory = false }: PartnerManag
           ]
         : [];
     const metricsReady = lockCategory ? !loading : !!metrics;
+    const totalPages = Math.max(1, Math.ceil(partners.length / pageSize));
+    const pagedPartners = partners.slice((page - 1) * pageSize, page * pageSize);
 
     return (
         <div className="space-y-6">
@@ -846,7 +859,7 @@ const PartnerManagement = ({ category = '', lockCategory = false }: PartnerManag
             </div>
 
             {/* Table */}
-            <Card className="p-0 overflow-hidden">
+            <Card className={cn('p-0 overflow-hidden', partners.length > 0 && !loading && !error && 'rounded-b-none')}>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left whitespace-nowrap">
                         <thead>
@@ -868,7 +881,7 @@ const PartnerManagement = ({ category = '', lockCategory = false }: PartnerManag
                             ) : partners.length === 0 ? (
                                 <tr><td colSpan={7}><EmptyState icon={Users} title="No partners found" description="No partners match the current filters." /></td></tr>
                             ) : (
-                                partners.map((p) => (
+                                pagedPartners.map((p) => (
                                     <tr key={p.id} className="hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => openReview(p)}>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2 flex-wrap">
@@ -925,6 +938,41 @@ const PartnerManagement = ({ category = '', lockCategory = false }: PartnerManag
                     </table>
                 </div>
             </Card>
+            {!loading && !error && partners.length > 0 && (
+                <div className="p-4 bg-gray-50 border border-t-0 border-gray-200 rounded-b-xl flex flex-wrap justify-between items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                        <span className="text-xs text-gray-500">
+                            {partners.length.toLocaleString()} partner{partners.length === 1 ? '' : 's'} · page {page} of {totalPages}
+                        </span>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-500">Show</span>
+                            <Select
+                                value={String(pageSize)}
+                                onChange={(v) => setPageSize(Number(v))}
+                                options={PAGE_SIZE_OPTIONS.map((n) => ({ value: String(n), label: String(n) }))}
+                                placement="top"
+                                className="min-w-[70px]"
+                            />
+                        </div>
+                    </div>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setPage((p) => Math.max(1, p - 1))}
+                            disabled={page <= 1}
+                            className="flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-600 disabled:opacity-50"
+                        >
+                            <ChevronLeft size={14} /> Prev
+                        </button>
+                        <button
+                            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                            disabled={page >= totalPages}
+                            className="flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-600 disabled:opacity-50"
+                        >
+                            Next <ChevronRight size={14} />
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

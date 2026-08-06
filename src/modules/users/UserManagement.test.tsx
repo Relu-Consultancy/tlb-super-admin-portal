@@ -114,4 +114,15 @@ describe('UserManagement', () => {
         expect(await screen.findByText('Account & Security')).toBeInTheDocument();
         expect(screen.getByText('Recent Logins')).toBeInTheDocument();
     });
+
+    it('changes page size via the Show selector and re-fetches page 1', async () => {
+        render(<UserManagement />);
+        await screen.findByText('active@tlb.com');
+        expect(listUsersPaginated).toHaveBeenCalledWith(expect.objectContaining({ page: 1, page_size: 10 }));
+
+        await userEvent.click(screen.getByRole('button', { name: '10' }));
+        await userEvent.click(await screen.findByText('25'));
+
+        await waitFor(() => expect(listUsersPaginated).toHaveBeenCalledWith(expect.objectContaining({ page: 1, page_size: 25 })));
+    });
 });

@@ -135,7 +135,8 @@ function SmartValue({ value }: { value: unknown }) {
 
 type Toast = { type: 'success' | 'error'; text: string } | null;
 
-const PAGE_SIZE = 10;
+const DEFAULT_PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
 interface EventApprovalProps {
     /** Pre-select a listing vertical (from the Partners sidebar sub-item). */
@@ -161,6 +162,7 @@ const EventApproval = ({ listingType = '', lockType = false }: EventApprovalProp
     // Seeded from the Partners sub-item; the dropdown can still change it within the tab.
     const [typeFilter, setTypeFilter] = useState(listingType);
     const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
     // Review (detail) view
     const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -186,7 +188,7 @@ const EventApproval = ({ listingType = '', lockType = false }: EventApprovalProp
 
     useEffect(() => {
         setPage(1);
-    }, [debouncedSearch, statusFilter, typeFilter]);
+    }, [debouncedSearch, statusFilter, typeFilter, pageSize]);
 
     const buildParams = useCallback(
         (): ListListingsParams => ({
@@ -593,8 +595,8 @@ const EventApproval = ({ listingType = '', lockType = false }: EventApprovalProp
           ]
         : [];
     const byType = stats?.by_type ? Object.entries(stats.by_type) : [];
-    const totalPages = Math.max(1, Math.ceil(listings.length / PAGE_SIZE));
-    const pagedListings = listings.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+    const totalPages = Math.max(1, Math.ceil(listings.length / pageSize));
+    const pagedListings = listings.slice((page - 1) * pageSize, page * pageSize);
 
     return (
         <div className="space-y-6">
@@ -664,7 +666,7 @@ const EventApproval = ({ listingType = '', lockType = false }: EventApprovalProp
             </div>
 
             {/* Table */}
-            <Card className="p-0 overflow-hidden">
+            <Card className={cn('p-0 overflow-hidden', listings.length > 0 && !loading && !error && 'rounded-b-none')}>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left whitespace-nowrap">
                         <thead>
@@ -730,30 +732,42 @@ const EventApproval = ({ listingType = '', lockType = false }: EventApprovalProp
                         </tbody>
                     </table>
                 </div>
-                {!loading && !error && listings.length > 0 && (
-                    <div className="p-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+            </Card>
+            {!loading && !error && listings.length > 0 && (
+                <div className="p-4 bg-gray-50 border border-t-0 border-gray-200 rounded-b-xl flex flex-wrap justify-between items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                         <span className="text-xs text-gray-500">
                             {listings.length.toLocaleString()} listing{listings.length === 1 ? '' : 's'} · page {page} of {totalPages}
                         </span>
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                                disabled={page <= 1}
-                                className="flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-600 disabled:opacity-50"
-                            >
-                                <ChevronLeft size={14} /> Prev
-                            </button>
-                            <button
-                                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                                disabled={page >= totalPages}
-                                className="flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-600 disabled:opacity-50"
-                            >
-                                Next <ChevronRight size={14} />
-                            </button>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-500">Show</span>
+                            <Select
+                                value={String(pageSize)}
+                                onChange={(v) => setPageSize(Number(v))}
+                                options={PAGE_SIZE_OPTIONS.map((n) => ({ value: String(n), label: String(n) }))}
+                                placement="top"
+                                className="min-w-[70px]"
+                            />
                         </div>
                     </div>
-                )}
-            </Card>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setPage((p) => Math.max(1, p - 1))}
+                            disabled={page <= 1}
+                            className="flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-600 disabled:opacity-50"
+                        >
+                            <ChevronLeft size={14} /> Prev
+                        </button>
+                        <button
+                            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                            disabled={page >= totalPages}
+                            className="flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-600 disabled:opacity-50"
+                        >
+                            Next <ChevronRight size={14} />
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

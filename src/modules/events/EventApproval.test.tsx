@@ -253,6 +253,27 @@ describe('Listings Approval', () => {
         expect(screen.getByText('Listing 0')).toBeInTheDocument();
     });
 
+    it('changes page size via the Show selector and resets to page 1', async () => {
+        const many = Array.from({ length: 15 }, (_, i) => ({
+            id: `l-${i}`, title: `Listing ${i}`, listing_type: 'event', status: 'pending', is_paused: false,
+            partner_name: 'Alpha Events', partner_email: 'alpha@tlb.dev', category: 'Music', city: 'Mumbai',
+            created_at: '2026-06-01T00:00:00Z', updated_at: '2026-06-01T00:00:00Z',
+        }));
+        (listListings as any).mockResolvedValue(many);
+        render(<EventApproval />);
+
+        await screen.findByText('Listing 0');
+        await userEvent.click(screen.getByRole('button', { name: /Next/i }));
+        expect(await screen.findByText(/page 2 of 2/)).toBeInTheDocument();
+
+        await userEvent.click(screen.getByText('10'));
+        await userEvent.click(await screen.findByText('25'));
+
+        expect(await screen.findByText('Listing 0')).toBeInTheDocument();
+        expect(screen.getByText('Listing 14')).toBeInTheDocument();
+        expect(screen.getByText('15 listings · page 1 of 1')).toBeInTheDocument();
+    });
+
     it('resets to page 1 when the search filter changes', async () => {
         const many = Array.from({ length: 15 }, (_, i) => ({
             id: `l-${i}`, title: `Listing ${i}`, listing_type: 'event', status: 'pending', is_paused: false,
